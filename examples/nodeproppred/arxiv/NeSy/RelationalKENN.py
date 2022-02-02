@@ -12,7 +12,6 @@ class RelationalKENN(torch.nn.Module):
                  binary_predicates,
                  unary_clauses,
                  binary_clauses,
-                 input_shape,
                  activation=lambda x: x,
                  initial_clause_weight=0.5,
                  **kwargs):
@@ -54,7 +53,6 @@ class RelationalKENN(torch.nn.Module):
         self.group_by = None
 
         # BUILD THE MODEL
-        #todo: function calls
         if len(self.unary_clauses) != 0:
             self.unary_ke = KnowledgeEnhancer(
                 self.unary_predicates, self.unary_clauses, initial_clause_weight=self.initial_clause_weight)
@@ -65,10 +63,10 @@ class RelationalKENN(torch.nn.Module):
             self.join = Join()
             self.group_by = GroupBy(self.n_unary)
 
-    def forward(self, unary, binary, index1, index2, **kwargs):
+    def forward(self, unary, binary, index1, index2, input_shape, **kwargs):
         #TODO: adapt here
         """Forward step of Kenn model for relational data.
-
+        :param input_shape #todo
         :param unary: the tensor with unary predicates pre-activations
         :param binary: the tensor with binary predicates pre-activations
         :param index1: a vector containing the indices of the first object
@@ -78,11 +76,11 @@ class RelationalKENN(torch.nn.Module):
         """
 
         if len(self.unary_clauses) != 0:
-            deltas_sum, deltas_u_list = self.unary_ke(unary)
+            deltas_sum, deltas_u_list = self.unary_ke(unary) # todo call of knowledge enhancer
             u = unary + deltas_sum
         else:
             u = unary
-            deltas_u_list = tf.expand_dims(tf.zeros(unary.shape), axis=0)
+            deltas_u_list = torch.unsqueeze(input=torch.zeros(unary.shape), dim=0)
 
         if len(self.binary_clauses) != 0 and len(binary) != 0:
             joined_matrix = self.join(u, binary, index1, index2)
@@ -91,8 +89,8 @@ class RelationalKENN(torch.nn.Module):
             delta_up, delta_bp = self.group_by(
                 u, binary, deltas_sum, index1, index2)
         else:
-            delta_up = tf.zeros(u.shape)
-            delta_bp = tf.zeros(binary.shape)
+            delta_up = torch.zeros(u.shape)
+            delta_bp = torch.zeros(binary.shape)
 
         return self.activation(u + delta_up), self.activation(binary + delta_bp) # todo: slow
 
