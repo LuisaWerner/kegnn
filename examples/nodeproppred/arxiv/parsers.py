@@ -2,7 +2,6 @@ import KnowledgeEnhancer
 import RelationalKENN
 import KENN
 
-
 def unary_parser(knowledge_file, activation=lambda x: x, initial_clause_weight=0.5, save_training_data=False, **kwargs):
     """
     Takes in input the knowledge file containing only unary clauses and returns a Kenn Layer,

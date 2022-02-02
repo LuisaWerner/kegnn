@@ -15,7 +15,6 @@ from logger import Logger
 from model import GCN, SAGE, Standard, MLP
 import torch_geometric.transforms as T
 
-
 def train(model, data, train_idx, optimizer):
     model.train()
     optimizer.zero_grad()
@@ -48,7 +47,6 @@ def test(model, data, split_idx, evaluator):
     })['acc']
 
     return train_acc, valid_acc, test_acc
-
 
 def main():
     parser = argparse.ArgumentParser(description='OGBN-Arxiv (GNN)')
@@ -83,9 +81,8 @@ def main():
         if args.use_node_embedding:
             embedding = torch.load('embedding.pt', map_location='cpu')
             data.x = torch.cat([data.x, embedding], dim=-1)
-
         model = MLP(data.x.size(-1), args.hidden_channels, dataset.num_classes,
-                    args.num_layers, args.dropout).to(device)
+                  args.num_layers, args.dropout).to(device)
 
     elif args.model == 'Standard':
         # set parameters for Standard NN of KENN
@@ -100,6 +97,7 @@ def main():
         if args.use_node_embedding:
             embedding = torch.load('embedding.pt', map_location='cpu')
             data.x = torch.cat([data.x, embedding], dim=-1)
+
         model = Standard(data.x.size(-1), args.hidden_channels, dataset.num_classes,
                          args.num_layers, args.dropout).to(device)
 
@@ -137,7 +135,6 @@ def main():
 
         logger.print_statistics(run)
     logger.print_statistics()
-
 
 if __name__ == "__main__":
     main()
