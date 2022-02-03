@@ -14,6 +14,7 @@ from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 from logger import Logger
 from model import GCN, SAGE, Standard, MLP
 import torch_geometric.transforms as T
+import numpy as np
 
 def train(model, data, train_idx, optimizer):
     model.train()
@@ -61,21 +62,39 @@ def main():
     parser.add_argument('--epochs', type=int, default=3) # 500
     parser.add_argument('--runs', type=int, default=1) # 10
     parser.add_argument('--model', type=str, default='MLP')
+    parser.add_argument('--inductive', type=bool, default=True)
     args = parser.parse_args()
     print(args)
 
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
 
-    dataset = PygNodePropPredDataset(name='ogbn-arxiv',
-                                     transform=T.ToSparseTensor())
-
+    dataset = PygNodePropPredDataset(name='ogbn-arxiv', transform=T.ToSparseTensor(remove_edge_index=False))
     data = dataset[0]
     data.adj_t = data.adj_t.to_symmetric()
-    data = data.to(device)
-
     split_idx = dataset.get_idx_split()
     train_idx = split_idx['train'].to(device)
+
+    # in inductive setting we have to eliminate the links between the splits
+    if args.inductive:
+        # delete index pairs where where not both head and tail are in the same split subset
+        train_id = torch.unsqueeze(torch.all(torch.isin(data.edge_index, split_idx['train']), dim=0), dim=1)
+        valid_id = torch.unsqueeze(torch.all(torch.isin(data.edge_index, split_idx['valid']), dim=0), dim=0)
+        test_id = torch.unsqueeze(torch.all(torch.isin(data.edge_index, split_idx['test']), dim=0), dim=0)
+
+        #torch masked select returns only the index
+        edge_index_train = torch.masked_select(torch.transpose(data.edge_index, 1, 0), torch.cat(tensors=[train_id, train_id], dim=1))
+        edge_index_valid = torch.masked_select(data.edge_index, torch.cat(tensors=[valid_id, valid_id], dim=0))
+        edge_index_test = torch.masked_select(data.edge_index, torch.cat(tensors=[test_id, test_id], dim=0))
+
+        # create sparse tensors
+        adj_train = torch.sparse_csr_tensor(crow_indices=index_train[0], col_indices=index_train[1])
+        adj_valid = torch.sparse_csr_tensor(crow_indices=index_valid[0], col_indices=index_valid[1])
+        adj_test = torch.sparse_csr_tensor(crow_indices=index_test[0], col_indices=index_test[1])
+
+    else:
+        data.adj_t = data.adj_t.to_symmetric()
+    data = data.to(device)
 
     if args.model == 'MLP':
         if args.use_node_embedding:
