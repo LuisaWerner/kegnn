@@ -109,7 +109,7 @@ class MLP(torch.nn.Module):
         for bn in self.bns:
             bn.reset_parameters()
 
-    def forward(self, x, adj_t, relations):
+    def forward(self, x, adj_t=None, relations=None): # The None is needed for KENN heritage
         for i, lin in enumerate(self.lins[:-1]):
             x = lin(x)
             x = self.bns[i](x)
@@ -162,7 +162,7 @@ class KENN(MLP):
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
-    def forward(self, x, adj_t, relations):
+    def forward(self, x, adj_t, relations): # TODO: signature has to match
         # call base NN to get unary preactivations
         z = super(KENN, self).forward(x, adj_t)
 

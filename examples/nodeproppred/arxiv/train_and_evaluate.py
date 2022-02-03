@@ -4,50 +4,21 @@ At the moment it only works for base NN
 TODO: 
 - adapt a script for KENN and add a script that runs everything 
 - early stopping ? 
-- prepare for inductive and transductive setting 
+- to discuss: use to_symmetric() for links 
+- prepare for inductive and transductive setting -IN PROGRESS 
+
 """
 
 import argparse
 import torch
+import torch_sparse
 import torch.nn.functional as F
 from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 from logger import Logger
 from model import GCN, SAGE, Standard, MLP
 import torch_geometric.transforms as T
-import numpy as np
+from training import *
 
-def train(model, data, train_idx, optimizer):
-    model.train()
-    optimizer.zero_grad()
-    out = model(data.x, data.adj_t)[train_idx]
-    loss = F.nll_loss(out, data.y.squeeze(1)[train_idx])
-    loss.backward()
-    optimizer.step()
-
-    return loss.item()
-
-
-@torch.no_grad()
-def test(model, data, split_idx, evaluator):
-    model.eval()
-
-    out = model(data.x, data.adj_t)
-    y_pred = out.argmax(dim=-1, keepdim=True)
-
-    train_acc = evaluator.eval({
-        'y_true': data.y[split_idx['train']],
-        'y_pred': y_pred[split_idx['train']],
-    })['acc']
-    valid_acc = evaluator.eval({
-        'y_true': data.y[split_idx['valid']],
-        'y_pred': y_pred[split_idx['valid']],
-    })['acc']
-    test_acc = evaluator.eval({
-        'y_true': data.y[split_idx['test']],
-        'y_pred': y_pred[split_idx['test']],
-    })['acc']
-
-    return train_acc, valid_acc, test_acc
 
 def main():
     parser = argparse.ArgumentParser(description='OGBN-Arxiv (GNN)')
@@ -59,9 +30,9 @@ def main():
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=3) # 500
-    parser.add_argument('--runs', type=int, default=1) # 10
-    parser.add_argument('--model', type=str, default='MLP')
+    parser.add_argument('--epochs', type=int, default=3)  # 500
+    parser.add_argument('--runs', type=int, default=1)  # 10
+    parser.add_argument('--model', type=str, default='GCN')
     parser.add_argument('--inductive', type=bool, default=True)
     args = parser.parse_args()
     print(args)
@@ -69,39 +40,41 @@ def main():
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
 
-    dataset = PygNodePropPredDataset(name='ogbn-arxiv', transform=T.ToSparseTensor(remove_edge_index=False))
+    # dataset = PygNodePropPredDataset(name='ogbn-arxiv', transform=T.ToSparseTensor(remove_edge_index=False))
+    dataset = PygNodePropPredDataset(name='ogbn-arxiv')
     data = dataset[0]
-    data.adj_t = data.adj_t.to_symmetric()
+    data.adj_t = torch_sparse.SparseTensor(row=data.edge_index[0], col=data.edge_index[1],
+                                           sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
     split_idx = dataset.get_idx_split()
     train_idx = split_idx['train'].to(device)
 
-    # in inductive setting we have to eliminate the links between the splits
     if args.inductive:
-        # delete index pairs where where not both head and tail are in the same split subset
-        train_id = torch.unsqueeze(torch.all(torch.isin(data.edge_index, split_idx['train']), dim=0), dim=1)
-        valid_id = torch.unsqueeze(torch.all(torch.isin(data.edge_index, split_idx['valid']), dim=0), dim=0)
-        test_id = torch.unsqueeze(torch.all(torch.isin(data.edge_index, split_idx['test']), dim=0), dim=0)
+        # delete index pairs where where not both head and tail are in the same split subset and store it in data object as SparseTensor
+        mask_train = torch.all(torch.isin(data.edge_index, split_idx['train']), dim=0)
+        mask_valid = torch.all(torch.isin(data.edge_index, split_idx['valid']), dim=0)
+        mask_test = torch.all(torch.isin(data.edge_index, split_idx['test']), dim=0)
 
-        #torch masked select returns only the index
-        edge_index_train = torch.masked_select(torch.transpose(data.edge_index, 1, 0), torch.cat(tensors=[train_id, train_id], dim=1))
-        edge_index_valid = torch.masked_select(data.edge_index, torch.cat(tensors=[valid_id, valid_id], dim=0))
-        edge_index_test = torch.masked_select(data.edge_index, torch.cat(tensors=[test_id, test_id], dim=0))
+        data.adj_train = torch_sparse.SparseTensor(row=torch.masked_select(input=data.edge_index[0], mask=mask_train),
+                                                   col=torch.masked_select(input=data.edge_index[1], mask=mask_train),
+                                                   sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
 
-        # create sparse tensors
-        adj_train = torch.sparse_csr_tensor(crow_indices=index_train[0], col_indices=index_train[1])
-        adj_valid = torch.sparse_csr_tensor(crow_indices=index_valid[0], col_indices=index_valid[1])
-        adj_test = torch.sparse_csr_tensor(crow_indices=index_test[0], col_indices=index_test[1])
+        data.adj_valid = torch_sparse.SparseTensor(row=torch.masked_select(input=data.edge_index[0], mask=mask_valid),
+                                                   col=torch.masked_select(input=data.edge_index[1], mask=mask_valid),
+                                                   sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
 
-    else:
-        data.adj_t = data.adj_t.to_symmetric()
+        data.adj_test = torch_sparse.SparseTensor(row=torch.masked_select(input=data.edge_index[0], mask=mask_test),
+                                                  col=torch.masked_select(input=data.edge_index[1], mask=mask_test),
+                                                  sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
+
     data = data.to(device)
 
+    # INITIALIZE THE MODEL
     if args.model == 'MLP':
         if args.use_node_embedding:
             embedding = torch.load('embedding.pt', map_location='cpu')
             data.x = torch.cat([data.x, embedding], dim=-1)
         model = MLP(data.x.size(-1), args.hidden_channels, dataset.num_classes,
-                  args.num_layers, args.dropout).to(device)
+                    args.num_layers, args.dropout).to(device)
 
     elif args.model == 'Standard':
         # set parameters for Standard NN of KENN
@@ -135,12 +108,14 @@ def main():
     evaluator = Evaluator(name='ogbn-arxiv')
     logger = Logger(args.runs, args)
 
+    """HERE THE TRAINING LOOP STARTS"""
     for run in range(args.runs):
         model.reset_parameters()
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         for epoch in range(1, 1 + args.epochs):
-            loss = train(model, data, train_idx, optimizer)
-            result = test(model, data, split_idx, evaluator)
+            # todo: adapt for inductive case
+            loss = train_transductive(model, data, train_idx, optimizer)
+            result = test_transductive(model, data, split_idx, evaluator)
             logger.add_result(run, result)
 
             if epoch % args.log_steps == 0:
@@ -154,6 +129,7 @@ def main():
 
         logger.print_statistics(run)
     logger.print_statistics()
+
 
 if __name__ == "__main__":
     main()
