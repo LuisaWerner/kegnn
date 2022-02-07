@@ -22,7 +22,7 @@ class GCN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
         super(GCN, self).__init__()
-
+        self.name = 'GCN'
         self.convs = torch.nn.ModuleList()
         self.convs.append(GCNConv(in_channels, hidden_channels, cached=True))
         self.bns = torch.nn.ModuleList()
@@ -57,7 +57,7 @@ class SAGE(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
         super(SAGE, self).__init__()
-
+        self.name = 'SAGE'
         self.convs = torch.nn.ModuleList()
         self.convs.append(SAGEConv(in_channels, hidden_channels))
         self.bns = torch.nn.ModuleList()
@@ -91,7 +91,7 @@ class MLP(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
         super(MLP, self).__init__()
-
+        self.name = 'MLP'
         self.lins = torch.nn.ModuleList()
         self.lins.append(torch.nn.Linear(in_channels, hidden_channels))
         self.bns = torch.nn.ModuleList()
@@ -150,6 +150,7 @@ class KENN(MLP):
 
     def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout, explainer_object=None):
         super(KENN, self).__init__(in_channels=in_channels, out_channels=out_channels, hidden_channels=hidden_channels, num_layers=num_layers, dropout=dropout)
+        self.name = str('KENN_'+super().name)
         self.knowledge_file=knowledge_file
         self.explainer_object=explainer_object
         self.kenn_layers = torch.nn.ModuleList()

@@ -1,6 +1,10 @@
 import torch
+import os
+import pickle
 
-
+# TODO: change how this whole file should work
+# store as in KENN
+# store dictionaries: { 'model.name' : [
 class Logger(object):
     def __init__(self, runs, info=None):
         self.info = info
@@ -42,3 +46,23 @@ class Logger(object):
             print(f'  Final Train: {r.mean():.2f} ± {r.std():.2f}')
             r = best_result[:, 3]
             print(f'   Final Test: {r.mean():.2f} ± {r.std():.2f}')
+
+    def save_results(self, args):
+        """ saves the results in separate files in a results directory """
+        # @ todo: still need to debug this
+        if not os.path.exists('results'):
+            os.makedirs('results')
+
+        results = {}.setdefault(args.model)
+        results[args.model].append(self.results)
+
+        if args.inductive:
+            with open('./results/results_inductive_{}runs'.format(args.runs), 'wb') as output:
+                pickle.dump(results, output)
+
+        if args.transductive:
+            with open('./results/results_transductive_{}runs'.format(args.runs), 'wb') as output:
+                pickle.dump(results, output)
+
+
+

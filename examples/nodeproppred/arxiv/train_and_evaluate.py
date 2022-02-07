@@ -10,6 +10,7 @@ TODO:
 """
 
 import argparse
+from initialize_model import initialize
 import torch
 import torch_sparse
 import torch.nn.functional as F
@@ -30,11 +31,12 @@ def main():
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=3)  # 500
+    parser.add_argument('--epochs', type=int, default=4)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='MLP')
     parser.add_argument('--inductive', type=bool, default=True)
     parser.add_argument('--transductive', type=bool, default=False)
+    parser.add_argument('--save_results', action='store_true')
     args = parser.parse_args()
     print(args)
 
@@ -44,6 +46,7 @@ def main():
     # dataset = PygNodePropPredDataset(name='ogbn-arxiv', transform=T.ToSparseTensor(remove_edge_index=False))
     dataset = PygNodePropPredDataset(name='ogbn-arxiv')
     data = dataset[0]
+    data.num_classes = dataset.num_classes
     data.adj_t = torch_sparse.SparseTensor(row=data.edge_index[0], col=data.edge_index[1],
                                            sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
     split_idx = dataset.get_idx_split()
@@ -66,47 +69,21 @@ def main():
                                                   col=torch.masked_select(input=data.edge_index[1], mask=mask_test),
                                                   sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
 
-    data = data.to(device)
+    data = data.to(device) #todo: does this work ?
+    # x = data.x.to(device)
 
     # INITIALIZE THE MODEL
-    if args.model == 'MLP':
-        if args.use_node_embedding:
-            embedding = torch.load('embedding.pt', map_location='cpu')
-            data.x = torch.cat([data.x, embedding], dim=-1)
-        model = MLP(data.x.size(-1), args.hidden_channels, dataset.num_classes,
-                    args.num_layers, args.dropout).to(device)
-
-    elif args.model == 'Standard':
-        # set parameters for Standard NN of KENN
-        args.use_node_embedding = False
-        args.num_layers = 4
-        args.hidden_channels = 50
-        args.dropout = 0.5
-        args.lr = 0.01
-        args.epochs = 300
-        args.runs = 500
-
-        if args.use_node_embedding:
-            embedding = torch.load('embedding.pt', map_location='cpu')
-            data.x = torch.cat([data.x, embedding], dim=-1)
-
-        model = Standard(data.x.size(-1), args.hidden_channels, dataset.num_classes,
-                         args.num_layers, args.dropout).to(device)
-
-    elif args.model == 'SAGE':
-        model = SAGE(data.num_features, args.hidden_channels,
-                     dataset.num_classes, args.num_layers,
-                     args.dropout).to(device)
-
-    elif args.model == 'GCN':
-        model = GCN(data.num_features, args.hidden_channels,
-                    dataset.num_classes, args.num_layers,
-                    args.dropout).to(device)
-    else:
-        print('unknown model :', args.model)
+    model = initialize(args, data)
+    model.to(device)
 
     evaluator = Evaluator(name='ogbn-arxiv')
     logger = Logger(args.runs, args)
+
+    # store results as dictionary {'model.name: [list of dictionaries for training stats]}
+    # todo: dictionary can be appended if we train several models and want to have results in one file
+    # the results dict is in logger?
+    results = {}
+    results.setdefault(model.name, [])
 
     """HERE THE TRAINING LOOP STARTS"""
     if args.transductive:
@@ -114,8 +91,8 @@ def main():
         for run in range(args.runs):
             model.reset_parameters()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
             for epoch in range(1, 1 + args.epochs):
-                # todo: adapt for inductive case
                 loss = train_transductive(model, data, train_idx, optimizer)
                 result = test_transductive(model, data, split_idx, evaluator)
                 logger.add_result(run, result) #adapt
@@ -131,6 +108,7 @@ def main():
 
             logger.print_statistics(run)  # adapt
         logger.print_statistics() #adapt
+        logger.save_results(args)
 
     if args.inductive:
         for run in range(args.runs):
