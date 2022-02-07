@@ -32,8 +32,9 @@ def main():
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=3)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
-    parser.add_argument('--model', type=str, default='GCN')
+    parser.add_argument('--model', type=str, default='MLP')
     parser.add_argument('--inductive', type=bool, default=True)
+    parser.add_argument('--transductive', type=bool, default=False)
     args = parser.parse_args()
     print(args)
 
@@ -49,7 +50,6 @@ def main():
     train_idx = split_idx['train'].to(device)
 
     if args.inductive:
-        # delete index pairs where where not both head and tail are in the same split subset and store it in data object as SparseTensor
         mask_train = torch.all(torch.isin(data.edge_index, split_idx['train']), dim=0)
         mask_valid = torch.all(torch.isin(data.edge_index, split_idx['valid']), dim=0)
         mask_test = torch.all(torch.isin(data.edge_index, split_idx['test']), dim=0)
@@ -109,26 +109,52 @@ def main():
     logger = Logger(args.runs, args)
 
     """HERE THE TRAINING LOOP STARTS"""
-    for run in range(args.runs):
-        model.reset_parameters()
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-        for epoch in range(1, 1 + args.epochs):
-            # todo: adapt for inductive case
-            loss = train_transductive(model, data, train_idx, optimizer)
-            result = test_transductive(model, data, split_idx, evaluator)
-            logger.add_result(run, result)
+    if args.transductive:
+        print('Start transductive training')
+        for run in range(args.runs):
+            model.reset_parameters()
+            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+            for epoch in range(1, 1 + args.epochs):
+                # todo: adapt for inductive case
+                loss = train_transductive(model, data, train_idx, optimizer)
+                result = test_transductive(model, data, split_idx, evaluator)
+                logger.add_result(run, result) #adapt
 
-            if epoch % args.log_steps == 0:
-                train_acc, valid_acc, test_acc = result
-                print(f'Run: {run + 1:02d}, '
-                      f'Epoch: {epoch:02d}, '
-                      f'Loss: {loss:.4f}, '
-                      f'Train: {100 * train_acc:.2f}%, '
-                      f'Valid: {100 * valid_acc:.2f}% '
-                      f'Test: {100 * test_acc:.2f}%')
+                if epoch % args.log_steps == 0:
+                    train_acc, valid_acc, test_acc = result
+                    print(f'Run: {run + 1:02d}, '
+                          f'Epoch: {epoch:02d}, '
+                          f'Loss: {loss:.4f}, '
+                          f'Train: {100 * train_acc:.2f}%, '
+                          f'Valid: {100 * valid_acc:.2f}% '
+                          f'Test: {100 * test_acc:.2f}%')
 
-        logger.print_statistics(run)
-    logger.print_statistics()
+            logger.print_statistics(run)  # adapt
+        logger.print_statistics() #adapt
+
+    if args.inductive:
+        for run in range(args.runs):
+            print('Start Inductive Runs ')
+            model.reset_parameters()
+            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+            for epoch in range(1, 1 + args.epochs):
+                loss = train_inductive(model, data, train_idx, optimizer) # adapt
+                result = test_inductive(model, data, split_idx, evaluator) # adapt
+                logger.add_result(run, result) # adapt
+
+                if epoch % args.log_steps == 0:
+                    train_acc, valid_acc, test_acc = result
+                    print(f'Run: {run + 1:02d}, '
+                          f'Epoch: {epoch:02d}, '
+                          f'Loss: {loss:.4f}, '
+                          f'Train: {100 * train_acc:.2f}%, '
+                          f'Valid: {100 * valid_acc:.2f}% '
+                          f'Test: {100 * test_acc:.2f}%')
+
+            logger.print_statistics(run) #adapt
+        logger.print_statistics() #adapt
+
+
 
 
 if __name__ == "__main__":
