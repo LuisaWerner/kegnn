@@ -18,7 +18,6 @@ class GCN(torch.nn.Module):
     """
     GCN module baseline given by OGB
     """
-
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
         super(GCN, self).__init__()
@@ -109,7 +108,7 @@ class MLP(torch.nn.Module):
         for bn in self.bns:
             bn.reset_parameters()
 
-    def forward(self, x, adj_t=None, relations=None): # The None is needed for KENN heritage
+    def forward(self, x, adj_t=None, relations=None):  # The None is needed for KENN heritage
         for i, lin in enumerate(self.lins[:-1]):
             x = lin(x)
             x = self.bns[i](x)
@@ -145,14 +144,17 @@ class Standard(torch.nn.Module):
         x = self.lin_layers[-1](x)
         return torch.softmax(x, dim=-1)
 
+
 class KENN(MLP):
     """ KENN with MLP (from ogb) as base NN"""
 
-    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout, explainer_object=None):
-        super(KENN, self).__init__(in_channels=in_channels, out_channels=out_channels, hidden_channels=hidden_channels, num_layers=num_layers, dropout=dropout)
-        self.name = str('KENN_'+super().name)
-        self.knowledge_file=knowledge_file
-        self.explainer_object=explainer_object
+    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
+                 explainer_object=None):
+        super(KENN, self).__init__(in_channels=in_channels, out_channels=out_channels, hidden_channels=hidden_channels,
+                                   num_layers=num_layers, dropout=dropout)
+        self.name = str('KENN_' + super().name)
+        self.knowledge_file = knowledge_file
+        self.explainer_object = explainer_object
         self.kenn_layers = torch.nn.ModuleList()
 
         for _ in range(num_kenn_layers):
@@ -163,7 +165,7 @@ class KENN(MLP):
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
-    def forward(self, x, adj_t, relations): # TODO: signature has to match
+    def forward(self, x, adj_t, relations):  # TODO: signature has to match
         # call base NN to get unary preactivations
         z = super(KENN, self).forward(x, adj_t)
 
@@ -172,6 +174,3 @@ class KENN(MLP):
             z = layer(x, adj_t, relations)
 
         return torch.softmax(z)
-
-
-

@@ -10,7 +10,15 @@ class Logger(object):
         self.results = {}
         self.results.setdefault(name, [])
 
-    def add_result(self, train_losses, train_accuracies, valid_losses, valid_accuracies, test_acc, run):
+    def add_result(self, train_losses: list,
+                   train_accuracies: list,
+                   valid_losses: list,
+                   valid_accuracies: list,
+                   test_acc: float,
+                   run: int):
+        """
+        adds the losses and accuracies of a run to the results dictionary
+        """
         run_results = {'train_losses': train_losses,
                        'train_accuracies': train_accuracies,
                        'valid_losses': valid_losses,
@@ -20,7 +28,7 @@ class Logger(object):
         self.results[self.name].append(run_results)
         self.print_results_run(run)
 
-    def print_results_run(self, run):
+    def print_results_run(self, run: int):
         """ Prints results after all epochs per run """
         max_valid_acc = max(self.results[self.name][run]['valid_accuracies'])
         max_train_acc = max(self.results[self.name][run]['train_accuracies'])
@@ -29,7 +37,7 @@ class Logger(object):
         print(f"Maximum accuracy on valid: {max_valid_acc}")
         print(f"Accuracy on test: {self.results[self.name][run]['test_accuracy']}")
 
-    def print_results(self, args, setting):
+    def print_results(self, args, setting: str):
         """ Prints results after all runs """
         max_epoch_acc_train = []
         max_epoch_acc_valid = []
@@ -78,7 +86,7 @@ class Logger(object):
 
     def save_results(self, args):
         """ saves the results in separate files in a results directory """
-        # @ todo: still need to debug this
+
         if not os.path.exists('results'):
             os.makedirs('results')
 

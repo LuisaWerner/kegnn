@@ -1,6 +1,6 @@
-import KnowledgeEnhancer
-import RelationalKENN
-import KENN
+from KnowledgeEnhancer import KnowledgeEnhancer
+from RelationalKENN import RelationalKENN
+from KENN import *
 
 def unary_parser(knowledge_file, activation=lambda x: x, initial_clause_weight=0.5, save_training_data=False, **kwargs):
     """

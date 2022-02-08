@@ -2,7 +2,7 @@
 
 """Write here the implementation of KnowledgeEnhancer.py"""
 import torch
-import ClauseEnhancer
+from ClauseEnhancer import ClauseEnhancer
 
 
 class KnowledgeEnhancer(torch.nn.Module):
@@ -61,4 +61,4 @@ class KnowledgeEnhancer(torch.nn.Module):
 
         #todo - check what this does
         return torch.transpose(
-            torch.scatter_add(all_indexes, torch.transpose(all_deltas), torch.flip(torch.size(inputs), [0])))
+            torch.scatter_add(all_indexes, torch.transpose(all_deltas), torch.flip(inputs.size(), [0])))

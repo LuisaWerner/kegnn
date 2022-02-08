@@ -2,6 +2,7 @@
 
 import torch
 import numpy as np
+from RangeConstraint import WeightClipper
 #from KENN2.layers.RangeConstraint import RangeConstraint
 
 
@@ -61,15 +62,19 @@ class ClauseEnhancer(torch.nn.Module):
         self.clause_weight = None
         self.save_training_data = save_training_data
 
-        self.clause_weight = self.add_weight(
+        """self.clause_weight = self.add_weight(
             name='kernel',
             shape=(1, 1),
             initializer=tf.keras.initializers.Constant(
                 value=self.initial_weight),
             constraint=RangeConstraint(),
             trainable=not self.hard_clause)
+        """
+        # todo self.clause_weight = [...]
+        self.register_parameter(name="clause_weight",
+                                param=torch.nn.Parameter(initial_clause_weight, requires_grad=not self.hard_clause))
 
-        super(ClauseEnhancer, self).build(input_shape)
+        #super(ClauseEnhancer, self).build(input_shape)
 
     def grounded_clause(self, inputs):
         """Find the grounding of the clause
@@ -77,13 +82,12 @@ class ClauseEnhancer(torch.nn.Module):
         :return: the grounded clause (a tensor with literals truth values)
         """
 
-        selected_predicates = tf.gather(
-            inputs, self.gather_literal_indices, axis=1)
+        selected_predicates = torch.gather(input=inputs, index=self.gather_literal_indices, dim=1) #todo
         clause_matrix = selected_predicates * self.signs
 
         return clause_matrix
 
-    def call(self, inputs, **kwargs):
+    def forward(self, inputs, **kwargs):
         """Improve the satisfaction level of the clause.
         :param inputs: the tensor containing predicates' pre-activation values for many entities
         :return: delta vector to be summed to the original pre-activation tensor to obtain an higher satisfaction of \
@@ -91,6 +95,6 @@ class ClauseEnhancer(torch.nn.Module):
 
         clause_matrix = self.grounded_clause(inputs)
 
-        delta = self.signs * tf.nn.softmax(clause_matrix) * self.clause_weight
+        delta = self.signs * torch.nn.Softmax(clause_matrix) * self.clause_weight
 
         return delta, self.scatter_literal_indices

@@ -1,4 +1,4 @@
-# TODO: rewrite to Torch
+
 
 import torch
 
@@ -11,7 +11,8 @@ class Join(torch.nn.Module):
     def __init__(self):
         super(Join, self).__init__()
 
-    def call(self, unary, binary, index1, index2):
+    def forward(self, unary, binary, index1, index2):
+        # todo: see if this runs
         """Join the unary and binary tensors.
 
         :param unary: the tensor with unary predicates pre-activations
@@ -32,5 +33,4 @@ class Join(torch.nn.Module):
             index2 = torch.reshape(index2, (1,))
 
         # returns matrix M of paper
-        # todo: slow
-        return torch.cat([torch.gather(unary, index1, axis=0), torch.gather(unary, index2, axis=0), binary], axis=1)
+        return torch.cat([torch.gather(unary, index=index1, dim=0), torch.gather(unary, index=index2, dim=0), binary], dim=1)

@@ -1,8 +1,8 @@
 # TODO: rewrite to Torch
 import torch
-import KnowledgeEnhancer
-import Join
-import GroupBy
+from KnowledgeEnhancer import KnowledgeEnhancer
+from Join import Join
+from GroupBy import GroupBy
 
 
 class RelationalKENN(torch.nn.Module):
@@ -104,3 +104,6 @@ class RelationalKENN(torch.nn.Module):
         config.update({'initial_clause_weight': self.initial_clause_weight})
 
         return config
+
+
+
