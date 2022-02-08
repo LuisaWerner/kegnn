@@ -31,24 +31,24 @@ def test_inductive(model, data, split_idx, evaluator):
     return: accuracy (float) on train, valid, test set
     """
     model.eval()
-    out_train = model(data.x, data.adj_train)[split_idx['train']].argmax(dim=-1, keepdim=True)
-    out_valid = model(data.x, data.adj_valid)[split_idx['valid']].argmax(dim=-1, keepdim=True)
-    out_test = model(data.x, data.adj_test)[split_idx['test']].argmax(dim=-1, keepdim=True)
+    out_train = model(data.x, data.adj_train)[split_idx['train']]
+    out_valid = model(data.x, data.adj_valid)[split_idx['valid']]
+    out_test = model(data.x, data.adj_test)[split_idx['test']]
 
     train_acc = evaluator.eval({
         'y_true': data.y[split_idx['train']],
-        'y_pred': out_train,
+        'y_pred': out_train.argmax(dim=-1, keepdim=True),
     })['acc']
     valid_acc = evaluator.eval({
         'y_true': data.y[split_idx['valid']],
-        'y_pred': out_valid,
+        'y_pred': out_valid.argmax(dim=-1, keepdim=True),
     })['acc']
     test_acc = evaluator.eval({
         'y_true': data.y[split_idx['test']],
-        'y_pred': out_test,
+        'y_pred': out_test.argmax(dim=-1, keepdim=True),
     })['acc']
 
-    return train_acc, valid_acc, test_acc
+    return [train_acc, valid_acc, test_acc], [out_train, out_valid, out_test]
 
 
 def train_transductive(model, data, train_idx, optimizer):
@@ -97,4 +97,4 @@ def test_transductive(model, data, split_idx, evaluator):
         'y_pred': y_pred[split_idx['test']],
     })['acc']
 
-    return train_acc, valid_acc, test_acc
+    return train_acc, valid_acc, test_acc, out

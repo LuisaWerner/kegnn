@@ -2,20 +2,49 @@ import torch
 import os
 import pickle
 
-# TODO: change how this whole file should work
-# store as in KENN
-# store dictionaries: { 'model.name' : [
-class Logger(object):
-    def __init__(self, runs, info=None):
-        self.info = info
-        self.results = [[] for _ in range(runs)]
 
-    def add_result(self, run, result):
-        assert len(result) == 3
-        assert run >= 0 and run < len(self.results)
-        self.results[run].append(result)
+class Logger(object):
+    def __init__(self, name):
+        # todo: change for several models
+        self.name = name
+        self.results = {}
+        self.results.setdefault(name, [])
+
+    def add_result(self, train_losses, train_accuracies, valid_losses, valid_accuracies, test_acc, run):
+        run_results = {'train_losses': train_losses,
+                       'train_accuracies': train_accuracies,
+                       'valid_losses': valid_losses,
+                       'valid_accuracies': valid_accuracies,
+                       'test_accuracy': test_acc
+                       }
+        self.results[self.name].append(run_results)
+        self.print_results_run(run)
+
+    def print_results_run(self, run):
+        """ Prints results after all epochs per run """
+        max_valid_acc = max(self.results[self.name][run]['valid_accuracies'])
+        max_train_acc = max(self.results[self.name][run]['train_accuracies'])
+        print(f"Results of run {run}:")
+        print(f"Maximum accuracy on train: {max_train_acc}")
+        print(f"Maximum accuracy on valid: {max_valid_acc}")
+        print(f"Accuracy on test: {self.results[self.name][run]['test_accuracy']}")
+
+    def print_results(self, args, setting):
+        """ Prints results after all runs """
+        max_epoch_acc_train = []
+        max_epoch_acc_valid = []
+        for run in range(len(self.results[self.name])):
+            max_epoch_acc_train.append(max(self.results[self.name][run]['train_accuracies']))
+            max_epoch_acc_valid.append(max(self.results[self.name][run]['valid_accuracies']))
+
+        print(f"Results of {setting} training, {args.runs} runs, {args.epochs} epochs ")
+        print(f"Average accuracy over {args.runs} iterations  on train :{sum(max_epoch_acc_train)/args.runs}")
+        print(f"Average accuracy over {args.runs} iterations on valid :{sum(max_epoch_acc_valid)/args.runs}")
+        print(f"Highest accuracy over train: {max(max_epoch_acc_train)}")
+        print(f"Highest accuracy over valid: {max(max_epoch_acc_valid)}")
 
     def print_statistics(self, run=None):
+        """ Original method, not used """
         if run is not None:
             result = 100 * torch.tensor(self.results[run])
             argmax = result[:, 1].argmax().item()
@@ -53,16 +82,10 @@ class Logger(object):
         if not os.path.exists('results'):
             os.makedirs('results')
 
-        results = {}.setdefault(args.model)
-        results[args.model].append(self.results)
-
         if args.inductive:
             with open('./results/results_inductive_{}runs'.format(args.runs), 'wb') as output:
-                pickle.dump(results, output)
+                pickle.dump(self.results, output)
 
         if args.transductive:
             with open('./results/results_transductive_{}runs'.format(args.runs), 'wb') as output:
-                pickle.dump(results, output)
-
-
-
+                pickle.dump(self.results, output)
