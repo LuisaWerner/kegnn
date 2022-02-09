@@ -1,6 +1,6 @@
 from KnowledgeEnhancer import KnowledgeEnhancer
 from RelationalKENN import RelationalKENN
-from KENN import *
+from KENN import Kenn
 
 def unary_parser(knowledge_file, activation=lambda x: x, initial_clause_weight=0.5, save_training_data=False, **kwargs):
     """
@@ -16,7 +16,7 @@ def unary_parser(knowledge_file, activation=lambda x: x, initial_clause_weight=0
 
     predicates = predicates_string[:-1].split(',')
 
-    return KENN(predicates, clauses, activation, initial_clause_weight, save_training_data, **kwargs)
+    return Kenn(predicates, clauses, activation, initial_clause_weight, save_training_data, **kwargs) # todo: is this needed ?
 
 
 def unary_parser_ke(knowledge_file, initial_clause_weight=0.5, **kwargs):
@@ -43,7 +43,7 @@ def relational_parser(knowledge_file, activation=lambda x: x, initial_clause_wei
 
     :param knowledge_file: path of the prior knowledge file;
     """
-    with open(knowledge_file, 'r') as kb_file:
+    with open(knowledge_file, 'r') as kb_file: # todo: file name too long - how does knowledge file look originally ?
         unary_literals_string = kb_file.readline()
         binary_literals_string = kb_file.readline()
 

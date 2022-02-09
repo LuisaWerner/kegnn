@@ -13,7 +13,7 @@ def train_inductive(model, data, train_idx, optimizer):
     """
     model.train()
     optimizer.zero_grad()
-    out = model(data.x, data.adj_train)[train_idx]  # take only the train indices
+    out = model(data.x, data.adj_train, data.relations)[train_idx]  # take only the train indices
     loss = F.nll_loss(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
@@ -22,6 +22,7 @@ def train_inductive(model, data, train_idx, optimizer):
 
 @torch.no_grad()
 def test_inductive(model, data, split_idx, evaluator):
+    # todo: adapt for KENN
     """
     test_inductive
     @param model - should be a NN of type torch.nn.module
@@ -52,6 +53,7 @@ def test_inductive(model, data, split_idx, evaluator):
 
 
 def train_transductive(model, data, train_idx, optimizer):
+    # todo: adapt for KENN
     """
     train_transductive
     training step for transductive setting
@@ -62,7 +64,7 @@ def train_transductive(model, data, train_idx, optimizer):
     """
     model.train()
     optimizer.zero_grad()
-    out = model(data.x, data.adj_t)[train_idx]
+    out = model(data.x, data.adj_t, data.relations)[train_idx]
     loss = F.nll_loss(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
@@ -81,7 +83,7 @@ def test_transductive(model, data, split_idx, evaluator):
     """
     model.eval()
 
-    out = model(data.x, data.adj_t)  # todo: replace by data.adj_t
+    out = model(data.x, data.adj_t, data.relations)
     y_pred = out.argmax(dim=-1, keepdim=True)
 
     train_acc = evaluator.eval({

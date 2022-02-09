@@ -33,4 +33,5 @@ class Join(torch.nn.Module):
             index2 = torch.reshape(index2, (1,))
 
         # returns matrix M of paper
+        # todo: use cat of sparse_tensor
         return torch.cat([torch.gather(unary, index=index1, dim=0), torch.gather(unary, index=index2, dim=0), binary], dim=1)

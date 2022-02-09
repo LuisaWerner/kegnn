@@ -1,4 +1,5 @@
 # TODO: rewrite to Torch
+# TODO: SparseTensor efficient implementation of Matrix operations
 
 import torch
 import numpy as np
@@ -59,7 +60,7 @@ class ClauseEnhancer(torch.nn.Module):
             signs.append(sign)
 
         self.signs = np.array(signs, dtype=np.float32)
-        self.clause_weight = None
+        #self.clause_weight = None
         self.save_training_data = save_training_data
 
         """self.clause_weight = self.add_weight(
@@ -72,9 +73,12 @@ class ClauseEnhancer(torch.nn.Module):
         """
         # todo self.clause_weight = [...]
         self.register_parameter(name="clause_weight",
-                                param=torch.nn.Parameter(initial_clause_weight, requires_grad=not self.hard_clause))
+                                param=torch.nn.Parameter(torch.Tensor([initial_clause_weight]), requires_grad=not self.hard_clause))
 
         #super(ClauseEnhancer, self).build(input_shape)
+    def reset_parameters(self):
+        # TODO
+        "do something"
 
     def grounded_clause(self, inputs):
         """Find the grounding of the clause

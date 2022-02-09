@@ -63,6 +63,12 @@ class RelationalKENN(torch.nn.Module):
             self.join = Join()
             self.group_by = GroupBy(self.n_unary)
 
+    def reset_parameters(self):
+        super().reset_parameters()
+        "do something"
+        # @ TODO
+
+
     def forward(self, unary, binary, index1, index2, input_shape, **kwargs):
         #TODO: adapt here
         """Forward step of Kenn model for relational data.

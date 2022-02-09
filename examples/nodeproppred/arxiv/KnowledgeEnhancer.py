@@ -38,6 +38,10 @@ class KnowledgeEnhancer(torch.nn.Module):
             self.clause_enhancers.append(ClauseEnhancer(
                 self.predicates, clause[:-1], self.initial_clause_weight, self.save_training_data))
 
+    def reset_parameters(self):
+        "TODO"
+        # Do something
+
     def forward(self, inputs, **kwargs):
         """Improve the satisfaction level of a set of clauses.
 
@@ -56,9 +60,11 @@ class KnowledgeEnhancer(torch.nn.Module):
             deltas_list.append(delta)
             indexes_list.append(indexes)
 
-        all_deltas = torch.cat(deltas_list, dim=1)
+        all_deltas = torch.cat(deltas_list, dim=1) # more efficient implementation of torch.cat
         all_indexes = torch.cat(indexes_list, dim=0)
 
         #todo - check what this does
         return torch.transpose(
             torch.scatter_add(all_indexes, torch.transpose(all_deltas), torch.flip(inputs.size(), [0])))
+            # todo: use of torch_scatter library for faster implementation
+            # https://pytorch-scatter.readthedocs.io/en/latest/functions/scatter.html
