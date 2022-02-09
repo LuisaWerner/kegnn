@@ -1,4 +1,6 @@
 """ Put here all the defined models for KENN/Base NN """
+import torch_sparse
+
 """
 -MLP: ogb baseline
 -GCN: ogb baseline
@@ -117,6 +119,7 @@ class MLP(torch.nn.Module):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lins[-1](x)
+        # todo: does log_softmax change the predictions a lot?
         return torch.log_softmax(x, dim=-1)
 
 
@@ -163,16 +166,16 @@ class KENN(MLP):
             self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file, explainer_object=explainer_object))
 
     def reset_parameters(self):
-        super().reset_parameters()
+        super().reset_parameters() # should call reset parameter function of MLP
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
     def forward(self, x, adj_t, relations):
-        z = super(KENN, self).forward(x)
+        z = super(KENN, self).forward(x, adj_t, relations)
 
         # call KENN layers
         for layer in self.kenn_layers:
 
-            z = layer(z, adj_t, relations)
+            z = layer(unary=z, adj=adj_t, binary=relations)
 
         return torch.softmax(z)

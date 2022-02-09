@@ -44,7 +44,7 @@ def main():
     data = dataset[0]
     data.num_classes = dataset.num_classes
     data.adj_t = torch_sparse.SparseTensor(row=data.edge_index[0], col=data.edge_index[1],
-                                           sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
+                                           sparse_sizes=(data.num_nodes, data.num_nodes))
     data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
 
     split_idx = dataset.get_idx_split()
@@ -57,15 +57,15 @@ def main():
 
         data.adj_train = torch_sparse.SparseTensor(row=torch.masked_select(input=data.edge_index[0], mask=mask_train),
                                                    col=torch.masked_select(input=data.edge_index[1], mask=mask_train),
-                                                   sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
+                                                   sparse_sizes=(data.num_nodes, data.num_nodes))
 
         data.adj_valid = torch_sparse.SparseTensor(row=torch.masked_select(input=data.edge_index[0], mask=mask_valid),
                                                    col=torch.masked_select(input=data.edge_index[1], mask=mask_valid),
-                                                   sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
+                                                   sparse_sizes=(data.num_nodes, data.num_nodes))
 
         data.adj_test = torch_sparse.SparseTensor(row=torch.masked_select(input=data.edge_index[0], mask=mask_test),
                                                   col=torch.masked_select(input=data.edge_index[1], mask=mask_test),
-                                                  sparse_sizes=(data.num_nodes, data.num_nodes)).to_symmetric()
+                                                  sparse_sizes=(data.num_nodes, data.num_nodes))
 
 
         data.relations_train = torch.full(size=(torch.count_nonzero(mask_train).item(), 1), fill_value=args.binary_preactivation) #todo verify shape

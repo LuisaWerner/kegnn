@@ -64,22 +64,32 @@ class RelationalKENN(torch.nn.Module):
             self.group_by = GroupBy(self.n_unary)
 
     def reset_parameters(self):
-        super().reset_parameters()
-        "do something"
-        # @ TODO
+        """Relational KENN and KnowledgeEnhancer don't have parameters
+        Resetting parameters of the knowledge enhancement layer means
+        resetting clause weights to initial clause weight """
+
+        if len(self.unary_clauses) != 0:
+            for ce in self.unary_ke.clause_enhancers:
+                ce.reset_parameters()
+
+        if len(self.binary_clauses) != 0:
+            for ce in self.binary_ke.clause_enhancers:
+                ce.reset_parameters()
 
 
-    def forward(self, unary, binary, index1, index2, input_shape, **kwargs):
-        #TODO: adapt here
+    def forward(self, unary, binary, adj):
         """Forward step of Kenn model for relational data.
-        :param input_shape #todo
         :param unary: the tensor with unary predicates pre-activations
         :param binary: the tensor with binary predicates pre-activations
-        :param index1: a vector containing the indices of the first object
-        of the pair referred by binary tensor
-        :param index2: a vector containing the indices of the second object
-        of the pair referred by binary tensor
+        :param adj - Adjacency Matrix as torch_sparse.SparseTensor
+         adj.row (index1)  a vector containing the indices of the first object
+         of the pair referred by binary tensor
+         adj.col (index2) a vector containing the indices of the second object
+         of the pair referred by binary tensor
         """
+
+        index1 = adj.storage._row
+        index2 = adj.storage._col
 
         if len(self.unary_clauses) != 0:
             deltas_sum, deltas_u_list = self.unary_ke(unary) # todo call of knowledge enhancer

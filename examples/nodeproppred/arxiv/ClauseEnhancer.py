@@ -4,14 +4,17 @@
 import torch
 import numpy as np
 from RangeConstraint import WeightClipper
-#from KENN2.layers.RangeConstraint import RangeConstraint
+
+
+# from KENN2.layers.RangeConstraint import RangeConstraint
 
 
 class ClauseEnhancer(torch.nn.Module):
     """Clause Enhancer layer
     """
 
-    def __init__(self, available_predicates, clause_string, initial_clause_weight, input_shape, save_training_data=False):
+    def __init__(self, available_predicates, clause_string, initial_clause_weight, input_shape,
+                 save_training_data=False):
         """Initialize the clause.
         :param available_predicates: the list of all possible literals in a clause
         :param clause_string: a string representing a conjunction of literals. The format should be:
@@ -27,7 +30,6 @@ class ClauseEnhancer(torch.nn.Module):
 
         super(ClauseEnhancer, self).__init__()
         string = clause_string.split(':')
-
         self.original_string = string[1]
         self.string = string[1].replace(
             ',', 'v').replace('(', '').replace(')', '')
@@ -59,8 +61,7 @@ class ClauseEnhancer(torch.nn.Module):
             self.scatter_literal_indices.append([literal_index])
             signs.append(sign)
 
-        self.signs = np.array(signs, dtype=np.float32)
-        #self.clause_weight = None
+        self.signs = torch.unsqueeze(torch.Tensor(signs), dim=1)
         self.save_training_data = save_training_data
 
         """self.clause_weight = self.add_weight(
@@ -73,21 +74,23 @@ class ClauseEnhancer(torch.nn.Module):
         """
         # todo self.clause_weight = [...]
         self.register_parameter(name="clause_weight",
-                                param=torch.nn.Parameter(torch.Tensor([initial_clause_weight]), requires_grad=not self.hard_clause))
+                                param=torch.nn.Parameter(torch.Tensor([self.initial_weight]),
+                                                         requires_grad=not self.hard_clause))
 
-        #super(ClauseEnhancer, self).build(input_shape)
     def reset_parameters(self):
-        # TODO
-        "do something"
+        # todo: check if this really works as it should
+        """ resets clause weights after one iteration back to the initial clause weight """
+        self.clause_weight = torch.nn.Parameter(torch.Tensor([self.initial_weight]), requires_grad=not self.hard_clause)
 
     def grounded_clause(self, inputs):
         """Find the grounding of the clause
         :param inputs: the tensor containing predicates' pre activations for many objects
         :return: the grounded clause (a tensor with literals truth values)
         """
-
-        selected_predicates = torch.gather(input=inputs, index=self.gather_literal_indices, dim=1) #todo
+        selected_predicates = inputs[self.gather_literal_indices]
+        #selected_predicates = torch.gather(input=inputs, index=self.gather_literal_indices, dim=1)  # todo
         clause_matrix = selected_predicates * self.signs
+        clause_matrix = torch.mul(selected_predicates, self.signs)
 
         return clause_matrix
 
