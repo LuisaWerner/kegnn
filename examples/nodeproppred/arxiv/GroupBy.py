@@ -1,6 +1,7 @@
 # TODO: rewrite to Torch
 
 import torch
+from torch_scatter import scatter_add
 
 
 class GroupBy(torch.nn.Module):
@@ -12,9 +13,8 @@ class GroupBy(torch.nn.Module):
         """ is not needed here I think """
 
     def forward(self, unary, binary, deltas, index1, index2):
-        # todo: see if this runs + check dimensions
         """Split the deltas matrix in unary and binary deltas.
-
+        #todo: why do we need binary here
         :param unary: the tensor with unary predicates pre-activations
         :param binary: the tensor with binary predicates pre-activations
         :param deltas: the tensor containing the delta values
@@ -27,11 +27,10 @@ class GroupBy(torch.nn.Module):
         ux = deltas[:, :self.n_unary]
         uy = deltas[:, self.n_unary:2 * self.n_unary]
         b = deltas[:, 2 * self.n_unary:]
-        shape = unary.size()
-        #shape = tf.cast(tf.shape(unary), dtype=tf.int64)
 
-        #inputs = tf.placeholder(tf.int32, shape)
+        ux_deltas = torch.zeros(unary.shape).scatter_(dim=0, index=torch.unsqueeze(index1, 1), src=ux, reduce='add')
+        uy_deltas = torch.zeros(unary.shape).scatter_(dim=0, index=torch.unsqueeze(index2, 1), src=uy, reduce='add')
 
-        #return tf.scatter_nd(index1, ux, shape) + tf.scatter_nd(index2, uy, shape), b
-        #return tf.scatter_nd(tf.expand_dims(index1, axis=1), ux, shape) + tf.scatter_nd(tf.expand_dims(index2, axis=1), uy, shape), b
-        return torch.scatter(src=torch.unsqueeze(index1, dim=1), dim=shape, index=ux) + torch.scatter(src=torch.unsqueeze(index2, dim=1), dim=shape, index=uy), b
+        assert ux_deltas.shape == uy_deltas.shape, 'GroupBy: deltas for ux and uy must have the same shape'
+
+        return torch.add(ux_deltas, uy_deltas), b
