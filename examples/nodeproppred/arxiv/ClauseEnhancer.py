@@ -4,6 +4,7 @@
 import torch
 import numpy as np
 from RangeConstraint import WeightClipper
+from torch.nn.functional import softmax, log_softmax
 
 
 # from KENN2.layers.RangeConstraint import RangeConstraint
@@ -61,7 +62,7 @@ class ClauseEnhancer(torch.nn.Module):
             self.scatter_literal_indices.append([literal_index])
             signs.append(sign)
 
-        self.signs = torch.unsqueeze(torch.Tensor(signs), dim=1)
+        self.signs = torch.Tensor(signs)
         self.save_training_data = save_training_data
 
         """self.clause_weight = self.add_weight(
@@ -87,9 +88,8 @@ class ClauseEnhancer(torch.nn.Module):
         :param inputs: the tensor containing predicates' pre activations for many objects
         :return: the grounded clause (a tensor with literals truth values)
         """
-        selected_predicates = inputs[self.gather_literal_indices]
+        selected_predicates = inputs[:, self.gather_literal_indices]
         #selected_predicates = torch.gather(input=inputs, index=self.gather_literal_indices, dim=1)  # todo
-        clause_matrix = selected_predicates * self.signs
         clause_matrix = torch.mul(selected_predicates, self.signs)
 
         return clause_matrix
@@ -102,6 +102,7 @@ class ClauseEnhancer(torch.nn.Module):
 
         clause_matrix = self.grounded_clause(inputs)
 
-        delta = self.signs * torch.nn.Softmax(clause_matrix) * self.clause_weight
+        #todo: torch.nn.functional.softmax does not work with our loss function, use log_softmax instead
+        delta = self.signs * softmax(clause_matrix) * self.clause_weight
 
-        return delta, self.scatter_literal_indices
+        return delta, torch.Tensor(self.scatter_literal_indices).to(torch.int64)

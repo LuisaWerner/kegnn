@@ -2,7 +2,10 @@
 
 """Write here the implementation of KnowledgeEnhancer.py"""
 import torch
+import torch_scatter
+
 from ClauseEnhancer import ClauseEnhancer
+
 
 
 class KnowledgeEnhancer(torch.nn.Module):
@@ -63,8 +66,5 @@ class KnowledgeEnhancer(torch.nn.Module):
         all_deltas = torch.cat(deltas_list, dim=1) # more efficient implementation of torch.cat
         all_indexes = torch.cat(indexes_list, dim=0)
 
-        #todo - check what this does
-        return torch.transpose(
-            torch.scatter_add(all_indexes, torch.transpose(all_deltas), torch.flip(inputs.size(), [0])))
-            # todo: use of torch_scatter library for faster implementation
-            # https://pytorch-scatter.readthedocs.io/en/latest/functions/scatter.html
+        # Scatter puts the changes of the clause enhancers in the right place and adds values if indices appear more than once
+        return torch.transpose(torch_scatter.scatter_add(src=torch.transpose(all_deltas, 0, 1), index=all_indexes, dim=0), 0, 1)
