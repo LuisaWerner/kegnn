@@ -1,5 +1,4 @@
 """ Put here all the defined models for KENN/Base NN """
-import torch_sparse
 
 """
 -MLP: ogb baseline
@@ -13,6 +12,7 @@ import torch_sparse
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, SAGEConv
+
 from examples.nodeproppred.arxiv.parsers import *
 
 
@@ -119,7 +119,7 @@ class MLP(torch.nn.Module):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lins[-1](x)
-        # todo: does log_softmax change the predictions a lot?
+        # todo: which one to use log or normal?
         return torch.log_softmax(x, dim=-1)
 
 
@@ -147,7 +147,7 @@ class Standard(torch.nn.Module):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lin_layers[-1](x)
-        return torch.softmax(x, dim=-1)
+        return F.softmax(x, dim=-1)
 
 
 class KENN(GCN):

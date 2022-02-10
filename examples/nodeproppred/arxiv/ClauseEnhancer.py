@@ -1,13 +1,6 @@
-# TODO: rewrite to Torch
-# TODO: SparseTensor efficient implementation of Matrix operations
-
 import torch
-import numpy as np
-from RangeConstraint import WeightClipper
-from torch.nn.functional import softmax, log_softmax
-
-
-# from KENN2.layers.RangeConstraint import RangeConstraint
+from torch import mul
+from torch.nn.functional import softmax
 
 
 class ClauseEnhancer(torch.nn.Module):
@@ -89,8 +82,7 @@ class ClauseEnhancer(torch.nn.Module):
         :return: the grounded clause (a tensor with literals truth values)
         """
         selected_predicates = inputs[:, self.gather_literal_indices]
-        #selected_predicates = torch.gather(input=inputs, index=self.gather_literal_indices, dim=1)  # todo
-        clause_matrix = torch.mul(selected_predicates, self.signs)
+        clause_matrix = mul(selected_predicates, self.signs)
 
         return clause_matrix
 
@@ -102,7 +94,6 @@ class ClauseEnhancer(torch.nn.Module):
 
         clause_matrix = self.grounded_clause(inputs)
 
-        #todo: torch.nn.functional.softmax does not work with our loss function, use log_softmax instead
         delta = self.signs * softmax(clause_matrix, dim=-1) * self.clause_weight
 
         return delta, torch.Tensor(self.scatter_literal_indices).to(torch.int64)

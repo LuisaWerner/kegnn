@@ -1,7 +1,7 @@
 
 
 import torch
-import torch_sparse
+from torch import cat, reshape
 
 
 class Join(torch.nn.Module):
@@ -25,16 +25,9 @@ class Join(torch.nn.Module):
         output corresponds to matrix M in the paper.
         """
 
-        #index1 = torch.squeeze(index1)
-        #index2 = torch.squeeze(index2)
-
-        # For the case where index1 and index2 were of length 1, tf.squeeze will make their rank = 0
-        # todo: don't know if we need this ?! Since we squeezed before?
-        #if index1.shape.rank == 0 and index2.shape.rank == 0:
         if index1.dim() == 0 and index2.dim() == 0:
-            index1 = torch.reshape(index1, (1,))
-            index2 = torch.reshape(index2, (1,))
+            index1 = reshape(index1, (1,))
+            index2 = reshape(index2, (1,))
 
         # returns matrix M of paper
-        return torch.cat([unary[index1], unary[index2], binary], dim=1)
-
+        return cat([unary[index1], unary[index2], binary], dim=1)
