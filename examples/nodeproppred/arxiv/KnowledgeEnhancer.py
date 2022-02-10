@@ -67,4 +67,7 @@ class KnowledgeEnhancer(torch.nn.Module):
         all_indexes = torch.cat(indexes_list, dim=0)
 
         # Scatter puts the changes of the clause enhancers in the right place and adds values if indices appear more than once
+        #torch.zeros(unary.shape).scatter_(dim=0, index=torch.unsqueeze(index1, 1), src=ux, reduce='add')
+
+
         return torch.transpose(torch_scatter.scatter_add(src=torch.transpose(all_deltas, 0, 1), index=all_indexes, dim=0), 0, 1)

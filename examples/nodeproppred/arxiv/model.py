@@ -150,7 +150,7 @@ class Standard(torch.nn.Module):
         return torch.softmax(x, dim=-1)
 
 
-class KENN(MLP):
+class KENN(GCN):
     """ KENN with MLP (from ogb) as base NN"""
 
     def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout, relations,
@@ -176,6 +176,6 @@ class KENN(MLP):
         # call KENN layers
         for layer in self.kenn_layers:
 
-            z = layer(unary=z, adj=adj_t, binary=relations)
+            z, _ = layer(unary=z, adj=adj_t, binary=relations)
 
-        return torch.softmax(z)
+        return F.softmax(z, dim=-1)

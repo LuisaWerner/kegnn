@@ -28,8 +28,11 @@ class GroupBy(torch.nn.Module):
         uy = deltas[:, self.n_unary:2 * self.n_unary]
         b = deltas[:, 2 * self.n_unary:]
 
-        ux_deltas = torch.zeros(unary.shape).scatter_(dim=0, index=torch.unsqueeze(index1, 1), src=ux, reduce='add')
-        uy_deltas = torch.zeros(unary.shape).scatter_(dim=0, index=torch.unsqueeze(index2, 1), src=uy, reduce='add')
+        # todo: only backward pass implemented for scatter_ if src.shape == index.shape
+        # todo: use torch_scatter library
+        # https://pytorch-scatter.readthedocs.io/en/latest/functions/scatter.html
+        ux_deltas = scatter_add(src=ux, index=torch.unsqueeze(index1, 1), dim=0, out=torch.zeros(unary.shape))
+        uy_deltas = scatter_add(src=uy, index=torch.unsqueeze(index2, 1), dim=0, out=torch.zeros(unary.shape))
 
         assert ux_deltas.shape == uy_deltas.shape, 'GroupBy: deltas for ux and uy must have the same shape'
 

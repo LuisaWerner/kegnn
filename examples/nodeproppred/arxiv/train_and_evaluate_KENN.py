@@ -93,6 +93,7 @@ def main():
         print('Start transductive training')
 
         for run in range(args.runs):
+            print (f"Run: {run} of {args.runs}")
             model.reset_parameters()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 

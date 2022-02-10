@@ -103,6 +103,6 @@ class ClauseEnhancer(torch.nn.Module):
         clause_matrix = self.grounded_clause(inputs)
 
         #todo: torch.nn.functional.softmax does not work with our loss function, use log_softmax instead
-        delta = self.signs * softmax(clause_matrix) * self.clause_weight
+        delta = self.signs * softmax(clause_matrix, dim=-1) * self.clause_weight
 
         return delta, torch.Tensor(self.scatter_literal_indices).to(torch.int64)
