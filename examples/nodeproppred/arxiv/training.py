@@ -9,12 +9,13 @@ def train_inductive(model, data, train_idx, optimizer, range_constraint):
     @param model: callable NN model of torch.nn.Module
     @param data: data object with x, y, adjacency matrix (separate matrices for train/valid/test)
     @param optimizer: torch.optim object
-    @param: range_constraint object of RangeConstraint.py to constrain parameters
+    @param range_constraint object of RangeConstraint.py to constrain parameters
+    @param train_idx: training indices
     returns: loss (float)
     """
     model.train()
     optimizer.zero_grad()
-    out = model(data.x, data.adj_train, data.relations)[train_idx]  # take only the train indices
+    out = model(data.x, data.adj_train, data.relations_train)[train_idx]  # take only the train indices
     loss = F.nll_loss(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
@@ -33,9 +34,9 @@ def test_inductive(model, data, split_idx, evaluator):
     return: accuracy (float) on train, valid, test set
     """
     model.eval()
-    out_train = model(data.x, data.adj_train)[split_idx['train']]
-    out_valid = model(data.x, data.adj_valid)[split_idx['valid']]
-    out_test = model(data.x, data.adj_test)[split_idx['test']]
+    out_train = model(data.x, data.adj_train, data.relations_train)[split_idx['train']]
+    out_valid = model(data.x, data.adj_valid, data.relations_valid)[split_idx['valid']]
+    out_test = model(data.x, data.adj_test, data.relations_test)[split_idx['test']]
 
     train_acc = evaluator.eval({
         'y_true': data.y[split_idx['train']],
@@ -55,13 +56,13 @@ def test_inductive(model, data, split_idx, evaluator):
 
 def train_transductive(model, data, train_idx, optimizer, range_constraint):
     """
-    train_transductive
     training step for transductive setting
     @param model: callable NN model of torch.nn.Module
     @param data: data object with x, y, adjacency matrix (full graph)
     @param optimizer: torch.optim object
-    @param: range_constraint object of RangeConstraint.py to constrain parameters
-    returns: loss (float)
+    @param train_idx: training split
+    @param range_constraint object of RangeConstraint.py to constrain parameters
+    @returns: loss (float)
     """
     model.train()
     optimizer.zero_grad()

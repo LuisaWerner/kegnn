@@ -1,0 +1,22 @@
+DONE
+Implement Weight Constraint/ Weight Clipping - DONE [11/02/22]
+Implement Inductive Training - DONE [11/02/22]
+
+TODO
+Implement Early Stopping
+Explainer objects
+Check CPU support
+Check multiple GPU support (Python Lightning library)
+Check other base NN
+Check GNN Autoscale/Batching
+Check other ogb datasets (eg. ogb Products)
+Use Tensorboard/plots
+Check if results are written correctly in files and interpreted with script
+Speedup of KENN layers
+Parallelize iterations (GPU)
+Write the full training loop with base NN + KENN in one script
+Test different knowledge
+Check Weight initialization
+log softmax or softmax ?
+Other T-norm implementations
+Choose another TBF function

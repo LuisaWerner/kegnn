@@ -154,7 +154,6 @@ class KENN(MLP):
     """ KENN with MLP (from ogb) as base NN"""
 
     def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
-                 relations,
                  explainer_object=None):
         super(KENN, self).__init__(in_channels=in_channels, out_channels=out_channels, hidden_channels=hidden_channels,
                                    num_layers=num_layers, dropout=dropout)
