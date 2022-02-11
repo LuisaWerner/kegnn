@@ -150,14 +150,15 @@ class Standard(torch.nn.Module):
         return F.softmax(x, dim=-1)
 
 
-class KENN(GCN):
+class KENN(MLP):
     """ KENN with MLP (from ogb) as base NN"""
 
-    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout, relations,
+    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
+                 relations,
                  explainer_object=None):
         super(KENN, self).__init__(in_channels=in_channels, out_channels=out_channels, hidden_channels=hidden_channels,
                                    num_layers=num_layers, dropout=dropout)
-        self.name = 'KENN_MLP' #str('KENN_' + super(KENN, self).name)
+        self.name = 'KENN_MLP'  # str('KENN_' + super(KENN, self).name)
         self.knowledge_file = knowledge_file
         self.explainer_object = explainer_object
         self.kenn_layers = torch.nn.ModuleList()

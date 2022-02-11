@@ -2,13 +2,14 @@ import torch
 import torch.nn.functional as F
 
 
-def train_inductive(model, data, train_idx, optimizer):
+def train_inductive(model, data, train_idx, optimizer, range_constraint):
     """
     train_inductive
     training step for transductive setting
     @param model: callable NN model of torch.nn.Module
     @param data: data object with x, y, adjacency matrix (separate matrices for train/valid/test)
     @param optimizer: torch.optim object
+    @param: range_constraint object of RangeConstraint.py to constrain parameters
     returns: loss (float)
     """
     model.train()
@@ -17,12 +18,12 @@ def train_inductive(model, data, train_idx, optimizer):
     loss = F.nll_loss(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
+    model.apply(range_constraint)
     return loss.item()
 
 
 @torch.no_grad()
 def test_inductive(model, data, split_idx, evaluator):
-    # todo: adapt for KENN
     """
     test_inductive
     @param model - should be a NN of type torch.nn.module
@@ -52,14 +53,14 @@ def test_inductive(model, data, split_idx, evaluator):
     return [train_acc, valid_acc, test_acc], [out_train, out_valid, out_test]
 
 
-def train_transductive(model, data, train_idx, optimizer):
-    # todo: adapt for KENN
+def train_transductive(model, data, train_idx, optimizer, range_constraint):
     """
     train_transductive
     training step for transductive setting
     @param model: callable NN model of torch.nn.Module
     @param data: data object with x, y, adjacency matrix (full graph)
     @param optimizer: torch.optim object
+    @param: range_constraint object of RangeConstraint.py to constrain parameters
     returns: loss (float)
     """
     model.train()
@@ -68,6 +69,7 @@ def train_transductive(model, data, train_idx, optimizer):
     loss = F.nll_loss(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
+    model.apply(range_constraint)
     return loss.item()
 
 

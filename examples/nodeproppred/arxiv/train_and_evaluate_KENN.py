@@ -2,19 +2,17 @@
 # this should later on be done in another file but to keep the overview I have it in a separate file now
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 
-import os
 import argparse
-import pickle
-from initialize_model import initialize
-import torch
+
 import torch_sparse
-import torch.nn.functional as F
-from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
-from logger import Logger
-from model import GCN, SAGE, Standard, MLP, KENN
-import torch_geometric.transforms as T
-from training import *
+
+from RangeConstraint import RangeConstraint
 from generate_knowledge import generate_knowledge
+from logger import Logger
+from model import KENN
+from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
+from training import *
+
 
 def main():
     parser = argparse.ArgumentParser(description='OGBN-Arxiv (GNN)')
@@ -34,6 +32,8 @@ def main():
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
     parser.add_argument('--num_kenn_layers', type=int, default=3)
+    parser.add_argument('--range_constraint_lower', type=float, default=0)
+    parser.add_argument('--range_constraint_upper', type=float, default=500)
     args = parser.parse_args()
     print(args)
 
@@ -48,7 +48,7 @@ def main():
     data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
 
     split_idx = dataset.get_idx_split()
-    train_idx = split_idx['train'].to(device) #todo: needed?
+    train_idx = split_idx['train'].to(device)  # todo: needed?
 
     if args.inductive:
         mask_train = torch.all(torch.isin(data.edge_index, split_idx['train']), dim=0)
@@ -67,15 +67,15 @@ def main():
                                                   col=torch.masked_select(input=data.edge_index[1], mask=mask_test),
                                                   sparse_sizes=(data.num_nodes, data.num_nodes))
 
-
-        data.relations_train = torch.full(size=(torch.count_nonzero(mask_train).item(), 1), fill_value=args.binary_preactivation) #todo verify shape
-        data.relations_valid = torch.full(size=(torch.count_nonzero(mask_valid).item(), 1), fill_value=args.binary_preactivation) #todo verify shape
-        data.relations_test = torch.full(size=(torch.count_nonzero(mask_test).item(), 1), fill_value=args.binary_preactivation) #todo verify shape
+        data.relations_train = torch.full(size=(torch.count_nonzero(mask_train).item(), 1),
+                                          fill_value=args.binary_preactivation)  # todo verify shape
+        data.relations_valid = torch.full(size=(torch.count_nonzero(mask_valid).item(), 1),
+                                          fill_value=args.binary_preactivation)  # todo verify shape
+        data.relations_test = torch.full(size=(torch.count_nonzero(mask_test).item(), 1),
+                                         fill_value=args.binary_preactivation)  # todo verify shape
     data = data.to(device)
 
     # INITIALIZE THE MODEL
-    # model = initialize(args, data)
-
     evaluator = Evaluator(name='ogbn-arxiv')
     _ = generate_knowledge(data.num_classes)
     if args.transductive:
@@ -86,14 +86,15 @@ def main():
                      num_layers=args.num_layers,
                      num_kenn_layers=args.num_kenn_layers,
                      dropout=args.dropout,
-                     relations=data.relations) # shape =  (# relations, 1)
+                     relations=data.relations)  # shape =  (# relations, 1)
 
         model.to(device)
         logger = Logger(model.name)
+        range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
         print('Start transductive training')
 
         for run in range(args.runs):
-            print (f"Run: {run} of {args.runs}")
+            print(f"Run: {run} of {args.runs}")
             model.reset_parameters()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
@@ -103,7 +104,7 @@ def main():
             valid_accuracies = []
 
             for epoch in range(args.epochs):
-                t_loss = train_transductive(model, data, train_idx, optimizer)
+                t_loss = train_transductive(model, data, train_idx, optimizer, range_constraint)
                 train_acc, valid_acc, test_acc, out = test_transductive(model, data, split_idx, evaluator)
                 v_loss = F.nll_loss(out[split_idx['valid']], data.y.squeeze(1)[split_idx['valid']]).item()
 
@@ -124,6 +125,7 @@ def main():
         logger.print_results(args, 'transductive')
 
         logger.save_results(args)
+
 
 if __name__ == '__main__':
     main()
