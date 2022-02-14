@@ -14,8 +14,8 @@ from training import *
 
 
 def main():
-    parser = argparse.ArgumentParser(description='OGBN-Arxiv (GNN)')
-    parser.add_argument('--dataset', type=str, default='ogbn-arxiv')
+    parser = argparse.ArgumentParser(description='OGBN-Products')
+    parser.add_argument('--dataset', type=str, default='ogbn-products')
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--log_steps', type=int, default=1)
     parser.add_argument('--use_sage', action='store_true')

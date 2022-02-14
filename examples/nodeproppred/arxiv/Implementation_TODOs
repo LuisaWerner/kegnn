@@ -5,6 +5,10 @@ Early Stopping - DONE [14/02/22]
 
 TODO
 FUNCTIONAL
+OGB: arxiv. Receive: "Luisa Werner, [14 Feb 2022 at 18:02:08]:
+                      ...Process finished with exit code 137 (interrupted by signal 9: SIGKILL). the concat of join.py return cat([unary[index1], unary[index2], binary], dim=1)
+
+                      https://stackoverflow.com/questions/43268156/process-finished-with-exit-code-137-in-pycharm"
 Explainer objects
 Check GPU support
 Check GNN Autoscale/Batching
