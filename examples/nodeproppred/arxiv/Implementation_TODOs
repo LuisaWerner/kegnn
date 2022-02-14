@@ -1,22 +1,29 @@
 DONE
 Implement Weight Constraint/ Weight Clipping - DONE [11/02/22]
 Implement Inductive Training - DONE [11/02/22]
+Early Stopping - DONE [14/02/22]
 
 TODO
-Implement Early Stopping
+FUNCTIONAL
 Explainer objects
-Check CPU support
-Check multiple GPU support (Python Lightning library)
-Check other base NN
+Check GPU support
 Check GNN Autoscale/Batching
 Check other ogb datasets (eg. ogb Products)
-Use Tensorboard/plots
 Check if results are written correctly in files and interpreted with script
 Speedup of KENN layers
-Parallelize iterations (GPU)
-Write the full training loop with base NN + KENN in one script
-Test different knowledge
 Check Weight initialization
+Write the full training loop with base NN + KENN in one script
+
+NON-FUNCTIONAL
+Check multiple GPU support (Python Lightning library)
+Use Tensorboard/plots
+Check directory structure (ogbn_products dataset etc.  are still in subdirectory of ogb-arxiv )
+
+TESTS
+Check other base NN
+log softmax or softmax ?
+Test different knowledge
 log softmax or softmax ?
 Other T-norm implementations
 Choose another TBF function
+

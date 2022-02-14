@@ -24,16 +24,18 @@ def main():
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=4)  # 500
+    parser.add_argument('--epochs', type=int, default=500)  # 500
     parser.add_argument('--runs', type=int, default=3)  # 10
     parser.add_argument('--model', type=str, default='MLP')
     parser.add_argument('--inductive', type=bool, default=True)
-    parser.add_argument('--transductive', type=bool, default=False)
+    parser.add_argument('--transductive', type=bool, default=True)
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
     parser.add_argument('--num_kenn_layers', type=int, default=3)
     parser.add_argument('--range_constraint_lower', type=float, default=0)
     parser.add_argument('--range_constraint_upper', type=float, default=500)
+    parser.add_argument('--es_min_delta', type=float, default=0.001)
+    parser.add_argument('--es_patience', type=int, default=3)
     args = parser.parse_args()
     print(args)
 
@@ -60,7 +62,7 @@ def main():
                      dropout=args.dropout)
 
         model.to(device)
-        logger = Logger(model.name)
+        logger = Logger(model.name, args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
@@ -73,6 +75,8 @@ def main():
             train_accuracies = []
             valid_accuracies = []
 
+            clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
+
             for epoch in range(args.epochs):
                 t_loss = train_transductive(model, data, train_idx, optimizer, range_constraint)
                 train_acc, valid_acc, test_acc, out = test_transductive(model, data, split_idx, evaluator)
@@ -84,6 +88,10 @@ def main():
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
 
+                for i in range(args.num_kenn_layers):
+                    clause_weights_dict[f"clause_weights_{i}"].append(
+                        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
+
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
@@ -92,7 +100,12 @@ def main():
                           f'Valid: {100 * valid_acc:.2f}% '
                           f'Test: {100 * test_acc:.2f}%')
 
-            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_acc, run)
+                # early stopping
+                if logger.callback_early_stopping(valid_accuracies):
+                    break
+
+            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_acc, run,
+                              clause_weights_dict)
         logger.print_results(args, 'transductive')
 
         logger.save_results(args)
@@ -108,7 +121,7 @@ def main():
                      dropout=args.dropout)
 
         model.to(device)
-        logger = Logger(model.name)
+        logger = Logger(model.name, args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
@@ -121,6 +134,8 @@ def main():
             train_accuracies = []
             valid_accuracies = []
 
+            clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
+
             for epoch in range(args.epochs):
                 t_loss = train_inductive(model, data, train_idx, optimizer, range_constraint)
                 accuracies, out = test_inductive(model, data, split_idx, evaluator)
@@ -132,6 +147,10 @@ def main():
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
 
+                for i in range(args.num_kenn_layers):
+                    clause_weights_dict[f"clause_weights_{i}"].append(
+                        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
+
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
@@ -140,7 +159,12 @@ def main():
                           f'Valid: {100 * accuracies[1]:.2f}% '
                           f'Test: {100 * accuracies[2]:.2f}%')
 
-            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, accuracies[2], run)
+                # early stopping
+                if logger.callback_early_stopping(valid_accuracies):
+                    break
+
+            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, accuracies[2], run,
+                              clause_weights_dict)
         logger.print_results(args, 'inductive')
         logger.save_results(args)
 

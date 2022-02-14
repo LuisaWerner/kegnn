@@ -1,21 +1,26 @@
-import torch
 import os
 import pickle
 
+import numpy as np
+import torch
+
 
 class Logger(object):
-    def __init__(self, name):
+    def __init__(self, name, args):
         # todo: change for several models
         self.name = name
         self.results = {}
         self.results.setdefault(name, [])
+        self.es_min_delta = args.es_min_delta
+        self.es_patience = args.es_patience
 
     def add_result(self, train_losses: list,
                    train_accuracies: list,
                    valid_losses: list,
                    valid_accuracies: list,
                    test_acc: float,
-                   run: int):
+                   run: int,
+                   clause_weights_dict=None):
         """
         adds the losses and accuracies of a run to the results dictionary
         """
@@ -23,6 +28,7 @@ class Logger(object):
                        'train_accuracies': train_accuracies,
                        'valid_losses': valid_losses,
                        'valid_accuracies': valid_accuracies,
+                       'clause_weights_dict': clause_weights_dict,
                        'test_accuracy': test_acc
                        }
         self.results[self.name].append(run_results)
@@ -97,3 +103,30 @@ class Logger(object):
         if args.transductive:
             with open('./results/results_transductive_{}runs'.format(args.runs), 'wb') as output:
                 pickle.dump(self.results, output)
+
+    def callback_early_stopping(self, valid_accuracies):
+        """
+        Takes as argument the list with all the validation accuracies.
+        If patience=k, checks if the mean of the last k accuracies is higher than the mean of the
+        previous k accuracies (i.e. we check that we are not overfitting). If not, stops learning.
+        @param valid_accuracies - list(float) , validation accuracy per epoch
+        @return bool - if training stops or not
+
+        """
+        epoch = len(valid_accuracies)
+        # no early stopping for 2 * patience epochs
+        if epoch // self.es_patience < 2:
+            return False
+
+        # Mean loss for last patience epochs and second-last patience epochs
+        mean_previous = np.mean(valid_accuracies[epoch - 2 * self.es_patience:epoch - self.es_patience])
+        mean_recent = np.mean(valid_accuracies[epoch - self.es_patience:epoch])
+        delta = mean_recent - mean_previous
+        if delta <= self.es_min_delta:
+            print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % self.es_patience)
+            print("*CB_ES* delta:", delta)
+            print("callback_early_stopping signal received at epoch= %d" % len(valid_accuracies))
+            print("Terminating training")
+            return True
+        else:
+            return False
