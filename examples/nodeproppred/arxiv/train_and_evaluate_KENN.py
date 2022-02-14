@@ -28,7 +28,7 @@ def main():
     parser.add_argument('--runs', type=int, default=3)  # 10
     parser.add_argument('--model', type=str, default='MLP')
     parser.add_argument('--inductive', type=bool, default=True)
-    parser.add_argument('--transductive', type=bool, default=True)
+    parser.add_argument('--transductive', type=bool, default=False)
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
     parser.add_argument('--num_kenn_layers', type=int, default=3)
