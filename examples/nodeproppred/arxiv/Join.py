@@ -1,7 +1,6 @@
-
-
+import numpy
 import torch
-from torch import cat, reshape
+from torch import reshape
 
 
 class Join(torch.nn.Module):
@@ -22,6 +21,8 @@ class Join(torch.nn.Module):
         of the pair referred by binary tensor
         :param index1: a vector containing the indices of the second object
         of the pair referred by binary tensor
+        :param index2: a vector containing the indices of the second object
+        of the pair referred by binary tensor
         output corresponds to matrix M in the paper.
         """
 
@@ -30,4 +31,9 @@ class Join(torch.nn.Module):
             index2 = reshape(index2, (1,))
 
         # returns matrix M of paper
-        return cat([unary[index1], unary[index2], binary], dim=1)
+        a = unary[index1]
+        b = unary[index2]
+
+        return numpy.concatenate([a, b, binary], dim=1)
+
+        # return torch.cat([unary[index1].detach(), unary[index2].detach(), binary.detach()], dim=1) # todo is detach okay

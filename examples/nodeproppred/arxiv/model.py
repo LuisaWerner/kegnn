@@ -13,7 +13,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, SAGEConv
 
-from examples.nodeproppred.arxiv.parsers import *
+from parsers import *
 
 
 class GCN(torch.nn.Module):
