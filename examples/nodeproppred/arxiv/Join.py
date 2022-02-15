@@ -1,4 +1,3 @@
-import numpy
 import torch
 from torch import reshape
 
@@ -31,9 +30,4 @@ class Join(torch.nn.Module):
             index2 = reshape(index2, (1,))
 
         # returns matrix M of paper
-        a = unary[index1]
-        b = unary[index2]
-
-        return numpy.concatenate([a, b, binary], dim=1)
-
-        # return torch.cat([unary[index1].detach(), unary[index2].detach(), binary.detach()], dim=1) # todo is detach okay
+        return torch.cat([unary[index1], unary[index2], binary], dim=1)
