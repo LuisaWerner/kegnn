@@ -1,7 +1,35 @@
 import torch
 import torch_sparse
+from torch_geometric.loader import NeighborLoader
 
 from ogb.nodeproppred import PygNodePropPredDataset
+
+
+def create_batches(args, data, split_idx):
+    """ only for transductive setting """  # todo: inductive setting
+
+    if args.batch_size > data.num_nodes:
+        print('choose batch size smaller than the source dataset to create batches from ')
+
+    # if the batch size is bigger than the number of nodes, re-activate full_batch training
+    train_loader = NeighborLoader(data,
+                                  num_neighbors=[args.sampling_neighbor_size] * 2,
+                                  shuffle=True,
+                                  input_nodes=split_idx['train'],
+                                  batch_size=args.batch_size)
+
+    valid_loader = NeighborLoader(data,
+                                  num_neighbors=[args.sampling_neighbor_size] * 2,
+                                  shuffle=True,
+                                  input_nodes=split_idx['valid'],
+                                  batch_size=args.batch_size)
+    test_loader = NeighborLoader(data,
+                                 num_neighbors=[args.sampling_neighbor_size] * 2,
+                                 shuffle=True,
+                                 input_nodes=split_idx['test'],
+                                 batch_size=args.batch_size)
+
+    return train_loader, valid_loader, test_loader
 
 
 def load_and_preprocess(args):
@@ -11,6 +39,7 @@ def load_and_preprocess(args):
     modifies the data object
     generates inductive links
     """
+
     dataset = PygNodePropPredDataset(name=args.dataset)
     data = dataset[0]
     data.num_classes = dataset.num_classes

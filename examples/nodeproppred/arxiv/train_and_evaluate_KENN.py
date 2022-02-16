@@ -9,8 +9,9 @@ from generate_knowledge import generate_knowledge
 from logger import Logger
 from model import KENN
 from ogb.nodeproppred import Evaluator
-from preprocess_data import load_and_preprocess
+from preprocess_data import load_and_preprocess, create_batches
 from training import *
+from training_batch import train, test
 
 
 def main():
@@ -27,7 +28,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=500)  # 500
     parser.add_argument('--runs', type=int, default=3)  # 10
     parser.add_argument('--model', type=str, default='MLP')
-    parser.add_argument('--inductive', type=bool, default=True)
+    parser.add_argument('--inductive', type=bool, default=False)
     parser.add_argument('--transductive', type=bool, default=True)
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
@@ -36,6 +37,9 @@ def main():
     parser.add_argument('--range_constraint_upper', type=float, default=500)
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=3)
+    parser.add_argument('--sampling_neighbor_size', type=int, default=10)
+    parser.add_argument('--batch_size', type=int, default=100)
+
     args = parser.parse_args()
     print(args)
 
@@ -78,13 +82,15 @@ def main():
             clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
             for epoch in range(args.epochs):
-                t_loss = train_transductive(model, data, train_idx, optimizer, range_constraint)
-                train_acc, valid_acc, test_acc, out = test_transductive(model, data, split_idx, evaluator)
-                # todo what do we need out for ?
-                v_loss = F.nll_loss(out[split_idx['valid']], data.y.squeeze(1)[split_idx['valid']]).item()
+                train_batches, valid_batches, test_batches = create_batches(args, data, split_idx)
 
-                train_accuracies.append(train_acc)
-                valid_accuracies.append(valid_acc)
+                t_loss = train(model, train_batches, optimizer, device, args, range_constraint)
+
+                t_accuracy, _ = test(model, train_batches, device, args)
+                v_accuracy, v_loss = test(model, valid_batches, device, args)
+
+                train_accuracies.append(t_accuracy)
+                valid_accuracies.append(v_accuracy)
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
 
@@ -96,9 +102,8 @@ def main():
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
                           f'Loss: {t_loss:.4f}, '
-                          f'Train: {100 * train_acc:.2f}%, '
-                          f'Valid: {100 * valid_acc:.2f}% '
-                          f'Test: {100 * test_acc:.2f}%')
+                          f'Train: {100 * t_accuracy:.2f}%, '
+                          f'Valid: {100 * v_accuracy:.2f}% ')
 
                 # early stopping
                 if logger.callback_early_stopping(valid_accuracies):
