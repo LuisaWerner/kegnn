@@ -2,6 +2,7 @@ DONE
 Implement Weight Constraint/ Weight Clipping - DONE [11/02/22]
 Implement Inductive Training - DONE [11/02/22]
 Early Stopping - DONE [14/02/22]
+Batching (only inductive), basic Neighborhood Sample of GraphSAGE [DONE] [17/02/22]
 
 TODO
 FUNCTIONAL
