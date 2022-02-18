@@ -18,7 +18,6 @@ def train(model, train_loader, optimizer, device, criterion, args, range_constra
         total_examples += args.batch_size
         total_loss = + float(loss) * args.batch_size
         total_correct += int((out.argmax(dim=-1) == batch.y.squeeze(1)[:args.batch_size]).sum())
-        # total_correct += int(out.argmax(dim=-1) == batch.y[:args.batch_size])
 
     epoch_acc = total_correct / total_examples
     epoch_loss = total_loss / total_examples

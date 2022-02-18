@@ -3,9 +3,11 @@
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 
 import argparse
+import os
+import shutil
 
-import torch.nn.functional as F
 import torch_geometric
+from torch.utils.tensorboard import SummaryWriter
 
 from RangeConstraint import RangeConstraint
 from generate_knowledge import generate_knowledge
@@ -29,7 +31,7 @@ def main():
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=500)  # 500
-    parser.add_argument('--runs', type=int, default=3)  # 10
+    parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='MLP')
     parser.add_argument('--inductive', type=bool, default=True)
     parser.add_argument('--transductive', type=bool, default=False)
@@ -41,11 +43,15 @@ def main():
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=3)
     parser.add_argument('--sampling_neighbor_size', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=10)
+    parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--seed', type=int, default=100)
 
     args = parser.parse_args()
     print(args)
+
+    # restart run with empty dir for tensorboard
+    if os.path.exists('./runs'):
+        shutil.rmtree('./runs')
 
     torch_geometric.seed_everything(args.seed)
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
@@ -85,11 +91,17 @@ def main():
 
             clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
+            writer = SummaryWriter(comment=f'Run {run}')
             for epoch in range(args.epochs):
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
                 t_accuracy, t_loss = train(model, train_batches, optimizer, device, criterion, args, range_constraint)
                 v_accuracy, v_loss = test(model, valid_batches, criterion, args, device)
+
+                writer.add_scalar("loss/train", t_loss, epoch)
+                writer.add_scalar("loss/valid", v_loss, epoch)
+                writer.add_scalar("accuracy/train", t_accuracy, epoch)
+                writer.add_scalar("accuracy/valid", v_accuracy, epoch)
 
                 train_accuracies.append(t_accuracy)
                 valid_accuracies.append(v_accuracy)
@@ -111,9 +123,12 @@ def main():
                 if logger.callback_early_stopping(valid_accuracies):
                     break
 
-            test_accuracy = test(model, test_batches, args, device)
+            test_accuracy = test(model, test_batches, criterion, args, device)
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
                               clause_weights_dict)
+            # writer.flush()
+            writer.close()
+
         logger.print_results(args, 'inductive')
         logger.save_results(args)
 

@@ -12,7 +12,6 @@ def load_and_preprocess(args):
     @return train_loader, valid_loader, test_loader: train/valid/test set split into batches,
     samples neighbors specified in args in an inductive setting
     #todo: specify for inductive setting
-
     """
 
     dataset = PygNodePropPredDataset(name=args.dataset)
