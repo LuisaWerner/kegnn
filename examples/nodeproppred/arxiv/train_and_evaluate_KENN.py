@@ -3,6 +3,10 @@
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 
 import argparse
+import os
+import shutil
+
+from torch.utils.tensorboard import SummaryWriter
 
 from RangeConstraint import RangeConstraint
 from generate_knowledge import generate_knowledge
@@ -42,6 +46,10 @@ def main():
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
 
+    if os.path.exists('./runs'):
+        shutil.rmtree('./runs')
+        print('old runs folder deleted')
+
     data, split_idx = load_and_preprocess(args)
     # data = data.to(device)
     data.to(device)
@@ -67,6 +75,7 @@ def main():
 
         for run in range(args.runs):
             print(f"Run: {run} of {args.runs}")
+            writer = SummaryWriter(comment=f'transductive, run {run}')
             model.reset_parameters()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
@@ -82,6 +91,11 @@ def main():
                 train_acc, valid_acc, test_acc, out = test_transductive(model, data, split_idx, evaluator)
                 # todo what do we need out for ?
                 v_loss = F.nll_loss(out[split_idx['valid']], data.y.squeeze(1)[split_idx['valid']]).item()
+
+                writer.add_scalar('valid_loss', v_loss, epoch)
+                writer.add_scalar('train_loss', t_loss, epoch)
+                writer.add_scalar('train_accuracy', train_acc, epoch)
+                writer.add_scalar('valid_accuracy', valid_acc, epoch)
 
                 train_accuracies.append(train_acc)
                 valid_accuracies.append(valid_acc)
@@ -106,6 +120,7 @@ def main():
 
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_acc, run,
                               clause_weights_dict)
+            writer.close()
         logger.print_results(args, 'transductive')
 
         logger.save_results(args)
@@ -125,6 +140,7 @@ def main():
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
+            writer = SummaryWriter(comment=f'inductive, run {run}')
             print(f"Run: {run} of {args.runs}")
             model.reset_parameters()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -141,6 +157,11 @@ def main():
                 accuracies, out = test_inductive(model, data, split_idx, evaluator)
                 # todo what do we need out for ?
                 v_loss = F.nll_loss(out[1], data.y.squeeze(1)[split_idx['valid']]).item()
+
+                writer.add_scalar('valid_loss', v_loss, epoch)
+                writer.add_scalar('train_loss', t_loss, epoch)
+                writer.add_scalar('train_accuracy', accuracies[0], epoch)
+                writer.add_scalar('valid_accuracy', accuracies[1], epoch)
 
                 train_accuracies.append(accuracies[0])
                 valid_accuracies.append(accuracies[1])
@@ -165,6 +186,7 @@ def main():
 
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, accuracies[2], run,
                               clause_weights_dict)
+            writer.close()
         logger.print_results(args, 'inductive')
         logger.save_results(args)
 
