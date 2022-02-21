@@ -27,25 +27,26 @@ def load_and_preprocess(args):
         print('choose batch size smaller than the source dataset to create batches from ')
         args.batch_size = data.num_nodes
 
-    train_loader = NeighborLoader(data,
-                                  num_neighbors=[args.sampling_neighbor_size] * 2,
-                                  shuffle=True,
-                                  input_nodes=split_idx['train'],
-                                  # since we only sample from nodes of the training set, it's inductive!
-                                  batch_size=args.batch_size)  # todo:
+    train_loader_inductive = NeighborLoader(data,
+                                            num_neighbors=[args.sampling_neighbor_size] * 2,
+                                            shuffle=True,
+                                            input_nodes=split_idx['train'],
+                                            # since we only sample from nodes of the training set, it's inductive!
+                                            batch_size=args.batch_size)  # todo:
 
-    valid_loader = NeighborLoader(data,
-                                  num_neighbors=[args.sampling_neighbor_size],
-                                  shuffle=True,
-                                  input_nodes=split_idx['valid'],
-                                  batch_size=args.batch_size)
-    test_loader = NeighborLoader(data,
-                                 num_neighbors=[args.sampling_neighbor_size],
-                                 shuffle=True,
-                                 input_nodes=split_idx['test'],
-                                 batch_size=args.batch_size)
+    valid_loader_inductive = NeighborLoader(data,
+                                            num_neighbors=[args.sampling_neighbor_size],
+                                            shuffle=True,
+                                            input_nodes=split_idx['valid'],
+                                            batch_size=args.batch_size)
+    test_loader_inductive = NeighborLoader(data,
+                                           num_neighbors=[args.sampling_neighbor_size],
+                                           shuffle=True,
+                                           input_nodes=split_idx['test'],
+                                           batch_size=args.batch_size)
 
-    # todo: how to do the transductive sampling
-    # Restart from new tomorrow... what is an efficient way to do this?! It cannot be too complicated
+    train_loader_transductive = None  # todo
+    valid_loader_transductive = None  # todo
+    test_loader_transductive = None  # todo
 
-    return data, split_idx, train_loader, valid_loader, test_loader
+    return data, split_idx, train_loader_inductive, valid_loader_inductive, test_loader_inductive, train_loader_transductive, valid_loader_transductive, test_loader_transductive
