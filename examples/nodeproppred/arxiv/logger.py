@@ -43,7 +43,7 @@ class Logger(object):
         print(f"Maximum accuracy on valid: {max_valid_acc}")
         print(f"Accuracy on test: {self.results[self.name][run]['test_accuracy']}")
 
-    def print_results(self, args, setting: str):
+    def print_results(self, args):
         """ Prints results after all runs """
         max_epoch_acc_train = []
         max_epoch_acc_valid = []
@@ -51,9 +51,9 @@ class Logger(object):
             max_epoch_acc_train.append(max(self.results[self.name][run]['train_accuracies']))
             max_epoch_acc_valid.append(max(self.results[self.name][run]['valid_accuracies']))
 
-        print(f"Results of {setting} training, {args.runs} runs, {args.epochs} epochs ")
-        print(f"Average accuracy over {args.runs} iterations  on train :{sum(max_epoch_acc_train)/args.runs}")
-        print(f"Average accuracy over {args.runs} iterations on valid :{sum(max_epoch_acc_valid)/args.runs}")
+        print(f"Results of {args.mode} training, {args.runs} runs, {args.epochs} epochs ")
+        print(f"Average accuracy over {args.runs} iterations  on train :{sum(max_epoch_acc_train) / args.runs}")
+        print(f"Average accuracy over {args.runs} iterations on valid :{sum(max_epoch_acc_valid) / args.runs}")
         print(f"Highest accuracy over train: {max(max_epoch_acc_train)}")
         print(f"Highest accuracy over valid: {max(max_epoch_acc_valid)}")
 

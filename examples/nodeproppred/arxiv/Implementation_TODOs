@@ -3,6 +3,7 @@ Implement Weight Constraint/ Weight Clipping - DONE [11/02/22]
 Implement Inductive Training - DONE [11/02/22]
 Early Stopping - DONE [14/02/22]
 Use Tensorboard/plots - DONE [18/02/22]
+Transductive Training [IN PROGRESS]
 
 TODO
 FUNCTIONAL
@@ -14,7 +15,7 @@ Check if results are written correctly in files and interpreted with script
 Speedup of KENN layers
 Check Weight initialization
 Write the full training loop with base NN + KENN in one script
-Transductive Training [IN PROGRESS]
+
 
 NON-FUNCTIONAL
 Check multiple GPU support (Python Lightning library), alternatively DataParallel, DistributedDataParallel
@@ -29,7 +30,6 @@ Test different knowledge
 log softmax or softmax ?
 Other T-norm implementations
 Choose another TBF function
-
 
 ---------------------------
 

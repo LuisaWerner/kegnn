@@ -33,8 +33,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=500)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='MLP')
-    parser.add_argument('--inductive', type=bool, default=True)
-    parser.add_argument('--transductive', type=bool, default=False)
+    parser.add_argument('--mode', type=str, default='transductive')  # alternatively inductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
     parser.add_argument('--num_kenn_layers', type=int, default=3)
@@ -64,8 +63,8 @@ def main():
     evaluator = Evaluator(name=args.dataset)
     _ = generate_knowledge(data.num_classes)
 
-    if args.inductive:
-        print('Start Inductive Training')
+    if args.mode == 'transductive':
+        print('Start Transductive Training')
         model = KENN(knowledge_file='knowledge_base',
                      in_channels=data.num_features,
                      out_channels=data.num_classes,
@@ -129,12 +128,9 @@ def main():
             # writer.flush()
             writer.close()
 
-        logger.print_results(args, 'inductive')
+        logger.print_results(args)
         logger.save_results(args)
 
-        # TODO: transductive, need transductive batches
-        # write sample for transductive setting eg. sampler = data.NeighborSampler(graph.edge_index, sizes=[3,10], batch_size=4,
-        #                                   shuffle=False)
 
 
 if __name__ == '__main__':
