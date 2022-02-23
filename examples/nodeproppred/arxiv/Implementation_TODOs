@@ -9,6 +9,7 @@ TODO
 FUNCTIONAL
 
 Explainer objects
+check other base NN
 Check GPU support
 Check GNN Autoscale/Batching
 Check other ogb datasets (eg. ogb Products)
