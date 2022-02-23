@@ -1,17 +1,79 @@
+import os
+import pickle
+
+import numpy as np
 import torch
 
 
 class Logger(object):
-    def __init__(self, runs, info=None):
-        self.info = info
-        self.results = [[] for _ in range(runs)]
+    def __init__(self, name, args):
+        # todo: change for several models
+        self.name = name
+        self.results = {}
+        self.results.setdefault(name, [])
+        self.es_min_delta = args.es_min_delta
+        self.es_patience = args.es_patience
 
-    def add_result(self, run, result):
-        assert len(result) == 3
-        assert run >= 0 and run < len(self.results)
-        self.results[run].append(result)
+    def clear_folders(self, args):
+        # TODO
+        """
+        folder = '/results'
+        for filename in os.listdir(folder):
+            file_path = os.path.join(folder, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print('Failed to delete %s. Reason: %s' % (file_path, e))
+        """
+
+    def add_result(self, train_losses: list,
+                   train_accuracies: list,
+                   valid_losses: list,
+                   valid_accuracies: list,
+                   test_acc: float,
+                   run: int,
+                   clause_weights_dict=None):
+        """
+        adds the losses and accuracies of a run to the results dictionary
+        """
+        run_results = {'train_losses': train_losses,
+                       'train_accuracies': train_accuracies,
+                       'valid_losses': valid_losses,
+                       'valid_accuracies': valid_accuracies,
+                       'clause_weights_dict': clause_weights_dict,
+                       'test_accuracy': test_acc
+                       }
+        self.results[self.name].append(run_results)
+        self.print_results_run(run)
+
+    def print_results_run(self, run: int):
+        """ Prints results after all epochs per run """
+        max_valid_acc = max(self.results[self.name][run]['valid_accuracies'])
+        max_train_acc = max(self.results[self.name][run]['train_accuracies'])
+        print(f"Results of run {run}:")
+        print(f"Maximum accuracy on train: {max_train_acc}")
+        print(f"Maximum accuracy on valid: {max_valid_acc}")
+        print(f"Accuracy on test: {self.results[self.name][run]['test_accuracy']}")
+
+    def print_results(self, args):
+        """ Prints results after all runs """
+        max_epoch_acc_train = []
+        max_epoch_acc_valid = []
+        for run in range(len(self.results[self.name])):
+            max_epoch_acc_train.append(max(self.results[self.name][run]['train_accuracies']))
+            max_epoch_acc_valid.append(max(self.results[self.name][run]['valid_accuracies']))
+
+        print(f"Results of {args.mode} training, {args.runs} runs, {args.epochs} epochs ")
+        print(f"Average accuracy over {args.runs} iterations  on train :{sum(max_epoch_acc_train) / args.runs}")
+        print(f"Average accuracy over {args.runs} iterations on valid :{sum(max_epoch_acc_valid) / args.runs}")
+        print(f"Highest accuracy over train: {max(max_epoch_acc_train)}")
+        print(f"Highest accuracy over valid: {max(max_epoch_acc_valid)}")
 
     def print_statistics(self, run=None):
+        """ Original method, not used """
         if run is not None:
             result = 100 * torch.tensor(self.results[run])
             argmax = result[:, 1].argmax().item()
@@ -42,3 +104,44 @@ class Logger(object):
             print(f'  Final Train: {r.mean():.2f} ± {r.std():.2f}')
             r = best_result[:, 3]
             print(f'   Final Test: {r.mean():.2f} ± {r.std():.2f}')
+
+    def save_results(self, args):
+        """ saves the results in separate files in a results directory """
+
+        if not os.path.exists('results'):
+            os.makedirs('results')
+
+        if args.mode == 'inductive':
+            with open('./results/results_inductive_{}runs'.format(args.runs), 'wb') as output:
+                pickle.dump(self.results, output)
+
+        if args.mode == 'transductive':
+            with open('./results/results_transductive_{}runs'.format(args.runs), 'wb') as output:
+                pickle.dump(self.results, output)
+
+    def callback_early_stopping(self, valid_accuracies):
+        """
+        Takes as argument the list with all the validation accuracies.
+        If patience=k, checks if the mean of the last k accuracies is higher than the mean of the
+        previous k accuracies (i.e. we check that we are not overfitting). If not, stops learning.
+        @param valid_accuracies - list(float) , validation accuracy per epoch
+        @return bool - if training stops or not
+
+        """
+        epoch = len(valid_accuracies)
+        # no early stopping for 2 * patience epochs
+        if epoch // self.es_patience < 2:
+            return False
+
+        # Mean loss for last patience epochs and second-last patience epochs
+        mean_previous = np.mean(valid_accuracies[epoch - 2 * self.es_patience:epoch - self.es_patience])
+        mean_recent = np.mean(valid_accuracies[epoch - self.es_patience:epoch])
+        delta = mean_recent - mean_previous
+        if delta <= self.es_min_delta:
+            print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % self.es_patience)
+            print("*CB_ES* delta:", delta)
+            print("callback_early_stopping signal received at epoch= %d" % len(valid_accuracies))
+            print("Terminating training")
+            return True
+        else:
+            return False
