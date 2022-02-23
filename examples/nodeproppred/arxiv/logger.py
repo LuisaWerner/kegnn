@@ -96,11 +96,11 @@ class Logger(object):
         if not os.path.exists('results'):
             os.makedirs('results')
 
-        if args.inductive:
+        if args.mode == 'inductive':
             with open('./results/results_inductive_{}runs'.format(args.runs), 'wb') as output:
                 pickle.dump(self.results, output)
 
-        if args.transductive:
+        if args.mode == 'transductive':
             with open('./results/results_transductive_{}runs'.format(args.runs), 'wb') as output:
                 pickle.dump(self.results, output)
 
