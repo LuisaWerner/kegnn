@@ -22,8 +22,9 @@ def load_and_preprocess(args):
         data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
         split_idx = dataset.get_idx_split()
 
-        if args.batch_size > data.num_nodes:
+        if args.batch_size > data.num_nodes or args.full_batch:
             print('choose batch size smaller than the source dataset to create batches from ')
+            print('Full batch training ')
             args.batch_size = data.num_nodes
 
         train_loader_transductive = NeighborLoader(data,
@@ -52,7 +53,7 @@ def load_and_preprocess(args):
         data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
         split_idx = dataset.get_idx_split()
 
-        if args.batch_size > data.num_nodes:
+        if args.batch_size > data.num_nodes or args.full_batch:
             print('choose batch size smaller than the source dataset to create batches from ')
             args.batch_size = data.num_nodes
 

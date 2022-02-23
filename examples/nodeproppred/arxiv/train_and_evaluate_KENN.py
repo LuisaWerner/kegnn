@@ -7,7 +7,7 @@ import os
 import shutil
 
 import torch_geometric
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 
 from RangeConstraint import RangeConstraint
 from generate_knowledge import generate_knowledge
@@ -31,9 +31,9 @@ def main():
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=500)  # 500
-    parser.add_argument('--runs', type=int, default=1)  # 10
+    parser.add_argument('--runs', type=int, default=2)  # 10
     parser.add_argument('--model', type=str, default='MLP')
-    parser.add_argument('--mode', type=str, default='transductive')  # alternatively inductive
+    parser.add_argument('--mode', type=str, default='inductive')  # alternatively inductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
     parser.add_argument('--num_kenn_layers', type=int, default=3)
@@ -43,20 +43,22 @@ def main():
     parser.add_argument('--es_patience', type=int, default=3)
     parser.add_argument('--sampling_neighbor_size', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1000)
+    parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--seed', type=int, default=100)
 
     args = parser.parse_args()
     print(args)
-
-    # restart run with empty dir for tensorboard
-    if os.path.exists('./runs'):
-        shutil.rmtree('./runs')
 
     torch_geometric.seed_everything(args.seed)
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
 
     if args.mode == 'transductive':
+
+        # restart run with empty dir for tensorboard
+        if os.path.exists('./runs/transductive'):
+            shutil.rmtree('./runs/transductive')
+
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
 
         # INITIALIZE THE MODEL
@@ -89,7 +91,7 @@ def main():
 
             clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
-            writer = SummaryWriter(comment=f'Run {run}')
+            writer = SummaryWriter(f'runs/transductive/run{run}')
             for epoch in range(args.epochs):
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
@@ -131,6 +133,11 @@ def main():
         logger.save_results(args)
 
     if args.mode == 'inductive':
+
+        # restart run with empty dir for tensorboard
+        if os.path.exists('./runs/inductive'):
+            shutil.rmtree('./runs/inductive')
+
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
         # INITIALIZE THE MODEL
         evaluator = Evaluator(name=args.dataset)
@@ -162,7 +169,7 @@ def main():
 
             clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
-            writer = SummaryWriter(comment=f'Run {run}')
+            writer = SummaryWriter(f'runs/inductive/run{run}')
             for epoch in range(args.epochs):
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")

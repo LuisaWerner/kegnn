@@ -3,19 +3,19 @@ Implement Weight Constraint/ Weight Clipping - DONE [11/02/22]
 Implement Inductive Training - DONE [11/02/22]
 Early Stopping - DONE [14/02/22]
 Use Tensorboard/plots - DONE [18/02/22]
-Transductive Training [IN PROGRESS]
+Transductive Training [22/02/22]
 
 TODO
 FUNCTIONAL
+
 Explainer objects
 Check GPU support
 Check GNN Autoscale/Batching
 Check other ogb datasets (eg. ogb Products)
-Check if results are written correctly in files and interpreted with script
+Check if results are written correctly in files and interpreted with script --- delete results of old runs per new run
 Speedup of KENN layers
 Check Weight initialization
 Write the full training loop with base NN + KENN in one script
-
 
 NON-FUNCTIONAL
 Check multiple GPU support (Python Lightning library), alternatively DataParallel, DistributedDataParallel
@@ -31,8 +31,7 @@ log softmax or softmax ?
 Other T-norm implementations
 Choose another TBF function
 
----------------------------
-
+-------------------------------------
 
 NOTE ON PARALLELISM
 Use DistributedDataParallel instead of DataParallel (also model parallelism ), more efficient implementation

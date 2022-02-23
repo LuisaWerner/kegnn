@@ -14,6 +14,21 @@ class Logger(object):
         self.es_min_delta = args.es_min_delta
         self.es_patience = args.es_patience
 
+    def clear_folders(self, args):
+        # TODO
+        """
+        folder = '/results'
+        for filename in os.listdir(folder):
+            file_path = os.path.join(folder, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print('Failed to delete %s. Reason: %s' % (file_path, e))
+        """
+
     def add_result(self, train_losses: list,
                    train_accuracies: list,
                    valid_losses: list,
