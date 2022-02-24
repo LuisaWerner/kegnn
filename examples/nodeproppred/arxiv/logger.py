@@ -1,8 +1,23 @@
 import os
 import pickle
+import shutil
 
 import numpy as np
 import torch
+
+
+def reset_folders(args):
+    """ clears folders from past runs """
+
+    # clear tensorboard folders
+    if os.path.exists('./runs/' + args.dataset + '/' + args.mode):
+        shutil.rmtree('./runs/' + args.dataset + '/' + args.mode)
+
+    # clear result folders
+    if os.path.exists('results/' + args.dataset + '/' + args.mode):
+        shutil.rmtree('results/' + args.dataset + '/' + args.mode)
+
+    print(' Deleted old directories results and runs')
 
 
 class Logger(object):
@@ -41,9 +56,9 @@ class Logger(object):
         print(f"Results of run {run}:")
         print(f"Maximum accuracy on train: {max_train_acc}")
         print(f"Maximum accuracy on valid: {max_valid_acc}")
-        print(f"Accuracy on test: {self.results[self.name][run]['test_accuracy']}")
+        print(f"Accuracy on test: {self.results[self.name][run]['test_accuracy'][0]}")
 
-    def print_results(self, args, setting: str):
+    def print_results(self, args):
         """ Prints results after all runs """
         max_epoch_acc_train = []
         max_epoch_acc_valid = []
@@ -51,9 +66,9 @@ class Logger(object):
             max_epoch_acc_train.append(max(self.results[self.name][run]['train_accuracies']))
             max_epoch_acc_valid.append(max(self.results[self.name][run]['valid_accuracies']))
 
-        print(f"Results of {setting} training, {args.runs} runs, {args.epochs} epochs ")
-        print(f"Average accuracy over {args.runs} iterations  on train :{sum(max_epoch_acc_train)/args.runs}")
-        print(f"Average accuracy over {args.runs} iterations on valid :{sum(max_epoch_acc_valid)/args.runs}")
+        print(f"Results of {args.mode} training, {args.runs} runs, {args.epochs} epochs ")
+        print(f"Average accuracy over {args.runs} iterations  on train :{sum(max_epoch_acc_train) / args.runs}")
+        print(f"Average accuracy over {args.runs} iterations on valid :{sum(max_epoch_acc_valid) / args.runs}")
         print(f"Highest accuracy over train: {max(max_epoch_acc_train)}")
         print(f"Highest accuracy over valid: {max(max_epoch_acc_valid)}")
 
@@ -93,16 +108,11 @@ class Logger(object):
     def save_results(self, args):
         """ saves the results in separate files in a results directory """
 
-        if not os.path.exists('results'):
-            os.makedirs('results')
+        if not os.path.exists('results/' + args.dataset + '/' + args.mode):
+            os.makedirs('results/' + args.dataset + '/' + args.mode)
 
-        if args.inductive:
-            with open('./results/results_inductive_{}runs'.format(args.runs), 'wb') as output:
-                pickle.dump(self.results, output)
-
-        if args.transductive:
-            with open('./results/results_transductive_{}runs'.format(args.runs), 'wb') as output:
-                pickle.dump(self.results, output)
+        with open('./results/' + args.dataset + '/' + args.mode + '/results_{}runs'.format(args.runs), 'wb') as output:
+            pickle.dump(self.results, output)
 
     def callback_early_stopping(self, valid_accuracies):
         """

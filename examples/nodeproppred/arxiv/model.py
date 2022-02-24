@@ -150,7 +150,7 @@ class Standard(torch.nn.Module):
         return F.softmax(x, dim=-1)
 
 
-class KENN(MLP):
+class KENN(MLP):  # todo: dependent from args
     """ KENN with MLP (from ogb) as base NN"""
 
     def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
