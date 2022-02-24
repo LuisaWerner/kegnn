@@ -60,6 +60,7 @@ def load_and_preprocess(args):
         data_train = data.subgraph(split_idx['train'])
         data_valid = data.subgraph(split_idx['valid'])
         data_test = data.subgraph(split_idx['test'])
+
         data_train.adj_t = torch_sparse.SparseTensor(row=data_train.edge_index[0], col=data_train.edge_index[1],
                                                      sparse_sizes=(data.num_nodes, data.num_nodes))
         data_valid.adj_t = torch_sparse.SparseTensor(row=data_valid.edge_index[0], col=data_valid.edge_index[1],

@@ -55,6 +55,8 @@ def main():
     if args.mode == 'transductive':
 
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
+        data.to(device)
+        # split_idx.to(device)
 
         # INITIALIZE THE MODEL
         evaluator = Evaluator(name=args.dataset)
@@ -131,6 +133,8 @@ def main():
     if args.mode == 'inductive':
 
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
+        data.to(device)
+        # split_idx.to(device)
 
         # INITIALIZE THE MODEL
         evaluator = Evaluator(name=args.dataset)
