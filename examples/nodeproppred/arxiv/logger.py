@@ -1,8 +1,23 @@
 import os
 import pickle
+import shutil
 
 import numpy as np
 import torch
+
+
+def reset_folders(args):
+    """ clears folders from past runs """
+
+    # clear tensorboard folders
+    if os.path.exists('./runs/' + args.dataset + '/' + args.mode):
+        shutil.rmtree('./runs/' + args.dataset + '/' + args.mode)
+
+    # clear result folders
+    if os.path.exists('results/' + args.dataset + '/' + args.mode):
+        shutil.rmtree('results/' + args.dataset + '/' + args.mode)
+
+    print(' Deleted old directories results and runs')
 
 
 class Logger(object):
@@ -13,21 +28,6 @@ class Logger(object):
         self.results.setdefault(name, [])
         self.es_min_delta = args.es_min_delta
         self.es_patience = args.es_patience
-
-    def clear_folders(self, args):
-        # TODO
-        """
-        folder = '/results'
-        for filename in os.listdir(folder):
-            file_path = os.path.join(folder, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print('Failed to delete %s. Reason: %s' % (file_path, e))
-        """
 
     def add_result(self, train_losses: list,
                    train_accuracies: list,
@@ -56,7 +56,7 @@ class Logger(object):
         print(f"Results of run {run}:")
         print(f"Maximum accuracy on train: {max_train_acc}")
         print(f"Maximum accuracy on valid: {max_valid_acc}")
-        print(f"Accuracy on test: {self.results[self.name][run]['test_accuracy']}")
+        print(f"Accuracy on test: {self.results[self.name][run]['test_accuracy'][0]}")
 
     def print_results(self, args):
         """ Prints results after all runs """
@@ -108,16 +108,11 @@ class Logger(object):
     def save_results(self, args):
         """ saves the results in separate files in a results directory """
 
-        if not os.path.exists('results'):
-            os.makedirs('results')
+        if not os.path.exists('results/' + args.dataset + '/' + args.mode):
+            os.makedirs('results/' + args.dataset + '/' + args.mode)
 
-        if args.mode == 'inductive':
-            with open('./results/results_inductive_{}runs'.format(args.runs), 'wb') as output:
-                pickle.dump(self.results, output)
-
-        if args.mode == 'transductive':
-            with open('./results/results_transductive_{}runs'.format(args.runs), 'wb') as output:
-                pickle.dump(self.results, output)
+        with open('./results/' + args.dataset + '/' + args.mode + '/results_{}runs'.format(args.runs), 'wb') as output:
+            pickle.dump(self.results, output)
 
     def callback_early_stopping(self, valid_accuracies):
         """

@@ -3,8 +3,6 @@
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 
 import argparse
-import os
-import shutil
 
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -12,6 +10,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from RangeConstraint import RangeConstraint
 from generate_knowledge import generate_knowledge
 from logger import Logger
+from logger import reset_folders
 from model import KENN
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
@@ -20,19 +19,19 @@ from training_batch import train, test
 
 
 def main():
-    parser = argparse.ArgumentParser(description='OGBN-Arxiv (GNN)')
-    parser.add_argument('--dataset', type=str, default='ogbn-arxiv')
+    parser = argparse.ArgumentParser(description='Experiments - KENN with MLP ')
+    parser.add_argument('--dataset', type=str, default='ogbn-products')
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--log_steps', type=int, default=1)
-    parser.add_argument('--use_sage', action='store_true')
+    parser.add_argument('--use_sage', action='store_true')  # todo no effect
     parser.add_argument('--use_node_embedding', action='store_true')
     parser.add_argument('--num_layers', type=int, default=3)
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=500)  # 500
+    parser.add_argument('--epochs', type=int, default=2)  # 500
     parser.add_argument('--runs', type=int, default=2)  # 10
-    parser.add_argument('--model', type=str, default='MLP')
+    parser.add_argument('--model', type=str, default='MLP')  # todo : make dependent from args
     parser.add_argument('--mode', type=str, default='inductive')  # alternatively inductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
@@ -55,10 +54,6 @@ def main():
 
     if args.mode == 'transductive':
 
-        # restart run with empty dir for tensorboard
-        if os.path.exists('./runs/transductive'):
-            shutil.rmtree('./runs/transductive')
-
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
 
         # INITIALIZE THE MODEL
@@ -76,6 +71,7 @@ def main():
 
         model.to(device)
         logger = Logger(model.name, args)
+        reset_folders(args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
@@ -91,7 +87,7 @@ def main():
 
             clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
-            writer = SummaryWriter(f'runs/transductive/run{run}')
+            writer = SummaryWriter('runs/' + args.dataset + f'/transductive/run{run}')
             for epoch in range(args.epochs):
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
@@ -134,11 +130,8 @@ def main():
 
     if args.mode == 'inductive':
 
-        # restart run with empty dir for tensorboard
-        if os.path.exists('./runs/inductive'):
-            shutil.rmtree('./runs/inductive')
-
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
+
         # INITIALIZE THE MODEL
         evaluator = Evaluator(name=args.dataset)
         _ = generate_knowledge(data.num_classes)
@@ -154,6 +147,7 @@ def main():
 
         model.to(device)
         logger = Logger(model.name, args)
+        reset_folders(args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
@@ -169,7 +163,7 @@ def main():
 
             clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
-            writer = SummaryWriter(f'runs/inductive/run{run}')
+            writer = SummaryWriter('runs/' + args.dataset + f'/inductive/run{run}')
             for epoch in range(args.epochs):
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
