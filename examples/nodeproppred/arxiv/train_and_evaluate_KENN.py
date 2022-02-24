@@ -3,6 +3,10 @@
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 
 import argparse
+import os
+import shutil
+
+from torch.utils.tensorboard import SummaryWriter
 
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -78,6 +82,7 @@ def main():
 
         for run in range(args.runs):
             print(f"Run: {run} of {args.runs}")
+            writer = SummaryWriter(comment=f'transductive, run {run}')
             model.reset_parameters()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
             criterion = F.nll_loss
@@ -155,6 +160,7 @@ def main():
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
+            writer = SummaryWriter(comment=f'inductive, run {run}')
             print(f"Run: {run} of {args.runs}")
             model.reset_parameters()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
