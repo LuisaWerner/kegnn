@@ -17,6 +17,7 @@ Check if results are written correctly in files and interpreted with script --- 
 Speedup of KENN layers
 Check Weight initialization
 Write the full training loop with base NN + KENN in one script
+Transductive Training [IN PROGRESS]
 
 NON-FUNCTIONAL
 Check multiple GPU support (Python Lightning library), alternatively DataParallel, DistributedDataParallel
