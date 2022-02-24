@@ -1,3 +1,6 @@
+# Methods for Full-Batch Training
+# Not needed because if we want to train full batch, we can set batch size to > training size
+
 import torch
 import torch.nn.functional as F
 
