@@ -11,7 +11,7 @@ from RangeConstraint import RangeConstraint
 from generate_knowledge import generate_knowledge
 from logger import Logger
 from logger import reset_folders
-from model import KENN
+from model import GCN, MLP
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training import *
@@ -31,7 +31,7 @@ def main():
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=2)  # 500
     parser.add_argument('--runs', type=int, default=2)  # 10
-    parser.add_argument('--model', type=str, default='MLP')  # todo : make dependent from args
+    parser.add_argument('--model', type=str, default='GCN')  # todo : make dependent from args
     parser.add_argument('--mode', type=str, default='inductive')  # alternatively inductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
@@ -63,13 +63,18 @@ def main():
         _ = generate_knowledge(data.num_classes)
 
         print('Start Transductive Training')
-        model = KENN(knowledge_file='knowledge_base',
-                     in_channels=data.num_features,
-                     out_channels=data.num_classes,
-                     hidden_channels=args.hidden_channels,
-                     num_layers=args.num_layers,
-                     num_kenn_layers=args.num_kenn_layers,
-                     dropout=args.dropout)
+        if args.model == 'GCN':
+            model = GCN(in_channels=data.num_features,
+                        out_channels=data.num_classes,
+                        hidden_channels=args.hidden_channels,
+                        num_layers=args.num_layers,
+                        dropout=args.dropout)
+        else:
+            model = MLP(in_channels=data.num_features,
+                        out_channels=data.num_classes,
+                        hidden_channels=args.hidden_channels,
+                        num_layers=args.num_layers,
+                        dropout=args.dropout)
 
         model.to(device)
         logger = Logger(model.name, args)
@@ -88,7 +93,7 @@ def main():
             train_accuracies = []
             valid_accuracies = []
 
-            clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
+            # clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
             writer = SummaryWriter('runs/' + args.dataset + f'/transductive/run{run}')
             for epoch in range(args.epochs):
@@ -107,9 +112,9 @@ def main():
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
 
-                for i in range(args.num_kenn_layers):
-                    clause_weights_dict[f"clause_weights_{i}"].append(
-                        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
+                # for i in range(args.num_kenn_layers):
+                #    clause_weights_dict[f"clause_weights_{i}"].append(
+                #        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
 
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
@@ -123,8 +128,7 @@ def main():
                     break
 
             test_accuracy = test(model, test_batches, criterion, args, device)
-            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
-                              clause_weights_dict)
+            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run)
             # writer.flush()
             writer.close()
 
@@ -139,16 +143,21 @@ def main():
 
         # INITIALIZE THE MODEL
         evaluator = Evaluator(name=args.dataset)
-        _ = generate_knowledge(data.num_classes)
+        # _ = generate_knowledge(data.num_classes)
 
         print('Start Inductive Training')
-        model = KENN(knowledge_file='knowledge_base',
-                     in_channels=data.num_features,
-                     out_channels=data.num_classes,
-                     hidden_channels=args.hidden_channels,
-                     num_layers=args.num_layers,
-                     num_kenn_layers=args.num_kenn_layers,
-                     dropout=args.dropout)
+        if args.model == 'GCN':
+            model = GCN(in_channels=data.num_features,
+                        out_channels=data.num_classes,
+                        hidden_channels=args.hidden_channels,
+                        num_layers=args.num_layers,
+                        dropout=args.dropout)
+        else:
+            model = MLP(in_channels=data.num_features,
+                        out_channels=data.num_classes,
+                        hidden_channels=args.hidden_channels,
+                        num_layers=args.num_layers,
+                        dropout=args.dropout)
 
         model.to(device)
         logger = Logger(model.name, args)
@@ -167,7 +176,7 @@ def main():
             train_accuracies = []
             valid_accuracies = []
 
-            clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
+            # clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
             writer = SummaryWriter('runs/' + args.dataset + f'/inductive/run{run}')
             for epoch in range(args.epochs):
@@ -186,9 +195,9 @@ def main():
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
 
-                for i in range(args.num_kenn_layers):
-                    clause_weights_dict[f"clause_weights_{i}"].append(
-                        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
+                # for i in range(args.num_kenn_layers):
+                #    clause_weights_dict[f"clause_weights_{i}"].append(
+                #        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
 
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
@@ -202,8 +211,7 @@ def main():
                     break
 
             test_accuracy = test(model, test_batches, criterion, args, device)
-            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
-                              clause_weights_dict)
+            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run)
             # writer.flush()
             writer.close()
 
