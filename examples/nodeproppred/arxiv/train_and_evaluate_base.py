@@ -8,10 +8,9 @@ import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from RangeConstraint import RangeConstraint
-from generate_knowledge import generate_knowledge
 from logger import Logger
 from logger import reset_folders
-from model import GCN, MLP
+from model import GCN, MLP, SAGE
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training import *
@@ -29,9 +28,9 @@ def main():
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=2)  # 500
-    parser.add_argument('--runs', type=int, default=2)  # 10
-    parser.add_argument('--model', type=str, default='GCN')  # todo : make dependent from args
+    parser.add_argument('--epochs', type=int, default=300)  # 500
+    parser.add_argument('--runs', type=int, default=1)  # 10
+    parser.add_argument('--model', type=str, default='SAGE')  # todo : make dependent from args
     parser.add_argument('--mode', type=str, default='inductive')  # alternatively inductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
@@ -39,7 +38,7 @@ def main():
     parser.add_argument('--range_constraint_lower', type=float, default=0)
     parser.add_argument('--range_constraint_upper', type=float, default=500)
     parser.add_argument('--es_min_delta', type=float, default=0.001)
-    parser.add_argument('--es_patience', type=int, default=3)
+    parser.add_argument('--es_patience', type=int, default=20)  # changed
     parser.add_argument('--sampling_neighbor_size', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--full_batch', type=bool, default=False)
@@ -60,15 +59,23 @@ def main():
 
         # INITIALIZE THE MODEL
         evaluator = Evaluator(name=args.dataset)
-        _ = generate_knowledge(data.num_classes)
+        # _ = generate_knowledge(data.num_classes)
 
         print('Start Transductive Training')
-        if args.model == 'GCN':
+        if args.model == 'SAGE':
+            model = SAGE(in_channels=data.num_features,
+                         out_channels=data.num_classes,
+                         hidden_channels=args.hidden_channels,
+                         num_layers=args.num_layers,
+                         dropout=args.dropout)
+
+        elif args.model == 'GCN':
             model = GCN(in_channels=data.num_features,
                         out_channels=data.num_classes,
                         hidden_channels=args.hidden_channels,
                         num_layers=args.num_layers,
                         dropout=args.dropout)
+
         else:
             model = MLP(in_channels=data.num_features,
                         out_channels=data.num_classes,
@@ -83,7 +90,6 @@ def main():
 
         for run in range(args.runs):
             print(f"Run: {run} of {args.runs}")
-            writer = SummaryWriter(comment=f'transductive, run {run}')
             model.reset_parameters()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
             criterion = F.nll_loss
@@ -92,8 +98,6 @@ def main():
             valid_losses = []
             train_accuracies = []
             valid_accuracies = []
-
-            # clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
             writer = SummaryWriter('runs/' + args.dataset + f'/transductive/run{run}')
             for epoch in range(args.epochs):
@@ -112,10 +116,6 @@ def main():
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
 
-                # for i in range(args.num_kenn_layers):
-                #    clause_weights_dict[f"clause_weights_{i}"].append(
-                #        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
-
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
@@ -129,7 +129,6 @@ def main():
 
             test_accuracy = test(model, test_batches, criterion, args, device)
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run)
-            # writer.flush()
             writer.close()
 
         logger.print_results(args)
@@ -143,15 +142,22 @@ def main():
 
         # INITIALIZE THE MODEL
         evaluator = Evaluator(name=args.dataset)
-        # _ = generate_knowledge(data.num_classes)
 
         print('Start Inductive Training')
-        if args.model == 'GCN':
+        if args.model == 'SAGE':
+            model = SAGE(in_channels=data.num_features,
+                         out_channels=data.num_classes,
+                         hidden_channels=args.hidden_channels,
+                         num_layers=args.num_layers,
+                         dropout=args.dropout)
+
+        elif args.model == 'GCN':
             model = GCN(in_channels=data.num_features,
                         out_channels=data.num_classes,
                         hidden_channels=args.hidden_channels,
                         num_layers=args.num_layers,
                         dropout=args.dropout)
+
         else:
             model = MLP(in_channels=data.num_features,
                         out_channels=data.num_classes,
@@ -165,7 +171,6 @@ def main():
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
-            writer = SummaryWriter(comment=f'inductive, run {run}')
             print(f"Run: {run} of {args.runs}")
             model.reset_parameters()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -175,8 +180,6 @@ def main():
             valid_losses = []
             train_accuracies = []
             valid_accuracies = []
-
-            # clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
 
             writer = SummaryWriter('runs/' + args.dataset + f'/inductive/run{run}')
             for epoch in range(args.epochs):
@@ -195,10 +198,6 @@ def main():
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
 
-                # for i in range(args.num_kenn_layers):
-                #    clause_weights_dict[f"clause_weights_{i}"].append(
-                #        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
-
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
@@ -212,7 +211,6 @@ def main():
 
             test_accuracy = test(model, test_batches, criterion, args, device)
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run)
-            # writer.flush()
             writer.close()
 
         logger.print_results(args)
