@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=10)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='KENN_GCN')
-    parser.add_argument('--mode', type=str, default='inductive')  # inductive/transductive
+    parser.add_argument('--mode', type=str, default='transductive')  # inductive/transductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
     parser.add_argument('--num_kenn_layers', type=int, default=3)
@@ -52,6 +52,7 @@ def main():
     torch_geometric.seed_everything(args.seed)
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
+    print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
     if args.mode == 'transductive':
 
@@ -63,6 +64,8 @@ def main():
 
         print('Start Transductive Training')
         model = get_model(data, args).to(device)
+
+        print(f'model on cuda: {next(model.parameters()).is_cuda}')
         logger = Logger(model.name, args)
         reset_folders(args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)

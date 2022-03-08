@@ -24,6 +24,7 @@ def train(model, train_loader, optimizer, device, criterion, args, range_constra
         optimizer.zero_grad()
         # batch = batch.to(device, 'edge_index')
         batch = batch.to(device)
+        print(f'batch.is_cuda: {batch.is_cuda}')
         out = model(batch.x, batch.edge_index, batch.relations)[:args.batch_size]
         loss = criterion(out, batch.y.squeeze(1)[:args.batch_size])
         loss.backward()
