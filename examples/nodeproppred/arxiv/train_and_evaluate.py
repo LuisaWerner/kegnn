@@ -56,14 +56,13 @@ def main():
     if args.mode == 'transductive':
 
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
-        data.to(device)
+        # data = data.to(device)
 
         evaluator = Evaluator(name=args.dataset)
         _ = generate_knowledge(data.num_classes)
 
         print('Start Transductive Training')
-        model = get_model(data, args)
-        model.to(device)
+        model = get_model(data, args).to(device)
         logger = Logger(model.name, args)
         reset_folders(args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
@@ -128,13 +127,13 @@ def main():
     if args.mode == 'inductive':
 
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
-        data.to(device)
+        # data = data.to(device)
 
         evaluator = Evaluator(name=args.dataset)
         _ = generate_knowledge(data.num_classes)
 
         print('Start Inductive Training')
-        model = get_model(data, args)
+        model = get_model(data, args).to(device)
         logger = Logger(model.name, args)
         reset_folders(args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
