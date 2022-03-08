@@ -21,8 +21,9 @@ def reset_folders(args):
 
 
 class Logger(object):
+    """ handles metrics during training """
+
     def __init__(self, name, args):
-        # todo: change for several models
         self.name = name
         self.results = {}
         self.results.setdefault(name, [])
@@ -51,6 +52,7 @@ class Logger(object):
 
     def print_results_run(self, run: int):
         """ Prints results after all epochs per run """
+
         max_valid_acc = max(self.results[self.name][run]['valid_accuracies'])
         max_train_acc = max(self.results[self.name][run]['train_accuracies'])
         print(f"Results of run {run}:")
@@ -74,6 +76,7 @@ class Logger(object):
 
     def print_statistics(self, run=None):
         """ Original method, not used """
+
         if run is not None:
             result = 100 * torch.tensor(self.results[run])
             argmax = result[:, 1].argmax().item()
@@ -124,6 +127,7 @@ class Logger(object):
 
         """
         epoch = len(valid_accuracies)
+
         # no early stopping for 2 * patience epochs
         if epoch // self.es_patience < 2:
             return False

@@ -4,11 +4,11 @@ from torch_geometric.loader import NeighborLoader
 from ogb.nodeproppred import PygNodePropPredDataset
 
 
-# TODO: Do we need the Sparse Matrices?
-
 def load_and_preprocess(args):
     """
     loads data and create batches
+    In the inductive setting, the data object is reduced before to avoid links between
+    different subsets. Only neighbors from the respective subset are sampled
     @param args: Argument Parser object specified by user
     @return train_loader, valid_loader, test_loader: train/valid/test set split into batches,
     samples neighbors specified in args in an transductive
