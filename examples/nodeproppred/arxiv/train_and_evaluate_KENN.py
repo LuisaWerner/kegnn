@@ -3,10 +3,6 @@
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 
 import argparse
-import os
-import shutil
-
-from torch.utils.tensorboard import SummaryWriter
 
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -24,7 +20,7 @@ from training_batch import train, test
 
 def main():
     parser = argparse.ArgumentParser(description='Experiments - KENN with MLP ')
-    parser.add_argument('--dataset', type=str, default='ogbn-products')
+    parser.add_argument('--dataset', type=str, default='ogbn-arxiv')
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--log_steps', type=int, default=1)
     parser.add_argument('--use_sage', action='store_true')  # todo no effect
@@ -33,7 +29,7 @@ def main():
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=2)  # 500
+    parser.add_argument('--epochs', type=int, default=500)  # 500
     parser.add_argument('--runs', type=int, default=2)  # 10
     parser.add_argument('--model', type=str, default='MLP')  # todo : make dependent from args
     parser.add_argument('--mode', type=str, default='inductive')  # alternatively inductive
@@ -42,10 +38,11 @@ def main():
     parser.add_argument('--num_kenn_layers', type=int, default=3)
     parser.add_argument('--range_constraint_lower', type=float, default=0)
     parser.add_argument('--range_constraint_upper', type=float, default=500)
+    parser.add_argument('--es_enabled', type=bool, default=False)
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=3)
     parser.add_argument('--sampling_neighbor_size', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=1000)
+    parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--seed', type=int, default=100)
 
@@ -123,7 +120,7 @@ def main():
                           f'Valid: {100 * v_accuracy:.2f}% ')
 
                 # early stopping
-                if logger.callback_early_stopping(valid_accuracies):
+                if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
                     break
 
             test_accuracy = test(model, test_batches, criterion, args, device)
@@ -202,7 +199,7 @@ def main():
                           f'Valid: {100 * v_accuracy:.2f}% ')
 
                 # early stopping
-                if logger.callback_early_stopping(valid_accuracies):
+                if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
                     break
 
             test_accuracy = test(model, test_batches, criterion, args, device)
