@@ -109,7 +109,7 @@ class MLP(torch.nn.Module):
 
     #def forward(self, x, adj_t=None, relations=None):  # The None is needed for KENN heritage
     #def forward(self, x, adj_t, relations):
-    def forward(self, x, adj_t, relations):
+    def forward(self, x, adj_t):
         for i, lin in enumerate(self.lins[:-1]):
             x = lin(x)
             x = self.bns[i](x)
