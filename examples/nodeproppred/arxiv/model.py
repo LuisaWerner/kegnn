@@ -1,13 +1,4 @@
-""" Put here all the defined models for KENN/Base NN """
-
-"""
--MLP: ogb baseline
--GCN: ogb baseline
--GraphSAGE: ogb baseline 
--Standard: base neural network architecture propoesd by KENN - still strange results
---> I would suggest not to use this as a baseline anymore but the ogb baselines 
-
-"""
+""" Base Neural Network and Knowledge Enhanced Models """
 
 import torch
 import torch.nn.functional as F
@@ -16,23 +7,82 @@ from torch_geometric.nn import GCNConv, SAGEConv
 from parsers import *
 
 
+def get_model(data, args):
+    """ instantiates the model specified in args """
+
+    if args.model == 'MLP':
+        model = MLP(in_channels=data.num_features,
+                    out_channels=data.num_classes,
+                    hidden_channels=args.hidden_channels,
+                    num_layers=args.num_layers,
+                    dropout=args.dropout)
+
+    elif args.model == 'GCN':
+        model = GCN(in_channels=data.num_features,
+                    out_channels=data.num_classes,
+                    hidden_channels=args.hidden_channels,
+                    num_layers=args.num_layers,
+                    dropout=args.dropout)
+
+    elif args.model == 'SAGE':
+        model = SAGE(in_channels=data.num_features,
+                     out_channels=data.num_classes,
+                     hidden_channels=args.hidden_channels,
+                     num_layers=args.num_layers,
+                     dropout=args.dropout)
+
+    elif args.model == 'KENN_MLP':
+        model = KennMlp(knowledge_file='knowledge_base',
+                        in_channels=data.num_features,
+                        out_channels=data.num_classes,
+                        hidden_channels=args.hidden_channels,
+                        num_layers=args.num_layers,
+                        num_kenn_layers=args.num_kenn_layers,
+                        dropout=args.dropout)
+
+    elif args.model == 'KENN_GCN':
+        model = KennGcn(knowledge_file='knowledge_base',
+                        in_channels=data.num_features,
+                        out_channels=data.num_classes,
+                        hidden_channels=args.hidden_channels,
+                        num_layers=args.num_layers,
+                        num_kenn_layers=args.num_kenn_layers,
+                        dropout=args.dropout)
+
+    elif args.model == 'KENN_SAGE':
+        model = KennSage(knowledge_file='knowledge_base',
+                         in_channels=data.num_features,
+                         out_channels=data.num_classes,
+                         hidden_channels=args.hidden_channels,
+                         num_layers=args.num_layers,
+                         num_kenn_layers=args.num_kenn_layers,
+                         dropout=args.dropout)
+    else:
+        print(f'Value Error: {args.model} does not exist. Choose a model in the list: GCN, SAGE, MLP, KENN_GCN, '
+              f'KENN_SAGE, KENN_MLP')
+        model = None
+
+    return model
+
+
 class GCN(torch.nn.Module):
     """
     GCN module baseline given by OGB
     """
+
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
         super(GCN, self).__init__()
         self.name = 'GCN'
         self.convs = torch.nn.ModuleList()
-        self.convs.append(GCNConv(in_channels, hidden_channels, cached=True))
+        self.convs.append(GCNConv(in_channels, hidden_channels))
         self.bns = torch.nn.ModuleList()
         self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
         for _ in range(num_layers - 2):
             self.convs.append(
-                GCNConv(hidden_channels, hidden_channels, cached=True))
+                GCNConv(hidden_channels, hidden_channels))
             self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-        self.convs.append(GCNConv(hidden_channels, out_channels, cached=True))
+        self.convs.append(GCNConv(hidden_channels, out_channels))
 
         self.dropout = dropout
 
@@ -42,13 +92,13 @@ class GCN(torch.nn.Module):
         for bn in self.bns:
             bn.reset_parameters()
 
-    def forward(self, x, adj_t, relations):
+    def forward(self, x, edge_index, relations):
         for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, adj_t)
+            x = conv(x, edge_index)
             x = self.bns[i](x)
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.convs[-1](x, adj_t)
+        x = self.convs[-1](x, edge_index)
         return x.log_softmax(dim=-1)
 
 
@@ -76,13 +126,13 @@ class SAGE(torch.nn.Module):
         for bn in self.bns:
             bn.reset_parameters()
 
-    def forward(self, x, adj_t, relations):
+    def forward(self, x, edge_index, relations):
         for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, adj_t)
+            x = conv(x, edge_index)
             x = self.bns[i](x)
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.convs[-1](x, adj_t)
+        x = self.convs[-1](x, edge_index)
         return x.log_softmax(dim=-1)
 
 
@@ -110,9 +160,7 @@ class MLP(torch.nn.Module):
         for bn in self.bns:
             bn.reset_parameters()
 
-    #def forward(self, x, adj_t=None, relations=None):  # The None is needed for KENN heritage
-    #def forward(self, x, adj_t, relations):
-    def forward(self, x, adj_t, relations):
+    def forward(self, x, edge_index, relations):
         for i, lin in enumerate(self.lins[:-1]):
             x = lin(x)
             x = self.bns[i](x)
@@ -125,6 +173,8 @@ class MLP(torch.nn.Module):
 
 class Standard(torch.nn.Module):
     """ Original Base Neural Network by KENN paper """
+
+    # todo: make sure that the right parameters are used
 
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
@@ -141,7 +191,7 @@ class Standard(torch.nn.Module):
         for layer in self.lin_layers:
             layer.reset_parameters()
 
-    def forward(self, x, adj_t):
+    def forward(self, x, edge_index):
         for i, lin in enumerate(self.lin_layers[:-1]):
             x = lin(x)
             x = F.relu(x)
@@ -150,14 +200,15 @@ class Standard(torch.nn.Module):
         return F.softmax(x, dim=-1)
 
 
-class KENN(MLP):  # todo: dependent from args
-    """ KENN with MLP (from ogb) as base NN"""
+class KennGcn(GCN):
+    """ KENN with GCN as base NN"""
 
     def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
                  explainer_object=None):
-        super(KENN, self).__init__(in_channels=in_channels, out_channels=out_channels, hidden_channels=hidden_channels,
-                                   num_layers=num_layers, dropout=dropout)
-        self.name = 'KENN_MLP'  # str('KENN_' + super(KENN, self).name)
+        super(KennGcn, self).__init__(in_channels=in_channels, out_channels=out_channels,
+                                      hidden_channels=hidden_channels,
+                                      num_layers=num_layers, dropout=dropout)
+        self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.explainer_object = explainer_object
         self.kenn_layers = torch.nn.ModuleList()
@@ -166,16 +217,77 @@ class KENN(MLP):  # todo: dependent from args
             self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file, explainer_object=explainer_object))
 
     def reset_parameters(self):
-        super().reset_parameters() # should call reset parameter function of MLP
+        super().reset_parameters()  # should call reset parameter function of MLP
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
-    def forward(self, x, adj_t, relations):
-        z = super(KENN, self).forward(x, adj_t, relations)
+    def forward(self, x, edge_index, relations):
+        z = super(KennGcn, self).forward(x, edge_index, relations)
 
         # call KENN layers
         for layer in self.kenn_layers:
+            z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
-            z, _ = layer(unary=z, adj=adj_t, binary=relations)
+        return F.softmax(z, dim=-1)
+
+
+class KennMlp(MLP):
+    """ KENN with MLP (from ogb) as base NN"""
+
+    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
+                 explainer_object=None):
+        super(KennMlp, self).__init__(in_channels=in_channels, out_channels=out_channels,
+                                      hidden_channels=hidden_channels,
+                                      num_layers=num_layers, dropout=dropout)
+        self.name = str('KENN_' + self.name)
+        self.knowledge_file = knowledge_file
+        self.explainer_object = explainer_object
+        self.kenn_layers = torch.nn.ModuleList()
+
+        for _ in range(num_kenn_layers):
+            self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file, explainer_object=explainer_object))
+
+    def reset_parameters(self):
+        super().reset_parameters()
+        for layer in self.kenn_layers:
+            layer.reset_parameters()
+
+    def forward(self, x, edge_index, relations):
+        z = super(KennMlp, self).forward(x, edge_index, relations)
+
+        # call KENN layers
+        for layer in self.kenn_layers:
+            z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
+
+        return F.softmax(z, dim=-1)
+
+
+class KennSage(SAGE):
+    """ KENN with GraphSage (from ogb) as base NN"""
+
+    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
+                 explainer_object=None):
+        super(KennSage, self).__init__(in_channels=in_channels, out_channels=out_channels,
+                                       hidden_channels=hidden_channels,
+                                       num_layers=num_layers, dropout=dropout)
+        self.name = str('KENN_' + self.name)
+        self.knowledge_file = knowledge_file
+        self.explainer_object = explainer_object
+        self.kenn_layers = torch.nn.ModuleList()
+
+        for _ in range(num_kenn_layers):
+            self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file, explainer_object=explainer_object))
+
+    def reset_parameters(self):
+        super().reset_parameters()  # should call reset parameter function of MLP
+        for layer in self.kenn_layers:
+            layer.reset_parameters()
+
+    def forward(self, x, edge_index, relations):
+        z = super(KennSage, self).forward(x, edge_index, relations)
+
+        # call KENN layers
+        for layer in self.kenn_layers:
+            z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
         return F.softmax(z, dim=-1)

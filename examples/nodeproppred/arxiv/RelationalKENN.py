@@ -1,8 +1,8 @@
-# TODO: rewrite to Torch
 import torch
-from KnowledgeEnhancer import KnowledgeEnhancer
-from Join import Join
+
 from GroupBy import GroupBy
+from Join import Join
+from KnowledgeEnhancer import KnowledgeEnhancer
 
 
 class RelationalKENN(torch.nn.Module):
@@ -76,23 +76,18 @@ class RelationalKENN(torch.nn.Module):
             for ce in self.binary_ke.clause_enhancers:
                 ce.reset_parameters()
 
-
-    def forward(self, unary, binary, adj):
+    def forward(self, unary, binary, edge_index):
         """Forward step of Kenn model for relational data.
         :param unary: the tensor with unary predicates pre-activations
         :param binary: the tensor with binary predicates pre-activations
-        :param adj - Adjacency Matrix as torch_sparse.SparseTensor
-         adj.row (index1)  a vector containing the indices of the first object
-         of the pair referred by binary tensor
-         adj.col (index2) a vector containing the indices of the second object
-         of the pair referred by binary tensor
+        :param edge_index: describes the first and second component of the link
         """
 
-        index1 = adj.storage._row
-        index2 = adj.storage._col
+        index1 = edge_index[0]
+        index2 = edge_index[1]
 
         if len(self.unary_clauses) != 0:
-            deltas_sum, deltas_u_list = self.unary_ke(unary) # todo call of knowledge enhancer
+            deltas_sum, deltas_u_list = self.unary_ke(unary)  # todo call of knowledge enhancer
             u = unary + deltas_sum
         else:
             u = unary
