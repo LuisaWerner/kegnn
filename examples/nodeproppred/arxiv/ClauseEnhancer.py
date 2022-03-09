@@ -22,7 +22,7 @@ class ClauseEnhancer(torch.nn.Module):
         :param initial_clause_weight: the initial sign to the clause weight. Used if the clause weight is learned.
         """
 
-        super(ClauseEnhancer, self).__init__()
+        super().__init__()
         string = clause_string.split(':')
         self.original_string = string[1]
         self.string = string[1].replace(
@@ -36,6 +36,8 @@ class ClauseEnhancer(torch.nn.Module):
             self.hard_clause = True
 
         self.hard_clause = string[0] != '_'
+
+        self.save_training_data = save_training_data
 
         literals_list = string[1].split(',')
         self.number_of_literals = len(literals_list)
@@ -55,25 +57,14 @@ class ClauseEnhancer(torch.nn.Module):
             self.scatter_literal_indices.append([literal_index])
             signs.append(sign)
 
-        self.signs = torch.Tensor(signs)
-        self.save_training_data = save_training_data
-        self.cuda()
-
-        """self.clause_weight = self.add_weight(
-            name='kernel',
-            shape=(1, 1),
-            initializer=tf.keras.initializers.Constant(
-                value=self.initial_weight),
-            constraint=RangeConstraint(),
-            trainable=not self.hard_clause)
-        """
-        # todo self.clause_weight = [...]
+        # self.signs = torch.Tensor(signs)
+        self.register_buffer('signs', torch.Tensor(signs))
         self.register_parameter(name="clause_weight",
                                 param=torch.nn.Parameter(torch.Tensor([self.initial_weight]),
                                                          requires_grad=not self.hard_clause))
 
     def reset_parameters(self):
-        # todo: check if this really works as it should
+        # todo: check if this really works as it should, don't know if we even need to call this method
         """ resets clause weights after one iteration back to the initial clause weight """
         self.clause_weight = torch.nn.Parameter(torch.Tensor([self.initial_weight]), requires_grad=not self.hard_clause)
 
@@ -85,6 +76,7 @@ class ClauseEnhancer(torch.nn.Module):
         selected_predicates = inputs[:, self.gather_literal_indices]
         print(f'ClauseEnhancer: selected predicates on cuda? {selected_predicates.is_cuda}')
         print(f'ClauseEnhancer: self.signs on cuda? {self.signs.is_cuda}')
+        #self.signs = self.signs.cuda() # todo: comment in
         clause_matrix = mul(selected_predicates, self.signs)
 
         return clause_matrix

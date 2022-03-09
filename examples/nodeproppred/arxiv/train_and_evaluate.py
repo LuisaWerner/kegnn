@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as F
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
+from torchsummary import summary
 
 from RangeConstraint import RangeConstraint
 from generate_knowledge import generate_knowledge
@@ -43,7 +44,7 @@ def main():
     parser.add_argument('--es_patience', type=int, default=3)
     parser.add_argument('--sampling_neighbor_size', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1000)
-    parser.add_argument('--full_batch', type=bool, default=True)
+    parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--seed', type=int, default=100)
 
     args = parser.parse_args()
@@ -63,17 +64,19 @@ def main():
         _ = generate_knowledge(data.num_classes)
 
         print('Start Transductive Training')
-        model = get_model(data, args).to(device)
 
-        print(f'model on cuda: {next(model.parameters()).is_cuda}')
-        logger = Logger(model.name, args)
+        # logger = Logger(model.name, args)
         reset_folders(args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
             print(f"Run: {run} of {args.runs}")
             writer = SummaryWriter('runs/' + args.dataset + f'/transductive/run{run}')
-            model.reset_parameters()
+            # model.reset_parameters()
+            # model = get_model(data, args).to(device)
+            model = get_model(data, args).to(device)
+            summary(model)
+            print(f'model on cuda: {next(model.parameters()).is_cuda}')
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
             criterion = F.nll_loss
 
@@ -116,16 +119,18 @@ def main():
                           f'Valid: {100 * v_accuracy:.2f}% ')
 
                 # early stopping
-                if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
-                    break
+                # if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
+                #    break
 
             test_accuracy = test(model, test_batches, criterion, args, device)
-            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
-                              clause_weights_dict)
+            # logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
+            #                  clause_weights_dict)
             writer.close()
 
-        logger.print_results(args)
-        logger.save_results(args)
+        # logger.print_results(args)
+        # logger.save_results(args)
+
+    # todo: if things work, adapt for inductive and put logger back
 
     if args.mode == 'inductive':
 
