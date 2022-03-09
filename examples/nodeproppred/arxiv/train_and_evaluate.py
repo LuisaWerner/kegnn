@@ -29,7 +29,7 @@ def main():
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=10)  # 500
+    parser.add_argument('--epochs', type=int, default=1)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='KENN_GCN')
     parser.add_argument('--mode', type=str, default='transductive')  # inductive/transductive
@@ -43,7 +43,7 @@ def main():
     parser.add_argument('--es_patience', type=int, default=3)
     parser.add_argument('--sampling_neighbor_size', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1000)
-    parser.add_argument('--full_batch', type=bool, default=False)
+    parser.add_argument('--full_batch', type=bool, default=True)
     parser.add_argument('--seed', type=int, default=100)
 
     args = parser.parse_args()

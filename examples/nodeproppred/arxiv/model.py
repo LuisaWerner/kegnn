@@ -9,7 +9,19 @@ from parsers import *
 
 def get_model(data, args):
     """ instantiates the model specified in args """
+    """
+    if args.model == 'MLP':
+        _class = MLP
+    elif args.model == 'GCN':
+        _class = GCN
 
+    model = _class(in_channels=data.num_features,
+                out_channels=data.num_classes,
+                hidden_channels=args.hidden_channels,
+                num_layers=args.num_layers,
+                dropout=args.dropout)
+
+    """
     if args.model == 'MLP':
         model = MLP(in_channels=data.num_features,
                     out_channels=data.num_classes,

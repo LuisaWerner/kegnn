@@ -11,7 +11,6 @@ class Join(torch.nn.Module):
         super(Join, self).__init__()
 
     def forward(self, unary, binary, index1, index2):
-        # todo: see if this runs
         """Join the unary and binary tensors.
 
         :param unary: the tensor with unary predicates pre-activations
