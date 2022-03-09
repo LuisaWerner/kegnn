@@ -9,66 +9,45 @@ from parsers import *
 
 def get_model(data, args):
     """ instantiates the model specified in args """
-    """
-    if args.model == 'MLP':
-        _class = MLP
-    elif args.model == 'GCN':
-        _class = GCN
 
-    model = _class(in_channels=data.num_features,
-                out_channels=data.num_classes,
-                hidden_channels=args.hidden_channels,
-                num_layers=args.num_layers,
-                dropout=args.dropout)
+    # Base neural network
+    if not args.model.startswith('KENN'):
+        if args.model == 'MLP':
+            _class = MLP
+        elif args.model == 'GCN':
+            _class = GCN
+        elif args.model == 'SAGE':
+            _class = SAGE
+        else:
+            _class = 'MLP'
+            print('Unknown model, set to MLP')
 
-    """
-    if args.model == 'MLP':
-        model = MLP(in_channels=data.num_features,
-                    out_channels=data.num_classes,
-                    hidden_channels=args.hidden_channels,
-                    num_layers=args.num_layers,
-                    dropout=args.dropout)
+        model = _class(in_channels=data.num_features,
+                       out_channels=data.num_classes,
+                       hidden_channels=args.hidden_channels,
+                       num_layers=args.num_layers,
+                       dropout=args.dropout)
 
-    elif args.model == 'GCN':
-        model = GCN(in_channels=data.num_features,
-                    out_channels=data.num_classes,
-                    hidden_channels=args.hidden_channels,
-                    num_layers=args.num_layers,
-                    dropout=args.dropout)
+    # todo make conditional inheritage
+    # KENN network
+    elif args.model.startswith('KENN'):
+        if args.model == 'KENN_MLP':
+            _class = KENN_MLP
+        elif args.model == 'KENN_GCN':
+            _class = KENN_GCN
+        elif args.model == 'KENN_SAGE':
+            _class = KENN_SAGE
+        else:
+            _class = 'MLP'
+            print('Unknown model, set to MLP')
 
-    elif args.model == 'SAGE':
-        model = SAGE(in_channels=data.num_features,
-                     out_channels=data.num_classes,
-                     hidden_channels=args.hidden_channels,
-                     num_layers=args.num_layers,
-                     dropout=args.dropout)
-
-    elif args.model == 'KENN_MLP':
-        model = KennMlp(knowledge_file='knowledge_base',
-                        in_channels=data.num_features,
-                        out_channels=data.num_classes,
-                        hidden_channels=args.hidden_channels,
-                        num_layers=args.num_layers,
-                        num_kenn_layers=args.num_kenn_layers,
-                        dropout=args.dropout)
-
-    elif args.model == 'KENN_GCN':
-        model = KennGcn(knowledge_file='knowledge_base',
-                        in_channels=data.num_features,
-                        out_channels=data.num_classes,
-                        hidden_channels=args.hidden_channels,
-                        num_layers=args.num_layers,
-                        num_kenn_layers=args.num_kenn_layers,
-                        dropout=args.dropout)
-
-    elif args.model == 'KENN_SAGE':
-        model = KennSage(knowledge_file='knowledge_base',
-                         in_channels=data.num_features,
-                         out_channels=data.num_classes,
-                         hidden_channels=args.hidden_channels,
-                         num_layers=args.num_layers,
-                         num_kenn_layers=args.num_kenn_layers,
-                         dropout=args.dropout)
+        model = _class(knowledge_file='knowledge_base',
+                       in_channels=data.num_features,
+                       out_channels=data.num_classes,
+                       hidden_channels=args.hidden_channels,
+                       num_layers=args.num_layers,
+                       num_kenn_layers=args.num_kenn_layers,
+                       dropout=args.dropout)
     else:
         print(f'Value Error: {args.model} does not exist. Choose a model in the list: GCN, SAGE, MLP, KENN_GCN, '
               f'KENN_SAGE, KENN_MLP')
@@ -84,7 +63,7 @@ class GCN(torch.nn.Module):
 
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
-        super(GCN, self).__init__()
+        super().__init__()
         self.name = 'GCN'
         self.convs = torch.nn.ModuleList()
         self.convs.append(GCNConv(in_channels, hidden_channels))
@@ -119,7 +98,7 @@ class SAGE(torch.nn.Module):
 
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
-        super(SAGE, self).__init__()
+        super().__init__()
         self.name = 'SAGE'
         self.convs = torch.nn.ModuleList()
         self.convs.append(SAGEConv(in_channels, hidden_channels))
@@ -153,7 +132,7 @@ class MLP(torch.nn.Module):
 
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
-        super(MLP, self).__init__()
+        super().__init__()
         self.name = 'MLP'
         self.lins = torch.nn.ModuleList()
         self.lins.append(torch.nn.Linear(in_channels, hidden_channels))
@@ -212,14 +191,14 @@ class Standard(torch.nn.Module):
         return F.softmax(x, dim=-1)
 
 
-class KennGcn(GCN):
+class KENN_GCN(GCN):
     """ KENN with GCN as base NN"""
 
     def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
                  explainer_object=None):
-        super(KennGcn, self).__init__(in_channels=in_channels, out_channels=out_channels,
-                                      hidden_channels=hidden_channels,
-                                      num_layers=num_layers, dropout=dropout)
+        super().__init__(in_channels=in_channels, out_channels=out_channels,
+                         hidden_channels=hidden_channels,
+                         num_layers=num_layers, dropout=dropout)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.explainer_object = explainer_object
@@ -234,7 +213,7 @@ class KennGcn(GCN):
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations):
-        z = super(KennGcn, self).forward(x, edge_index, relations)
+        z = super().forward(x, edge_index, relations)
 
         # call KENN layers
         for layer in self.kenn_layers:
@@ -243,14 +222,14 @@ class KennGcn(GCN):
         return F.softmax(z, dim=-1)
 
 
-class KennMlp(MLP):
+class KENN_MLP(MLP):
     """ KENN with MLP (from ogb) as base NN"""
 
     def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
                  explainer_object=None):
-        super(KennMlp, self).__init__(in_channels=in_channels, out_channels=out_channels,
-                                      hidden_channels=hidden_channels,
-                                      num_layers=num_layers, dropout=dropout)
+        super().__init__(in_channels=in_channels, out_channels=out_channels,
+                         hidden_channels=hidden_channels,
+                         num_layers=num_layers, dropout=dropout)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.explainer_object = explainer_object
@@ -265,7 +244,7 @@ class KennMlp(MLP):
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations):
-        z = super(KennMlp, self).forward(x, edge_index, relations)
+        z = super().forward(x, edge_index, relations)
 
         # call KENN layers
         for layer in self.kenn_layers:
@@ -274,14 +253,14 @@ class KennMlp(MLP):
         return F.softmax(z, dim=-1)
 
 
-class KennSage(SAGE):
+class KENN_SAGE(SAGE):
     """ KENN with GraphSage (from ogb) as base NN"""
 
     def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
                  explainer_object=None):
-        super(KennSage, self).__init__(in_channels=in_channels, out_channels=out_channels,
-                                       hidden_channels=hidden_channels,
-                                       num_layers=num_layers, dropout=dropout)
+        super().__init__(in_channels=in_channels, out_channels=out_channels,
+                         hidden_channels=hidden_channels,
+                         num_layers=num_layers, dropout=dropout)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.explainer_object = explainer_object
@@ -296,7 +275,7 @@ class KennSage(SAGE):
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations):
-        z = super(KennSage, self).forward(x, edge_index, relations)
+        z = super().forward(x, edge_index, relations)
 
         # call KENN layers
         for layer in self.kenn_layers:
