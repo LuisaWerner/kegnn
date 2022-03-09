@@ -57,6 +57,7 @@ class ClauseEnhancer(torch.nn.Module):
 
         self.signs = torch.Tensor(signs)
         self.save_training_data = save_training_data
+        self.cuda()
 
         """self.clause_weight = self.add_weight(
             name='kernel',
@@ -83,6 +84,7 @@ class ClauseEnhancer(torch.nn.Module):
         """
         selected_predicates = inputs[:, self.gather_literal_indices]
         print(f'ClauseEnhancer: selected predicates on cuda? {selected_predicates.is_cuda}')
+        print(f'ClauseEnhancer: self.signs on cuda? {self.signs.is_cuda}')
         clause_matrix = mul(selected_predicates, self.signs)
 
         return clause_matrix
