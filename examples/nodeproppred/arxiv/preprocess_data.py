@@ -30,7 +30,8 @@ def load_and_preprocess(args):
                                                    num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
                                                    shuffle=True,
                                                    input_nodes=split_idx['train'],
-                                                   batch_size=args.batch_size)
+                                                   batch_size=args.batch_size,
+                                                   num_workers=args.num_workers)
 
         valid_loader_transductive = NeighborLoader(data,
                                                    num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
@@ -65,7 +66,8 @@ def load_and_preprocess(args):
                                                 num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
                                                 shuffle=True,
                                                 input_nodes=None,
-                                                batch_size=args.batch_size)
+                                                batch_size=args.batch_size,
+                                                num_workers=args.num_workers)
         valid_loader_inductive = NeighborLoader(data=data_valid,
                                                 num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
                                                 shuffle=True,

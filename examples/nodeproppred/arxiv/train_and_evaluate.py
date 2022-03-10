@@ -45,6 +45,7 @@ def main():
     parser.add_argument('--sampling_neighbor_size', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--full_batch', type=bool, default=False)
+    parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--seed', type=int, default=100)
 
     args = parser.parse_args()
@@ -115,7 +116,7 @@ def main():
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
-                          f'Time: {end - start:02d}, '
+                          f'Time: {end - start:.2f}, '
                           f'Loss: {t_loss:.4f}, '
                           f'Train: {100 * t_accuracy:.2f}%, '
                           f'Valid: {100 * v_accuracy:.2f}% ')
