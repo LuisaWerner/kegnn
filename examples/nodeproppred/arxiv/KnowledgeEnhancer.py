@@ -30,7 +30,7 @@ class KnowledgeEnhancer(torch.nn.Module):
 
         """
 
-        super(KnowledgeEnhancer, self).__init__()
+        super().__init__()
         self.predicates = predicates
         self.clauses = clauses
         self.initial_clause_weight = initial_clause_weight
@@ -42,8 +42,9 @@ class KnowledgeEnhancer(torch.nn.Module):
                 self.predicates, clause[:-1], self.initial_clause_weight, self.save_training_data))
 
     def reset_parameters(self):
-        "TODO"
-        # Do something
+        """ no need to implement because the Knowledge Enhancer doesn't have trainable parameters. They are in Clause
+        Enhancers """
+        pass
 
     def forward(self, inputs, **kwargs):
         """Improve the satisfaction level of a set of clauses.

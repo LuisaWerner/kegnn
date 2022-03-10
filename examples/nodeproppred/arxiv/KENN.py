@@ -1,6 +1,7 @@
 # TODO: check if this runs
 
 import torch
+
 from KnowledgeEnhancer import KnowledgeEnhancer
 
 
@@ -8,7 +9,7 @@ class Kenn(torch.nn.Module):
 
     def __init__(self, predicates, clauses, activation=lambda x: x, initial_clause_weight=0.5, save_training_data=False,
                  **kwargs):
-        super(Kenn, self).__init__()
+        super().__init__()
         self.predicates = predicates
         self.clauses = clauses
         self.activation = activation
@@ -18,8 +19,7 @@ class Kenn(torch.nn.Module):
         self.predicates, self.clauses, self.initial_clause_weight, self.save_training_data)
 
     def reset_parameters(self):
-        "do something"
-        # @ TODO
+        pass
 
     def forward(self, inputs):
         """Improve the satisfaction level of a set of clauses.

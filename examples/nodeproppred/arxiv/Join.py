@@ -3,12 +3,9 @@ from torch import reshape
 
 
 class Join(torch.nn.Module):
-    """Join layer
-
-    """
-
+    """Join layer"""
     def __init__(self):
-        super(Join, self).__init__()
+        super().__init__()
 
     def forward(self, unary, binary, index1, index2):
         """Join the unary and binary tensors.

@@ -1,6 +1,8 @@
+from torch import mul
 import torch
 from torch import mul
 from torch.nn.functional import softmax
+from torch_geometric.nn.inits import constant
 
 
 class ClauseEnhancer(torch.nn.Module):
@@ -57,16 +59,13 @@ class ClauseEnhancer(torch.nn.Module):
             self.scatter_literal_indices.append([literal_index])
             signs.append(sign)
 
-        # self.signs = torch.Tensor(signs)
         self.register_buffer('signs', torch.Tensor(signs))
-        self.register_parameter(name="clause_weight",
-                                param=torch.nn.Parameter(torch.Tensor([self.initial_weight]),
-                                                         requires_grad=not self.hard_clause))
+        self.clause_weight = torch.nn.Parameter(torch.Tensor([self.initial_weight]), requires_grad=not self.hard_clause)
 
     def reset_parameters(self):
         # todo: check if this really works as it should, don't know if we even need to call this method
         """ resets clause weights after one iteration back to the initial clause weight """
-        self.clause_weight = torch.nn.Parameter(torch.Tensor([self.initial_weight]), requires_grad=not self.hard_clause)
+        constant(self.clause_weight, self.initial_weight)
 
     def grounded_clause(self, inputs):
         """Find the grounding of the clause
@@ -76,7 +75,6 @@ class ClauseEnhancer(torch.nn.Module):
         selected_predicates = inputs[:, self.gather_literal_indices]
         print(f'ClauseEnhancer: selected predicates on cuda? {selected_predicates.is_cuda}')
         print(f'ClauseEnhancer: self.signs on cuda? {self.signs.is_cuda}')
-        #self.signs = self.signs.cuda() # todo: comment in
         clause_matrix = mul(selected_predicates, self.signs)
 
         return clause_matrix

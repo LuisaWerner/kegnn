@@ -6,7 +6,7 @@ from torch_scatter import scatter_add
 
 class GroupBy(torch.nn.Module):
     def __init__(self, number_of_unary_predicates):
-        super(GroupBy, self).__init__()
+        super().__init__()
         self.n_unary = number_of_unary_predicates
 
     def reset_parameters(self):
@@ -14,7 +14,6 @@ class GroupBy(torch.nn.Module):
 
     def forward(self, unary, binary, deltas, index1, index2):
         """Split the deltas matrix in unary and binary deltas.
-        #todo: why do we need binary here
         :param unary: the tensor with unary predicates pre-activations
         :param binary: the tensor with binary predicates pre-activations
         :param deltas: the tensor containing the delta values

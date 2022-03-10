@@ -8,7 +8,6 @@ import torch
 import torch.nn.functional as F
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
-from torchsummary import summary
 
 from RangeConstraint import RangeConstraint
 from generate_knowledge import generate_knowledge
@@ -75,7 +74,6 @@ def main():
             # model.reset_parameters()
             # model = get_model(data, args).to(device)
             model = get_model(data, args).to(device)
-            summary(model)
             print(f'model on cuda: {next(model.parameters()).is_cuda}')
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
             criterion = F.nll_loss

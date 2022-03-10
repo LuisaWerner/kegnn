@@ -37,7 +37,7 @@ class RelationalKENN(torch.nn.Module):
         :param initial_clause_weight: initial value for the cluase weight (if clause is not hard)
         """
 
-        super(RelationalKENN, self).__init__()
+        super().__init__()
 
         self.unary_predicates = unary_predicates
         self.n_unary = len(unary_predicates)
@@ -89,7 +89,7 @@ class RelationalKENN(torch.nn.Module):
         print(f'RelationalKENN unary, binary on cuda? {unary.is_cuda, binary.is_cuda}')
 
         if len(self.unary_clauses) != 0:
-            deltas_sum, deltas_u_list = self.unary_ke(unary)  # todo call of knowledge enhancer
+            deltas_sum, deltas_u_list = self.unary_ke(unary)
             u = unary + deltas_sum
         else:
             u = unary
@@ -97,7 +97,7 @@ class RelationalKENN(torch.nn.Module):
 
         if len(self.binary_clauses) != 0 and len(binary) != 0:
             joined_matrix = self.join(u, binary, index1, index2)
-            deltas_sum = self.binary_ke(joined_matrix) #todo: this operation is quite slow
+            deltas_sum = self.binary_ke(joined_matrix)
 
             delta_up, delta_bp = self.group_by(
                 u, binary, deltas_sum, index1, index2)
