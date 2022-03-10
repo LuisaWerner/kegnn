@@ -78,8 +78,6 @@ class ClauseEnhancer(torch.nn.Module):
         :return: the grounded clause (a tensor with literals truth values)
         """
         selected_predicates = inputs[:, self.gather_literal_indices]
-        print(f'ClauseEnhancer: selected predicates on cuda? {selected_predicates.is_cuda}')
-        print(f'ClauseEnhancer: self.signs on cuda? {self.signs.is_cuda}')
         clause_matrix = mul(selected_predicates, self.signs)
 
         return clause_matrix
@@ -91,8 +89,6 @@ class ClauseEnhancer(torch.nn.Module):
         the clause"""
 
         clause_matrix = self.grounded_clause(inputs)
-        print(
-            f'Clause Enhancer (forward) clause_matrix, self.signs on cuda? {clause_matrix.is_cuda, self.signs.is_cuda}')
 
         delta = self.signs * softmax(clause_matrix, dim=-1) * self.clause_weight
 

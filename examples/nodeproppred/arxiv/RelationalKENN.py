@@ -85,8 +85,6 @@ class RelationalKENN(torch.nn.Module):
 
         index1 = edge_index[0]
         index2 = edge_index[1]
-        print(f'RelationalKENN index1, index 2 on cuda? {index1.is_cuda, index2.is_cuda}')
-        print(f'RelationalKENN unary, binary on cuda? {unary.is_cuda, binary.is_cuda}')
 
         if len(self.unary_clauses) != 0:
             deltas_sum, deltas_u_list = self.unary_ke(unary)

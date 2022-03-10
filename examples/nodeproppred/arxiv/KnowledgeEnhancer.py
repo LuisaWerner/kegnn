@@ -61,8 +61,6 @@ class KnowledgeEnhancer(torch.nn.Module):
 
         for clause in self.clause_enhancers:
             delta, indexes = clause(inputs)
-            print(f'KnowledgeEnhancer: delta, indexes on cuda? {delta.is_cuda, indexes.is_cuda}')
-
             deltas_list.append(delta)
             indexes_list.append(indexes)
 
