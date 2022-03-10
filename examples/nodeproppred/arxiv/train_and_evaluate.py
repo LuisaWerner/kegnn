@@ -116,7 +116,7 @@ def main():
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
-                          f'Time: {end - start:.2f}, '
+                          f'Time: {end - start:.8f}, '
                           f'Loss: {t_loss:.4f}, '
                           f'Train: {100 * t_accuracy:.2f}%, '
                           f'Valid: {100 * v_accuracy:.2f}% ')
