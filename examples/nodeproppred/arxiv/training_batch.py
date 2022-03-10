@@ -1,7 +1,4 @@
-import timeit
-
 import torch
-from tqdm import tqdm
 
 
 def train(model, train_loader, optimizer, device, criterion, args, range_constraint):
@@ -22,12 +19,10 @@ def train(model, train_loader, optimizer, device, criterion, args, range_constra
     model.train()
     total_examples = total_loss = total_correct = 0
 
-    start = timeit.timeit()
-    for batch in tqdm(train_loader):
+    for batch in enumerate(train_loader):
         optimizer.zero_grad()
         # batch = batch.to(device, 'edge_index')
         batch = batch.to(device)
-        print(f'batch.is_cuda: {batch.is_cuda}')
         out = model(batch.x, batch.edge_index, batch.relations)[:args.batch_size]
         loss = criterion(out, batch.y.squeeze(1)[:args.batch_size])
         loss.backward()
@@ -40,8 +35,6 @@ def train(model, train_loader, optimizer, device, criterion, args, range_constra
 
     epoch_acc = total_correct / total_examples
     epoch_loss = total_loss / total_examples
-    end = timeit.timeit()
-    print(f'Time per epoch : {end - start}')
 
     return epoch_acc, epoch_loss
 

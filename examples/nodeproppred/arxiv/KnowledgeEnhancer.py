@@ -40,7 +40,6 @@ class KnowledgeEnhancer(torch.nn.Module):
         for clause in self.clauses:
             self.clause_enhancers.append(ClauseEnhancer(
                 self.predicates, clause[:-1], self.initial_clause_weight, self.save_training_data))
-        print('test')
 
     def reset_parameters(self):
         """ no need to implement because the Knowledge Enhancer doesn't have trainable parameters. They are in Clause
