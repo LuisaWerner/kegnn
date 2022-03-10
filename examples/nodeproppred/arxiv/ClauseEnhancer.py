@@ -1,4 +1,3 @@
-from torch import mul
 import torch
 from torch import mul
 from torch.nn.functional import softmax
@@ -44,8 +43,10 @@ class ClauseEnhancer(torch.nn.Module):
         literals_list = string[1].split(',')
         self.number_of_literals = len(literals_list)
 
-        self.gather_literal_indices = []
-        self.scatter_literal_indices = []
+        # self.gather_literal_indices = []
+        # self.scatter_literal_indices = []
+        gather_literal_indices = []
+        scatter_literal_indices = []
         signs = []
 
         for literal in literals_list:
@@ -55,11 +56,15 @@ class ClauseEnhancer(torch.nn.Module):
                 literal = literal[1:]
 
             literal_index = available_predicates.index(literal)
-            self.gather_literal_indices.append(literal_index)
-            self.scatter_literal_indices.append([literal_index])
+            # self.gather_literal_indices.append(literal_index)
+            # self.scatter_literal_indices.append([literal_index]) # todo be careful here with brackets
+            gather_literal_indices.append(literal_index)
+            scatter_literal_indices.append(literal_index)
             signs.append(sign)
 
         self.register_buffer('signs', torch.Tensor(signs))
+        self.register_buffer('gather_literal_indices', torch.Tensor(gather_literal_indices).to(torch.long))
+        self.register_buffer('scatter_literal_indices', torch.Tensor(scatter_literal_indices).to(torch.long))
         self.clause_weight = torch.nn.Parameter(torch.Tensor([self.initial_weight]), requires_grad=not self.hard_clause)
 
     def reset_parameters(self):
@@ -91,4 +96,5 @@ class ClauseEnhancer(torch.nn.Module):
 
         delta = self.signs * softmax(clause_matrix, dim=-1) * self.clause_weight
 
-        return delta, torch.Tensor(self.scatter_literal_indices).to(torch.int64)
+        # return delta, torch.Tensor(self.scatter_literal_indices).to(torch.int64)
+        return delta, self.scatter_literal_indices
