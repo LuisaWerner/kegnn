@@ -3,7 +3,6 @@
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 
 import argparse
-import timeit
 
 import torch
 import torch.nn.functional as F
@@ -93,10 +92,8 @@ def main():
             for epoch in range(args.epochs):
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
-                start = timeit.timeit()
                 t_accuracy, t_loss = train(model, train_batches, optimizer, device, criterion, args, range_constraint)
                 v_accuracy, v_loss = test(model, valid_batches, criterion, args, device)
-                end = timeit.timeit()
 
                 writer.add_scalar("loss/train", t_loss, epoch)
                 writer.add_scalar("loss/valid", v_loss, epoch)
@@ -116,7 +113,7 @@ def main():
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
-                          f'Time: {end - start:.8f}, '
+                          # f'Time: {end - start:.8f}, '
                           f'Loss: {t_loss:.4f}, '
                           f'Train: {100 * t_accuracy:.2f}%, '
                           f'Valid: {100 * v_accuracy:.2f}% ')

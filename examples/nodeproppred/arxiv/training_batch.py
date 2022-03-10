@@ -1,5 +1,8 @@
+import timeit
+
 import torch
 from tqdm import tqdm
+
 
 def train(model, train_loader, optimizer, device, criterion, args, range_constraint):
     """
@@ -19,6 +22,7 @@ def train(model, train_loader, optimizer, device, criterion, args, range_constra
     model.train()
     total_examples = total_loss = total_correct = 0
 
+    start = timeit.timeit()
     for batch in tqdm(train_loader):
         optimizer.zero_grad()
         # batch = batch.to(device, 'edge_index')
@@ -35,6 +39,8 @@ def train(model, train_loader, optimizer, device, criterion, args, range_constra
 
     epoch_acc = total_correct / total_examples
     epoch_loss = total_loss / total_examples
+    end = timeit.timeit()
+    print(f'epoch time: {end - start}')
 
     return epoch_acc, epoch_loss
 
