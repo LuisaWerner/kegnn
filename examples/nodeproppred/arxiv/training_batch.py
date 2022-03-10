@@ -1,5 +1,5 @@
 import torch
-
+from tqdm import tqdm
 
 def train(model, train_loader, optimizer, device, criterion, args, range_constraint):
     """
@@ -19,7 +19,7 @@ def train(model, train_loader, optimizer, device, criterion, args, range_constra
     model.train()
     total_examples = total_loss = total_correct = 0
 
-    for batch in enumerate(train_loader):
+    for batch in tqdm(train_loader):
         optimizer.zero_grad()
         # batch = batch.to(device, 'edge_index')
         batch = batch.to(device)
