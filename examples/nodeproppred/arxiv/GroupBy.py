@@ -31,8 +31,8 @@ class GroupBy(torch.nn.Module):
         print(
             f'GroupBy ux, uy, b on cuda? {ux.is_cuda, uy.is_cuda, b.is_cuda,}')
 
-        ux_deltas = scatter_add(src=ux, index=torch.unsqueeze(index1, 1), dim=0, out=torch.zeros(unary.shape))
-        uy_deltas = scatter_add(src=uy, index=torch.unsqueeze(index2, 1), dim=0, out=torch.zeros(unary.shape))
+        ux_deltas = scatter_add(src=ux, index=torch.unsqueeze(index1, 1), dim=0, out=torch.zeros(unary.shape).cuda())
+        uy_deltas = scatter_add(src=uy, index=torch.unsqueeze(index2, 1), dim=0, out=torch.zeros(unary.shape).cuda())
 
         assert ux_deltas.shape == uy_deltas.shape, 'GroupBy: deltas for ux and uy must have the same shape'
 
