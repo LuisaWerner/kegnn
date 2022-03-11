@@ -43,7 +43,7 @@ def main():
     parser.add_argument('--sampling_neighbor_size', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--full_batch', type=bool, default=False)
-    parser.add_argument('--num_workers', type=int, default=0)
+    parser.add_argument('--num_workers', type=int, default=30)
     parser.add_argument('--seed', type=int, default=100)
 
     args = parser.parse_args()
@@ -115,7 +115,7 @@ def main():
                 if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
                     break
 
-            test_accuracy = test(model, test_batches, criterion, args, device)
+            test_accuracy = test(model, test_batches, criterion, device)
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
                               clause_weights_dict)
             writer.close()
@@ -182,7 +182,7 @@ def main():
                 if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
                     break
 
-            test_accuracy = test(model, test_batches, criterion, args, device)
+            test_accuracy = test(model, test_batches, criterion, device)
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
                               clause_weights_dict)
             writer.close()
