@@ -14,7 +14,6 @@ from generate_knowledge import generate_knowledge
 from logger import Logger
 from logger import reset_folders
 from model import get_model
-from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training_batch import train, test
 
@@ -58,8 +57,6 @@ def main():
     if args.mode == 'transductive':
 
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
-
-        evaluator = Evaluator(name=args.dataset)
         _ = generate_knowledge(data.num_classes)
 
         print('Start Transductive Training')
@@ -89,8 +86,8 @@ def main():
             for epoch in range(args.epochs):
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
-                t_accuracy, t_loss = train(model, train_batches, optimizer, device, criterion, args, range_constraint)
-                v_accuracy, v_loss = test(model, valid_batches, criterion, args, device)
+                t_accuracy, t_loss = train(model, train_batches, optimizer, device, criterion, range_constraint)
+                v_accuracy, v_loss = test(model, valid_batches, criterion, device)
 
                 writer.add_scalar("loss/train", t_loss, epoch)
                 writer.add_scalar("loss/valid", v_loss, epoch)
@@ -129,8 +126,6 @@ def main():
     if args.mode == 'inductive':
 
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
-
-        evaluator = Evaluator(name=args.dataset)
         _ = generate_knowledge(data.num_classes)
 
         print('Start Inductive Training')
@@ -158,8 +153,8 @@ def main():
             for epoch in range(args.epochs):
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
-                t_accuracy, t_loss = train(model, train_batches, optimizer, device, criterion, args, range_constraint)
-                v_accuracy, v_loss = test(model, valid_batches, criterion, args, device)
+                t_accuracy, t_loss = train(model, train_batches, optimizer, device, criterion, range_constraint)
+                v_accuracy, v_loss = test(model, valid_batches, criterion, device)
 
                 writer.add_scalar("loss/train", t_loss, epoch)
                 writer.add_scalar("loss/valid", v_loss, epoch)
