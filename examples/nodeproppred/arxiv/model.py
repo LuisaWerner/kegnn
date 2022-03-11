@@ -28,7 +28,6 @@ def get_model(data, args):
                        num_layers=args.num_layers,
                        dropout=args.dropout)
 
-    # todo make conditional inheritage
     # KENN network
     elif args.model.startswith('KENN'):
         if args.model == 'KENN_MLP':

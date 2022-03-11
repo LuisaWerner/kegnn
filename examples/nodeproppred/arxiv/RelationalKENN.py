@@ -13,8 +13,7 @@ class RelationalKENN(torch.nn.Module):
                  unary_clauses,
                  binary_clauses,
                  activation=lambda x: x,
-                 initial_clause_weight=0.5,
-                 **kwargs):
+                 initial_clause_weight=0.5):
 
         """Initialize the knowledge base.
         :param input_shape: size of the input
