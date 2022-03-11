@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=10)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='KENN_GCN')
-    parser.add_argument('--mode', type=str, default='transductive')  # inductive/transductive
+    parser.add_argument('--mode', type=str, default='inductive')  # inductive/transductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
     parser.add_argument('--num_kenn_layers', type=int, default=3)
@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--sampling_neighbor_size', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--full_batch', type=bool, default=False)
-    parser.add_argument('--num_workers', type=int, default=30)
+    parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--seed', type=int, default=100)
 
     args = parser.parse_args()
@@ -58,22 +58,19 @@ def main():
     if args.mode == 'transductive':
 
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
-        # data = data.to(device)
 
         evaluator = Evaluator(name=args.dataset)
         _ = generate_knowledge(data.num_classes)
 
         print('Start Transductive Training')
 
-        # logger = Logger(model.name, args)
+        logger = Logger(args)
         reset_folders(args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
             print(f"Run: {run} of {args.runs}")
             writer = SummaryWriter('runs/' + args.dataset + f'/transductive/run{run}')
-            # model.reset_parameters()
-            # model = get_model(data, args).to(device)
             model = get_model(data, args).to(device)
             print(f'model on cuda: {next(model.parameters()).is_cuda}')
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -113,43 +110,38 @@ def main():
                 if epoch % args.log_steps == 0:
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
-                          # f'Time: {end - start:.8f}, '
                           f'Loss: {t_loss:.4f}, '
                           f'Train: {100 * t_accuracy:.2f}%, '
                           f'Valid: {100 * v_accuracy:.2f}% ')
 
                 # early stopping
-                # if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
-                #    break
+                if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
+                    break
 
             test_accuracy = test(model, test_batches, criterion, args, device)
-            # logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
-            #                  clause_weights_dict)
+            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
+                              clause_weights_dict)
             writer.close()
 
-        # logger.print_results(args)
-        # logger.save_results(args)
-
-    # todo: if things work, adapt for inductive and put logger back
+        logger.print_results(args)
+        logger.save_results(args)
 
     if args.mode == 'inductive':
 
         data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
-        # data = data.to(device)
 
         evaluator = Evaluator(name=args.dataset)
         _ = generate_knowledge(data.num_classes)
 
         print('Start Inductive Training')
-        model = get_model(data, args).to(device)
-        logger = Logger(model.name, args)
+        logger = Logger(args)
         reset_folders(args)
         range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
         for run in range(args.runs):
             print(f"Run: {run} of {args.runs}")
             writer = SummaryWriter('runs/' + args.dataset + f'/inductive/run{run}')
-            model.reset_parameters()
+            model = get_model(data, args).to(device)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
             criterion = F.nll_loss
 

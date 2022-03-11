@@ -23,10 +23,10 @@ def reset_folders(args):
 class Logger(object):
     """ handles metrics during training """
 
-    def __init__(self, name, args):
-        self.name = name
+    def __init__(self, args):
+        self.name = args.model
         self.results = {}
-        self.results.setdefault(name, [])
+        self.results.setdefault(args.model, [])
         self.es_min_delta = args.es_min_delta
         self.es_patience = args.es_patience
 
