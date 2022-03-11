@@ -112,7 +112,7 @@ def main():
                           f'Valid: {100 * v_accuracy:.2f}% ')
 
                 # early stopping
-                if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
+                if args.es_enabled and logger.callback_early_stopping(valid_accuracies):
                     break
 
             test_accuracy = test(model, test_batches, criterion, device)
@@ -179,7 +179,7 @@ def main():
                           f'Valid: {100 * v_accuracy:.2f}% ')
 
                 # early stopping
-                if args.es_enabled & logger.callback_early_stopping(valid_accuracies):
+                if args.es_enabled and logger.callback_early_stopping(valid_accuracies):
                     break
 
             test_accuracy = test(model, test_batches, criterion, device)
