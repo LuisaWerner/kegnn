@@ -37,14 +37,10 @@ class ClauseEnhancer(torch.nn.Module):
             self.hard_clause = True
 
         self.hard_clause = string[0] != '_'
-
         self.save_training_data = save_training_data
-
         literals_list = string[1].split(',')
         self.number_of_literals = len(literals_list)
 
-        # self.gather_literal_indices = []
-        # self.scatter_literal_indices = []
         gather_literal_indices = []
         scatter_literal_indices = []
         signs = []
@@ -56,8 +52,6 @@ class ClauseEnhancer(torch.nn.Module):
                 literal = literal[1:]
 
             literal_index = available_predicates.index(literal)
-            # self.gather_literal_indices.append(literal_index)
-            # self.scatter_literal_indices.append([literal_index]) # todo be careful here with brackets
             gather_literal_indices.append(literal_index)
             scatter_literal_indices.append(literal_index)
             signs.append(sign)
@@ -82,7 +76,7 @@ class ClauseEnhancer(torch.nn.Module):
 
         return clause_matrix
 
-    def forward(self, inputs, **kwargs):
+    def forward(self, inputs):
         """Improve the satisfaction level of the clause.
         :param inputs: the tensor containing predicates' pre-activation values for many entities
         :return: delta vector to be summed to the original pre-activation tensor to obtain an higher satisfaction of \
@@ -92,5 +86,4 @@ class ClauseEnhancer(torch.nn.Module):
 
         delta = self.signs * softmax(clause_matrix, dim=-1) * self.clause_weight
 
-        # return delta, torch.Tensor(self.scatter_literal_indices).to(torch.int64)
         return delta, self.scatter_literal_indices
