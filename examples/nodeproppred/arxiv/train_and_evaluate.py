@@ -40,7 +40,7 @@ def main():
     parser.add_argument('--es_enabled', type=bool, default=False)
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=3)
-    parser.add_argument('--sampling_neighbor_size', type=int, default=10)
+    parser.add_argument('--sampling_neighbor_size', type=int, default=-1)  # all neighbors will be included with -1
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--full_batch', type=bool, default=True)
     parser.add_argument('--num_workers', type=int, default=30)
