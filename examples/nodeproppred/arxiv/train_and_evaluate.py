@@ -15,6 +15,7 @@ from generate_knowledge import generate_knowledge
 from logger import Logger
 from logger import reset_folders
 from model import get_model
+from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training_batch import train, test
 
@@ -70,6 +71,7 @@ def main():
             print(f"Run: {run} of {args.runs}")
             writer = SummaryWriter('runs/' + args.dataset + f'/transductive/run{run}')
             model = get_model(data, args).to(device)
+            evaluator = Evaluator(name='ogbn-arxiv')
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
             criterion = F.nll_loss
 
@@ -87,8 +89,10 @@ def main():
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
                 start = time()
-                t_accuracy, t_loss = train(model, train_batches, optimizer, device, criterion, range_constraint)
-                v_accuracy, v_loss = test(model, valid_batches, criterion, device)
+                t_loss = train(model, train_batches, optimizer, device, criterion, range_constraint)
+                t_accuracy, _ = test(model, train_batches, criterion, device, evaluator)
+                v_accuracy, v_loss = test(model, valid_batches, criterion, device, evaluator)
+                test_accuracy, _ = test(model, test_batches, criterion, device, evaluator)
                 end = time()
 
                 writer.add_scalar("loss/train", t_loss, epoch)
@@ -112,7 +116,8 @@ def main():
                           f'Loss: {t_loss:.4f}, '
                           f'Time: {end - start:.6f} '
                           f'Train: {100 * t_accuracy:.2f}%, '
-                          f'Valid: {100 * v_accuracy:.2f}% ')
+                          f'Valid: {100 * v_accuracy:.2f}% '
+                          f'Test: {100 * test_accuracy:.2f}% ')
 
                 # early stopping
                 if args.es_enabled and logger.callback_early_stopping(valid_accuracies):
