@@ -110,7 +110,7 @@ def main():
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
                           f'Loss: {t_loss:.4f}, '
-                          f'Time: {end - start:.6f}'
+                          f'Time: {end - start:.6f} '
                           f'Train: {100 * t_accuracy:.2f}%, '
                           f'Valid: {100 * v_accuracy:.2f}% ')
 

@@ -1,12 +1,14 @@
-from sklearn.metrics import roc_auc_score
-import pandas as pd
 import os
+
 import numpy as np
+import pandas as pd
+from sklearn.metrics import roc_auc_score
 
 try:
     import torch
 except ImportError:
     torch = None
+
 
 ### Evaluator for node property prediction
 class Evaluator:
@@ -23,7 +25,6 @@ class Evaluator:
 
         self.num_tasks = int(meta_info[self.name]['num tasks'])
         self.eval_metric = meta_info[self.name]['eval metric']
-
 
     def _parse_and_check_input(self, input_dict):
         if self.eval_metric == 'rocauc' or self.eval_metric == 'acc':
