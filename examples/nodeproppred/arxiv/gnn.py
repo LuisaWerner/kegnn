@@ -2,7 +2,6 @@ import argparse
 
 import torch
 import torch.nn.functional as F
-import torch_geometric.transforms as T
 from torch_geometric.nn import GCNConv, SAGEConv
 
 from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
@@ -47,13 +46,13 @@ class SAGE(torch.nn.Module):
         super(SAGE, self).__init__()
 
         self.convs = torch.nn.ModuleList()
-        self.convs.append(SAGEConv(in_channels, hidden_channels))
+        self.convs.append(SAGEConv(in_channels, hidden_channels))  # cached=True
         self.bns = torch.nn.ModuleList()
         self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
         for _ in range(num_layers - 2):
-            self.convs.append(SAGEConv(hidden_channels, hidden_channels))
+            self.convs.append(SAGEConv(hidden_channels, hidden_channels))  # cached=True
             self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-        self.convs.append(SAGEConv(hidden_channels, out_channels))
+        self.convs.append(SAGEConv(hidden_channels, out_channels))  # cached= True
 
         self.dropout = dropout
 
@@ -77,7 +76,7 @@ def train(model, data, train_idx, optimizer):
     model.train()
 
     optimizer.zero_grad()
-    out = model(data.x, data.adj_t)[train_idx]
+    out = model(data.x, data.edge_index)[train_idx]
     loss = F.nll_loss(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
@@ -89,7 +88,7 @@ def train(model, data, train_idx, optimizer):
 def test(model, data, split_idx, evaluator):
     model.eval()
 
-    out = model(data.x, data.adj_t)
+    out = model(data.x, data.edge_index)
     y_pred = out.argmax(dim=-1, keepdim=True)
 
     train_acc = evaluator.eval({
@@ -125,11 +124,11 @@ def main():
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
 
-    dataset = PygNodePropPredDataset(name='ogbn-arxiv',
-                                     transform=T.ToSparseTensor())
+    # dataset = PygNodePropPredDataset(name='ogbn-arxiv', transform=T.ToSparseTensor())
+    dataset = PygNodePropPredDataset(name='ogbn-arxiv')
 
     data = dataset[0]
-    data.adj_t = data.adj_t.to_symmetric()
+    # data.adj_t = data.adj_t.to_symmetric()
     data = data.to(device)
 
     split_idx = dataset.get_idx_split()
