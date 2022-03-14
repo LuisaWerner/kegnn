@@ -123,7 +123,7 @@ def main():
                 if args.es_enabled and logger.callback_early_stopping(valid_accuracies):
                     break
 
-            test_accuracy = test(model, test_batches, criterion, device)
+            test_accuracy = test(model, test_batches, criterion, device, evaluator)
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
                               clause_weights_dict)
             writer.close()

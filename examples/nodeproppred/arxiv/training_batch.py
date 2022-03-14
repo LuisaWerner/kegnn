@@ -55,9 +55,9 @@ def test(model, loader, criterion, device, evaluator):
     for batch in iter(loader):
         batch = batch.to(device)
         out = model(batch.x, batch.edge_index, batch.relations)[:batch.batch_size]
-        loss = criterion(out, batch.y.squeeze(1)[:batch.batch_size])
-        y_pred = out.argmax(dim=-1, keepdim=True)
         # loss = criterion(out, batch.y.squeeze(1)[:batch.batch_size])
+        y_pred = out.argmax(dim=-1, keepdim=True)
+        loss = criterion(out, batch.y.squeeze(1)[:batch.batch_size])
         batch_acc = evaluator.eval({
             'y_true': batch.y[:batch.batch_size],
             'y_pred': y_pred,
