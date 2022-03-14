@@ -29,7 +29,7 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint):
         loss = criterion(out, batch.y.squeeze(1)[:batch.batch_size])
         loss.backward()
         optimizer.step()
-        model.apply(range_constraint)
+        # model.apply(range_constraint)
 
         total_examples += batch.batch_size
         total_loss += float(loss) * batch.batch_size
