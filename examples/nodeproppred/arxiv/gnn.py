@@ -2,6 +2,7 @@ import argparse
 
 import torch
 import torch.nn.functional as F
+import torch_geometric
 from torch_geometric.nn import GCNConv, SAGEConv
 
 from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
@@ -13,14 +14,14 @@ class GCN(torch.nn.Module):
         super(GCN, self).__init__()
 
         self.convs = torch.nn.ModuleList()
-        self.convs.append(GCNConv(in_channels, hidden_channels))
+        self.convs.append(GCNConv(in_channels, hidden_channels))  # cached=True
         self.bns = torch.nn.ModuleList()
         self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
         for _ in range(num_layers - 2):
             self.convs.append(
-                GCNConv(hidden_channels, hidden_channels))
+                GCNConv(hidden_channels, hidden_channels))  # cached=True
             self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-        self.convs.append(GCNConv(hidden_channels, out_channels))
+        self.convs.append(GCNConv(hidden_channels, out_channels))  # cached=True
 
         self.dropout = dropout
 
@@ -46,13 +47,13 @@ class SAGE(torch.nn.Module):
         super(SAGE, self).__init__()
 
         self.convs = torch.nn.ModuleList()
-        self.convs.append(SAGEConv(in_channels, hidden_channels))  # cached=True
+        self.convs.append(SAGEConv(in_channels, hidden_channels))
         self.bns = torch.nn.ModuleList()
         self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
         for _ in range(num_layers - 2):
-            self.convs.append(SAGEConv(hidden_channels, hidden_channels))  # cached=True
+            self.convs.append(SAGEConv(hidden_channels, hidden_channels))
             self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-        self.convs.append(SAGEConv(hidden_channels, out_channels))  # cached= True
+        self.convs.append(SAGEConv(hidden_channels, out_channels))
 
         self.dropout = dropout
 
@@ -123,6 +124,8 @@ def main():
 
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
+
+    torch_geometric.seed_everything(100)
 
     # dataset = PygNodePropPredDataset(name='ogbn-arxiv', transform=T.ToSparseTensor())
     dataset = PygNodePropPredDataset(name='ogbn-arxiv')
