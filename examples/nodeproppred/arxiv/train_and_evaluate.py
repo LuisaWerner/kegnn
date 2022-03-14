@@ -3,6 +3,7 @@
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 
 import argparse
+from time import time
 
 import torch
 import torch.nn.functional as F
@@ -31,7 +32,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=500)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='GCN')
-    parser.add_argument('--mode', type=str, default='inductive')  # inductive/transductive
+    parser.add_argument('--mode', type=str, default='transductive')  # inductive/transductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
     parser.add_argument('--num_kenn_layers', type=int, default=3)
@@ -69,7 +70,6 @@ def main():
             print(f"Run: {run} of {args.runs}")
             writer = SummaryWriter('runs/' + args.dataset + f'/transductive/run{run}')
             model = get_model(data, args).to(device)
-            print(f'model on cuda: {next(model.parameters()).is_cuda}')
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
             criterion = F.nll_loss
 
@@ -86,8 +86,10 @@ def main():
             for epoch in range(args.epochs):
                 print(f'Start batch training of epoch {epoch}')
                 print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
+                start = time()
                 t_accuracy, t_loss = train(model, train_batches, optimizer, device, criterion, range_constraint)
                 v_accuracy, v_loss = test(model, valid_batches, criterion, device)
+                end = time()
 
                 writer.add_scalar("loss/train", t_loss, epoch)
                 writer.add_scalar("loss/valid", v_loss, epoch)
@@ -108,6 +110,7 @@ def main():
                     print(f'Run: {run + 1:02d}, '
                           f'Epoch: {epoch:02d}, '
                           f'Loss: {t_loss:.4f}, '
+                          f'Time: {end - start:.6f}'
                           f'Train: {100 * t_accuracy:.2f}%, '
                           f'Valid: {100 * v_accuracy:.2f}% ')
 
