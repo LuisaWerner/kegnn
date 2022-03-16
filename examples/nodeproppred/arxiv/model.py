@@ -170,14 +170,13 @@ class Standard(torch.nn.Module):
 
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
-        super(Standard, self).__init__()
+        super().__init__()
         self.lin_layers = torch.nn.ModuleList()
-        self.lin_layers.append(torch.nn.Linear(in_channels, hidden_channels))
-        self.lin_layers.append(torch.nn.Linear(hidden_channels, hidden_channels))
-        self.lin_layers.append(torch.nn.Linear(in_channels, hidden_channels))
-        self.lin_layers.append(torch.nn.Linear(hidden_channels, out_channels))
-
-        self.dropout = dropout
+        self.lin_layers.append(torch.nn.Linear(in_channels, 50))
+        self.lin_layers.append(torch.nn.Linear(50, 50))
+        self.lin_layers.append(torch.nn.Linear(50, 50))
+        self.lin_layers.append(torch.nn.Linear(50, out_channels))
+        self.dropout = 0.5
 
     def reset_parameters(self):
         for layer in self.lin_layers:
