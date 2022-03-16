@@ -164,15 +164,17 @@ class MLP(torch.nn.Module):
 class Standard(torch.nn.Module):
     """ Original Base Neural Network by KENN paper """
 
-    # todo: make sure that the right parameters are used
+    # in_channels =
+    # out_channels = 6
+    # hidden_channels = 50
 
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout):
         super(Standard, self).__init__()
         self.lin_layers = torch.nn.ModuleList()
         self.lin_layers.append(torch.nn.Linear(in_channels, hidden_channels))
-        for _ in range(num_layers - 2):
-            self.lin_layers.append(torch.nn.Linear(hidden_channels, hidden_channels))
+        self.lin_layers.append(torch.nn.Linear(hidden_channels, hidden_channels))
+        self.lin_layers.append(torch.nn.Linear(in_channels, hidden_channels))
         self.lin_layers.append(torch.nn.Linear(hidden_channels, out_channels))
 
         self.dropout = dropout
