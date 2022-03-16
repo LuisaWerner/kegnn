@@ -36,6 +36,7 @@ class Logger(object):
                    valid_accuracies: list,
                    test_acc: float,
                    run: int,
+                   epoch_time: list,
                    clause_weights_dict=None):
         """
         adds the losses and accuracies of a run to the results dictionary
@@ -45,7 +46,8 @@ class Logger(object):
                        'valid_losses': valid_losses,
                        'valid_accuracies': valid_accuracies,
                        'clause_weights_dict': clause_weights_dict,
-                       'test_accuracy': test_acc
+                       'test_accuracy': test_acc,
+                       'epoch_time': epoch_time
                        }
         self.results[self.name].append(run_results)
         self.print_results_run(run)
@@ -55,10 +57,12 @@ class Logger(object):
 
         max_valid_acc = max(self.results[self.name][run]['valid_accuracies'])
         max_train_acc = max(self.results[self.name][run]['train_accuracies'])
+        avg_time = sum(self.results[self.name][run]['epoch_time']) / len(self.results[self.name][run]['epoch_time'])
         print(f"Results of run {run}:")
         print(f"Maximum accuracy on train: {max_train_acc}")
         print(f"Maximum accuracy on valid: {max_valid_acc}")
         print(f"Accuracy on test: {self.results[self.name][run]['test_accuracy'][0]}")
+        print(f"Avg epoch time: {avg_time}")
 
     def print_results(self, args):
         """ Prints results after all runs """

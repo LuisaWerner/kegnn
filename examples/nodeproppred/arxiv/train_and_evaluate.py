@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=300)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
-    parser.add_argument('--model', type=str, default='MLP')
+    parser.add_argument('--model', type=str, default='KENN_MLP')
     parser.add_argument('--mode', type=str, default='transductive')  # inductive/transductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
@@ -79,6 +79,7 @@ def main():
             valid_losses = []
             train_accuracies = []
             valid_accuracies = []
+            epoch_time = []
 
             if model.name.startswith('KENN'):
                 clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
@@ -104,6 +105,7 @@ def main():
                 valid_accuracies.append(v_accuracy)
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
+                epoch_time.append(end - start)
 
                 if model.name.startswith('KENN'):
                     for i in range(args.num_kenn_layers):
@@ -125,7 +127,9 @@ def main():
 
             test_accuracy = test(model, test_batches, criterion, device, evaluator)
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
+                              epoch_time,
                               clause_weights_dict)
+            logger.print_results_run(run)
             writer.close()
 
         logger.print_results(args)
@@ -153,6 +157,7 @@ def main():
             valid_losses = []
             train_accuracies = []
             valid_accuracies = []
+            epoch_time = []
 
             if model.name.startswith('KENN'):
                 clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
@@ -180,6 +185,7 @@ def main():
                 valid_accuracies.append(v_accuracy)
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
+                epoch_time.append(end - start)
 
                 if model.name.startswith('KENN'):
                     for i in range(args.num_kenn_layers):
@@ -201,10 +207,12 @@ def main():
 
             test_accuracy = test(model, test_batches, criterion, device, evaluator)
             logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
+                              epoch_time,
                               clause_weights_dict)
             writer.close()
+            logger.print_results_run(run)
 
-        logger.print_results(args)
+        # logger.print_results(args)
         logger.save_results(args)
 
 
