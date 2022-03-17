@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=300)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
-    parser.add_argument('--model', type=str, default='GCN')
+    parser.add_argument('--model', type=str, default='KENN_GCN')
     parser.add_argument('--mode', type=str, default='transductive')  # inductive/transductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
@@ -42,7 +42,8 @@ def main():
     parser.add_argument('--es_enabled', type=bool, default=False)
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=3)
-    parser.add_argument('--sampling_neighbor_size', type=int, default=10)  # all neighbors will be included with -1
+    parser.add_argument('--sampling_neighbor_size', type=int,
+                        default=10)  # all neighbors will be included with -1 # todo: how many neighbors do we need only for KENN
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=0)
