@@ -22,7 +22,6 @@ def load_and_preprocess(args):
         split_idx = dataset.get_idx_split()
 
         if args.batch_size > data.num_nodes or args.full_batch:
-            print('choose batch size smaller than the source dataset to create batches from ')
             print('Full batch training ')
             args.batch_size = data.num_nodes
 
@@ -55,7 +54,7 @@ def load_and_preprocess(args):
         split_idx = dataset.get_idx_split()
 
         if args.batch_size > data.num_nodes or args.full_batch:
-            print('choose batch size smaller than the source dataset to create batches from ')
+            print('Full Batch Training')
             args.batch_size = data.num_nodes
 
         data_train = data.subgraph(split_idx['train'])
