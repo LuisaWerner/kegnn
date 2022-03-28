@@ -26,20 +26,23 @@ def load_and_preprocess(args):
             args.batch_size = data.num_nodes
 
         train_loader_transductive = NeighborLoader(data,
-                                                   num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
+                                                   num_neighbors=[
+                                                                     args.sampling_neighbor_size] * args.num_layers_sampling,
                                                    shuffle=True,
                                                    input_nodes=split_idx['train'],
                                                    batch_size=args.batch_size,
                                                    num_workers=args.num_workers)
 
         valid_loader_transductive = NeighborLoader(data,
-                                                   num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
+                                                   num_neighbors=[
+                                                                     args.sampling_neighbor_size] * args.num_layers_sampling,
                                                    shuffle=True,
                                                    input_nodes=split_idx['valid'],
                                                    batch_size=args.batch_size)
 
         test_loader_transductive = NeighborLoader(data,
-                                                  num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
+                                                  num_neighbors=[
+                                                                    args.sampling_neighbor_size] * args.num_layers_sampling,
                                                   shuffle=True,
                                                   input_nodes=split_idx['test'],
                                                   batch_size=args.batch_size)
@@ -62,18 +65,18 @@ def load_and_preprocess(args):
         data_test = data.subgraph(split_idx['test'])
 
         train_loader_inductive = NeighborLoader(data=data_train,
-                                                num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
+                                                num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
                                                 shuffle=True,
                                                 input_nodes=None,
                                                 batch_size=args.batch_size,
                                                 num_workers=args.num_workers)
         valid_loader_inductive = NeighborLoader(data=data_valid,
-                                                num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
+                                                num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
                                                 shuffle=True,
                                                 input_nodes=None,
                                                 batch_size=args.batch_size)
         test_loader_inductive = NeighborLoader(data=data_test,
-                                               num_neighbors=[args.sampling_neighbor_size] * args.num_layers,
+                                               num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
                                                shuffle=True,
                                                input_nodes=None,
                                                batch_size=args.batch_size)

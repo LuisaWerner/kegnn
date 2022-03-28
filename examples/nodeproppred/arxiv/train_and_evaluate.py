@@ -26,7 +26,8 @@ def main():
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--log_steps', type=int, default=1)
     parser.add_argument('--use_node_embedding', action='store_true')
-    parser.add_argument('--num_layers', type=int, default=1)  # todo
+    parser.add_argument('--num_layers', type=int, default=3)  # todo
+    parser.add_argument('--num_layers_sampling', type=int, default=1)  # have to correspond when GCN used
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
