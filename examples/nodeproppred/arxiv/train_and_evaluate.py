@@ -22,7 +22,7 @@ from training_batch import train, test
 
 def main():
     parser = argparse.ArgumentParser(description='Experiments')
-    parser.add_argument('--dataset', type=str, default='ogbn-products')  # alternatively products
+    parser.add_argument('--dataset', type=str, default='ogbn-arxiv')  # alternatively products
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--log_steps', type=int, default=1)
     parser.add_argument('--use_node_embedding', action='store_true')

@@ -68,9 +68,12 @@ class Logger(object):
         """ Prints results after all runs """
         max_epoch_acc_train = []
         max_epoch_acc_valid = []
+        epoch_times = []
         for run in range(len(self.results[self.name])):
             max_epoch_acc_train.append(max(self.results[self.name][run]['train_accuracies']))
             max_epoch_acc_valid.append(max(self.results[self.name][run]['valid_accuracies']))
+            epoch_times.append(
+                sum(self.results[self.name][run]['epoch_time']) / len(self.results[self.name][run]['epoch_time']))
 
         print(f"Results of {args.mode} training, {args.runs} runs, {args.epochs} epochs ")
         print(f'Arguments: {args}')
@@ -78,6 +81,7 @@ class Logger(object):
         print(f"Average accuracy over {args.runs} iterations on valid :{sum(max_epoch_acc_valid) / args.runs}")
         print(f"Highest accuracy over train: {max(max_epoch_acc_train)}")
         print(f"Highest accuracy over valid: {max(max_epoch_acc_valid)}")
+        print(f"Average epoch time: {np.mean(epoch_times)}")
 
     def print_statistics(self, run=None):
         """ Original method, not used """
