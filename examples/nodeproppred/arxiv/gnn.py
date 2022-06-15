@@ -2,9 +2,10 @@ import argparse
 
 import torch
 import torch.nn.functional as F
-import torch_geometric
+import torch_geometric.transforms as T
 from torch_geometric.nn import GCNConv, SAGEConv
 
+from logger import Logger
 from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 
 
@@ -14,14 +15,14 @@ class GCN(torch.nn.Module):
         super(GCN, self).__init__()
 
         self.convs = torch.nn.ModuleList()
-        self.convs.append(GCNConv(in_channels, hidden_channels))  # cached=True
+        self.convs.append(GCNConv(in_channels, hidden_channels, cached=True))
         self.bns = torch.nn.ModuleList()
         self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
         for _ in range(num_layers - 2):
             self.convs.append(
-                GCNConv(hidden_channels, hidden_channels))  # cached=True
+                GCNConv(hidden_channels, hidden_channels, cached=True))
             self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-        self.convs.append(GCNConv(hidden_channels, out_channels))  # cached=True
+        self.convs.append(GCNConv(hidden_channels, out_channels, cached=True))
 
         self.dropout = dropout
 
@@ -77,7 +78,7 @@ def train(model, data, train_idx, optimizer):
     model.train()
 
     optimizer.zero_grad()
-    out = model(data.x, data.edge_index)[train_idx]
+    out = model(data.x, data.adj_t)[train_idx]
     loss = F.nll_loss(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
@@ -89,7 +90,7 @@ def train(model, data, train_idx, optimizer):
 def test(model, data, split_idx, evaluator):
     model.eval()
 
-    out = model(data.x, data.edge_index)
+    out = model(data.x, data.adj_t)
     y_pred = out.argmax(dim=-1, keepdim=True)
 
     train_acc = evaluator.eval({
@@ -112,26 +113,24 @@ def main():
     parser = argparse.ArgumentParser(description='OGBN-Arxiv (GNN)')
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--log_steps', type=int, default=1)
-    parser.add_argument('--use_sage', type=bool, default=True)
+    parser.add_argument('--use_sage', action='store_true')
     parser.add_argument('--num_layers', type=int, default=3)
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--runs', type=int, default=1)
+    parser.add_argument('--epochs', type=int, default=500)
+    parser.add_argument('--runs', type=int, default=10)
     args = parser.parse_args()
     print(args)
 
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
 
-    torch_geometric.seed_everything(100)
-
-    # dataset = PygNodePropPredDataset(name='ogbn-arxiv', transform=T.ToSparseTensor())
-    dataset = PygNodePropPredDataset(name='ogbn-arxiv')
+    dataset = PygNodePropPredDataset(name='ogbn-arxiv',
+                                     transform=T.ToSparseTensor())
 
     data = dataset[0]
-    # data.adj_t = data.adj_t.to_symmetric()
+    data.adj_t = data.adj_t.to_symmetric()
     data = data.to(device)
 
     split_idx = dataset.get_idx_split()
@@ -147,7 +146,7 @@ def main():
                     args.dropout).to(device)
 
     evaluator = Evaluator(name='ogbn-arxiv')
-    # logger = Logger(args.runs, args)
+    logger = Logger(args.runs, args)
 
     for run in range(args.runs):
         model.reset_parameters()
@@ -155,7 +154,7 @@ def main():
         for epoch in range(1, 1 + args.epochs):
             loss = train(model, data, train_idx, optimizer)
             result = test(model, data, split_idx, evaluator)
-            # logger.add_result(run, result)
+            logger.add_result(run, result)
 
             if epoch % args.log_steps == 0:
                 train_acc, valid_acc, test_acc = result
@@ -166,8 +165,8 @@ def main():
                       f'Valid: {100 * valid_acc:.2f}% '
                       f'Test: {100 * test_acc:.2f}%')
 
-        # logger.print_statistics(run)
-    # logger.print_statistics()
+        logger.print_statistics(run)
+    logger.print_statistics()
 
 
 if __name__ == "__main__":
