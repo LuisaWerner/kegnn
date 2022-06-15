@@ -1,8 +1,8 @@
 import torch
 
-from GroupBy import GroupBy
-from Join import Join
-from KnowledgeEnhancer import KnowledgeEnhancer
+from KENN.GroupBy import GroupBy
+from KENN.Join import Join
+from KENN.KnowledgeEnhancer import KnowledgeEnhancer
 
 
 class RelationalKENN(torch.nn.Module):
@@ -63,7 +63,7 @@ class RelationalKENN(torch.nn.Module):
             self.group_by = GroupBy(self.n_unary)
 
     def reset_parameters(self):
-        """Relational KENN and KnowledgeEnhancer don't have parameters
+        """Relational KENN-Experiments and KnowledgeEnhancer don't have parameters
         Resetting parameters of the knowledge enhancement layer means
         resetting clause weights to initial clause weight """
 

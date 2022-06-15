@@ -1,4 +1,4 @@
-# train KENN here
+# train KENN-Experiments here
 # this should later on be done in another file but to keep the overview I have it in a separate file now
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 
@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from RangeConstraint import RangeConstraint
+from KENN.RangeConstraint import RangeConstraint
 from generate_knowledge import generate_knowledge
 from logger import Logger
 from logger import reset_folders
@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=3)
     parser.add_argument('--sampling_neighbor_size', type=int,
-                        default=-1)  # all neighbors will be included with -1 # todo: how many neighbors do we need only for KENN
+                        default=-1)  # all neighbors will be included with -1 # todo: how many neighbors do we need only for KENN-Experiments
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=0)
@@ -83,7 +83,7 @@ def main():
             valid_accuracies = []
             epoch_time = []
 
-            if model.name.startswith('KENN'):
+            if model.name.startswith('KENN-Experiments'):
                 clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
             else:
                 clause_weights_dict = None
@@ -109,7 +109,7 @@ def main():
                 valid_losses.append(v_loss)
                 epoch_time.append(end - start)
 
-                if model.name.startswith('KENN'):
+                if model.name.startswith('KENN-Experiments'):
                     for i in range(args.num_kenn_layers):
                         clause_weights_dict[f"clause_weights_{i}"].append(
                             [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
@@ -161,7 +161,7 @@ def main():
             valid_accuracies = []
             epoch_time = []
 
-            if model.name.startswith('KENN'):
+            if model.name.startswith('KENN-Experiments'):
                 clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
             else:
                 clause_weights_dict = None
@@ -189,7 +189,7 @@ def main():
                 valid_losses.append(v_loss)
                 epoch_time.append(end - start)
 
-                if model.name.startswith('KENN'):
+                if model.name.startswith('KENN-Experiments'):
                     for i in range(args.num_kenn_layers):
                         clause_weights_dict[f"clause_weights_{i}"].append(
                             [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])

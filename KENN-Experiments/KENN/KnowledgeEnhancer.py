@@ -2,10 +2,9 @@
 
 """Write here the implementation of KnowledgeEnhancer.py"""
 import torch
+from KENN.ClauseEnhancer import ClauseEnhancer
 from torch import cat, transpose
 from torch_scatter import scatter_add
-
-from ClauseEnhancer import ClauseEnhancer
 
 
 class KnowledgeEnhancer(torch.nn.Module):

@@ -2,7 +2,7 @@
 
 import torch
 
-from KnowledgeEnhancer import KnowledgeEnhancer
+from KENN.KnowledgeEnhancer import KnowledgeEnhancer
 
 
 class Kenn(torch.nn.Module):
