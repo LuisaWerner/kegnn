@@ -1,5 +1,5 @@
 import torch
-from torch.nn.parallel import DataParallel
+from torch.nn.parallel import DataParallel, DistributedDataParallel
 
 
 def train(model, train_loader, optimizer, device, criterion, range_constraint):
@@ -17,9 +17,10 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint):
     @param args: input parameters
     @param range_constraint : weight clipping for parameters
     """
+    model = model.to(device)
     if torch.cuda.device_count() > 1:
         print(f'created parallelized model for {torch.cuda.device_count()} GPUs')
-        model = DataParallel(model)
+        model = DistributedDataParallel(model, device_ids=[0, 1])
 
     model.train()
     total_examples = total_loss = total_correct = 0
