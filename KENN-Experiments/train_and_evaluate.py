@@ -83,7 +83,7 @@ def main():
             valid_accuracies = []
             epoch_time = []
 
-            if model.name.startswith('KENN-Experiments'):
+            if model.name.startswith('KENN'):
                 clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
             else:
                 clause_weights_dict = None
@@ -109,7 +109,7 @@ def main():
                 valid_losses.append(v_loss)
                 epoch_time.append(end - start)
 
-                if model.name.startswith('KENN-Experiments'):
+                if model.name.startswith('KENN'):
                     for i in range(args.num_kenn_layers):
                         clause_weights_dict[f"clause_weights_{i}"].append(
                             [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
@@ -161,7 +161,7 @@ def main():
             valid_accuracies = []
             epoch_time = []
 
-            if model.name.startswith('KENN-Experiments'):
+            if model.name.startswith('KENN'):
                 clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
             else:
                 clause_weights_dict = None
@@ -189,7 +189,7 @@ def main():
                 valid_losses.append(v_loss)
                 epoch_time.append(end - start)
 
-                if model.name.startswith('KENN-Experiments'):
+                if model.name.startswith('KENN'):
                     for i in range(args.num_kenn_layers):
                         clause_weights_dict[f"clause_weights_{i}"].append(
                             [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])

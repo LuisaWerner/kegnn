@@ -1,0 +1,7 @@
+KENN-Experiments
+
+Baselines
+- Run OGB baselines given with the data (GNN, MLP) and see the performance outcomes without batching
+- Run OGB baselines given with the data (GNN, MLP) and see the performance outcomes WITH BATCHING
+Scalability
+- Use DataParallel and Distributed Data
