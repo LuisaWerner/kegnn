@@ -82,6 +82,8 @@ def train(model, data, train_idx, optimizer):
     loss = F.nll_loss(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
+    print("Outside: input size", data.x.size(), "output_size",
+          out.size())  # todo this is only to see if both GPUs are used
 
     return loss.item()
 
