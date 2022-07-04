@@ -20,39 +20,7 @@ from preprocess_data import load_and_preprocess
 from training_batch import train, test
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Experiments')
-    parser.add_argument('--dataset', type=str, default='ogbn-arxiv')  # alternatively products
-    parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--log_steps', type=int, default=1)
-    parser.add_argument('--use_node_embedding', action='store_true')
-    parser.add_argument('--num_layers', type=int, default=3)  # todo
-    parser.add_argument('--num_layers_sampling', type=int, default=1)  # have to correspond when GCN used
-    parser.add_argument('--hidden_channels', type=int, default=256)
-    parser.add_argument('--dropout', type=float, default=0.5)
-    parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=300)  # 500
-    parser.add_argument('--runs', type=int, default=1)  # 10
-    parser.add_argument('--model', type=str, default='GCN')
-    parser.add_argument('--mode', type=str, default='transductive')  # inductive/transductive
-    parser.add_argument('--save_results', action='store_true')
-    parser.add_argument('--binary_preactivation', type=float, default=500.0)
-    parser.add_argument('--num_kenn_layers', type=int, default=3)
-    parser.add_argument('--range_constraint_lower', type=float, default=0)
-    parser.add_argument('--range_constraint_upper', type=float, default=500)
-    parser.add_argument('--es_enabled', type=bool, default=False)
-    parser.add_argument('--es_min_delta', type=float, default=0.001)
-    parser.add_argument('--es_patience', type=int, default=3)
-    parser.add_argument('--sampling_neighbor_size', type=int,
-                        default=-1)  # all neighbors will be included with -1 # todo: how many neighbors do we need only for KENN-Experiments
-    parser.add_argument('--batch_size', type=int, default=500)
-    parser.add_argument('--full_batch', type=bool, default=True)
-    parser.add_argument('--num_workers', type=int, default=0)
-    parser.add_argument('--seed', type=int, default=100)
-
-    args = parser.parse_args()
-    print(args)
-
+def run_experiment(args):
     torch_geometric.seed_everything(args.seed)
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
@@ -216,6 +184,41 @@ def main():
 
         # logger.print_results(args)
         logger.save_results(args)
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Experiments')
+    parser.add_argument('--dataset', type=str, default='ogbn-arxiv')  # alternatively products
+    parser.add_argument('--device', type=int, default=0)
+    parser.add_argument('--log_steps', type=int, default=1)
+    parser.add_argument('--use_node_embedding', action='store_true')
+    parser.add_argument('--num_layers', type=int, default=3)  # todo
+    parser.add_argument('--num_layers_sampling', type=int, default=1)  # have to correspond when GCN used
+    parser.add_argument('--hidden_channels', type=int, default=256)
+    parser.add_argument('--dropout', type=float, default=0.5)
+    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--epochs', type=int, default=300)  # 500
+    parser.add_argument('--runs', type=int, default=1)  # 10
+    parser.add_argument('--model', type=str, default='GCN')
+    parser.add_argument('--mode', type=str, default='transductive')  # inductive/transductive
+    parser.add_argument('--save_results', action='store_true')
+    parser.add_argument('--binary_preactivation', type=float, default=500.0)
+    parser.add_argument('--num_kenn_layers', type=int, default=3)
+    parser.add_argument('--range_constraint_lower', type=float, default=0)
+    parser.add_argument('--range_constraint_upper', type=float, default=500)
+    parser.add_argument('--es_enabled', type=bool, default=False)
+    parser.add_argument('--es_min_delta', type=float, default=0.001)
+    parser.add_argument('--es_patience', type=int, default=3)
+    parser.add_argument('--sampling_neighbor_size', type=int,
+                        default=-1)  # all neighbors will be included with -1 # todo: how many neighbors do we need only for KENN-Experiments
+    parser.add_argument('--batch_size', type=int, default=500)
+    parser.add_argument('--full_batch', type=bool, default=True)
+    parser.add_argument('--num_workers', type=int, default=0)
+    parser.add_argument('--seed', type=int, default=100)
+
+    args = parser.parse_args()
+    print(args)
+    run_experiment(args)
 
 
 if __name__ == '__main__':
