@@ -2,7 +2,7 @@ import argparse
 import json
 from experiment_config import ExperimentConf
 from train_and_evaluate import run_experiment
-
+import wandb
 
 def run_experiments(config_file):
     """
@@ -14,7 +14,9 @@ def run_experiments(config_file):
         json_content = json.loads(f.read())
         for conf in json_content['configs']:
             experiment_conf = ExperimentConf(conf)
+            wandb.init(project="test-project", entity="tyrex", config= conf)
             run_experiment(experiment_conf)
+            wandb.finish()
 
 
 def main():

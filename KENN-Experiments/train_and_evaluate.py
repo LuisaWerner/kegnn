@@ -18,7 +18,9 @@ from model import get_model
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training_batch import train, test
-from app_stats import RunStats
+from app_stats import RunStats, ExperimentStats
+import wandb
+
 
 def run_experiment(args):
     torch_geometric.seed_everything(args.seed)
@@ -35,6 +37,7 @@ def run_experiment(args):
     reset_folders(args)
     range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
+    xp_stats = ExperimentStats()
     for run in range(args.runs):
         print(f"Run: {run} of {args.runs}")
         writer = SummaryWriter('runs/' + args.dataset + f'/transductive/run{run}')
@@ -53,7 +56,6 @@ def run_experiment(args):
             clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
         else:
             clause_weights_dict = None
-
         for epoch in range(args.epochs):
             print(f'Start batch training of epoch {epoch}')
             print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
@@ -94,19 +96,21 @@ def run_experiment(args):
                 break
 
         test_accuracy = test(model, test_batches, criterion, device, evaluator)
-        # logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
-        #                   epoch_time,
-        #                   clause_weights_dict)
-        # logger.print_results_run(run)
-        print("****")
-        print(RunStats(run,train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy,
-                          epoch_time))
-        print("****")
+        rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy[0], epoch_time)
+        xp_stats.add_run(rs)
+        print(rs)
+        wandb.log(rs.to_dict())
+        logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
+                          epoch_time,
+                          clause_weights_dict)
+        logger.print_results_run(run)  # todo remove?
         writer.close()
 
-    # logger.print_results(args)
-    # logger.save_results(args)
-
+    xp_stats.end_experiment()
+    print(xp_stats)
+    wandb.log(xp_stats.to_dict())
+    logger.print_results(args)  # todo remove?
+    logger.save_results(args)
 
 
 def main():
