@@ -18,7 +18,7 @@ from model import get_model
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training_batch import train, test
-
+from app_stats import RunStats
 
 def run_experiment(args):
     torch_geometric.seed_everything(args.seed)
@@ -94,14 +94,18 @@ def run_experiment(args):
                 break
 
         test_accuracy = test(model, test_batches, criterion, device, evaluator)
-        logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
-                          epoch_time,
-                          clause_weights_dict)
-        logger.print_results_run(run)
+        # logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
+        #                   epoch_time,
+        #                   clause_weights_dict)
+        # logger.print_results_run(run)
+        print("****")
+        print(RunStats(run,train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy,
+                          epoch_time))
+        print("****")
         writer.close()
 
-    logger.print_results(args)
-    logger.save_results(args)
+    # logger.print_results(args)
+    # logger.save_results(args)
 
 
 
