@@ -20,6 +20,38 @@ from preprocess_data import load_and_preprocess
 from training_batch import train, test
 from app_stats import RunStats, ExperimentStats
 import wandb
+import numpy as np
+
+
+def callback_early_stopping(valid_accuracies, es_patience, es_min_delta):
+    """
+    Takes as argument the list with all the validation accuracies.
+    If patience=k, checks if the mean of the last k accuracies is higher than the mean of the
+    previous k accuracies (i.e. we check that we are not overfitting). If not, stops learning.
+    @param valid_accuracies - list(float) , validation accuracy per epoch
+    @param es_patience: early stopping patience
+    @param es_min_delta: early stopping delta. Minimum threshold above which the model is considered improving.
+    @return bool - if training stops or not
+
+    """
+    epoch = len(valid_accuracies)
+
+    # no early stopping for 2 * patience epochs
+    if epoch // es_patience < 2:
+        return False
+
+    # Mean loss for last patience epochs and second-last patience epochs
+    mean_previous = np.mean(valid_accuracies[epoch - 2 * es_patience:epoch - es_patience])
+    mean_recent = np.mean(valid_accuracies[epoch - es_patience:epoch])
+    delta = mean_recent - mean_previous
+    if delta <= es_min_delta:
+        print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % es_patience)
+        print("*CB_ES* delta:", delta)
+        print("callback_early_stopping signal received at epoch= %d" % len(valid_accuracies))
+        print("Terminating training")
+        return True
+    else:
+        return False
 
 
 def run_experiment(args):
@@ -33,7 +65,6 @@ def run_experiment(args):
 
     print('Start Transductive Training')
 
-    logger = Logger(args)
     reset_folders(args)
     range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
@@ -92,7 +123,7 @@ def run_experiment(args):
                 # f'Test: {100 * test_accuracy:.2f}% ')
 
             # early stopping
-            if args.es_enabled and logger.callback_early_stopping(valid_accuracies):
+            if args.es_enabled and callback_early_stopping(valid_accuracies):
                 break
 
         test_accuracy = test(model, test_batches, criterion, device, evaluator)
@@ -100,17 +131,11 @@ def run_experiment(args):
         xp_stats.add_run(rs)
         print(rs)
         wandb.log(rs.to_dict())
-        logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
-                          epoch_time,
-                          clause_weights_dict)
-        logger.print_results_run(run)  # todo remove?
         writer.close()
 
     xp_stats.end_experiment()
     print(xp_stats)
     wandb.log(xp_stats.to_dict())
-    logger.print_results(args)  # todo remove?
-    logger.save_results(args)
 
 
 def main():
