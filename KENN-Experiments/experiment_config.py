@@ -27,4 +27,9 @@ class ExperimentConf(object):
         self.full_batch = conf_dict['full_batch']
         self.num_workers = conf_dict['num_workers']
         self.seed = conf_dict['seed']
-
+        self.cluster_sampling = conf_dict['cluster_sampling']
+        self.num_partitions = conf_dict['num_partitions']
+        self.graph_saint_node = conf_dict['graph_saint_node']
+        self.graph_saint_node = conf_dict['graph_saint_edge']
+        self.graph_saint_node = conf_dict['graph_saint_rw']
+        self.graph_saint_node = conf_dict['graph_saint_mrw']
