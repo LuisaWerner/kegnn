@@ -1,8 +1,8 @@
 # train KENN-Experiments here
 # this should later on be done in another file but to keep the overview I have it in a separate file now
 # Remark: only transductive training at the moment, only one base NN (= MLP)
-
 import argparse
+import warnings
 from time import time
 
 import torch
@@ -129,24 +129,23 @@ def main():
     parser.add_argument('--es_enabled', type=bool, default=False)
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=3)
-    parser.add_argument('--sampling_neighbor_size', type=int,
-                        default=-1)  # all neighbors will be included with -1 # todo: how many neighbors do we need only for KENN-Experiments
+    parser.add_argument('--sampling_neighbor_size', type=int, default=-1)  # all neighbors will be included with -1
     parser.add_argument('--batch_size', type=int, default=500)
     parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--seed', type=int, default=100)
-    parser.add_argument('--cluster_sampling', type=bool, default=True)
-    parser.add_argument('--num_partitions', type=int,
-                        default=100)  # todo how to set this ? should depend on graph and memory
-    # todo: make sure that only one of them is True
-    parser.add_argument('--graph_saint_node', type=bool, default=False)  # graph SAINT node sampler
-    parser.add_argument('--graph_saint_edge', type=bool, default=False)  # graph SAINT edge sampler
-    parser.add_argument('--graph_saint_rw', type=bool, default=False)  # graph SAINT random walk sampler
-    parser.add_argument('--graph_saint_mrw', type=bool,
-                        default=False)  # graph SAINT multi-dimensional random walk sampler
+    parser.add_argument('--cluster_sampling', action='store_true')
+    parser.add_argument('--cluster_sampling_num_partitions', type=int, default=100)  # for cluster sampling
+    # parser.add_argument('--graph_saint', action='store_true')
+    parser.add_argument('--graph_saint', type=bool, default=False)
 
     args = parser.parse_args()
     print(args)
+
+    if args.graph_saint and args.cluster_sampling:
+        warnings.warn('Several parameters for sampling are set to True. Do Default Sampling instead ')
+        args.graph_saint, args.cluster_sampling = False
+
     run_experiment(args)
 
 
