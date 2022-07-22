@@ -1,5 +1,6 @@
 import torch
 from torch_geometric.loader import NeighborLoader, ClusterLoader, ClusterData
+from torch_geometric.utils import subgraph
 
 from ogb.nodeproppred import PygNodePropPredDataset
 
@@ -56,6 +57,33 @@ def create_batches(data, split_idx, args):
                                      batch_size=args.batch_size)
 
     return train_loader, valid_loader, test_loader
+
+
+def get_mask(split_idx, data):
+    """
+    todo
+    """
+    for key, idx in split_idx.items():
+        mask = torch.zeros(data.num_nodes, dtype=torch.bool)
+        mask[idx] = True
+        data[f'{key}_mask'] = mask
+    return data
+
+
+def to_inductive(data):
+    """
+    todo: find another solution for inductive/transductive that is more intuitive
+    """
+    data = data.clone()
+    mask = data.train_mask
+    data.x = data.x[mask]
+    data.y = data.y[mask]
+    data.train_mask = data.train_mask[mask]
+    data.test_mask = None
+    data.edge_index, _ = subgraph(mask, data.edge_index, None,
+                                  relabel_nodes=True, num_nodes=data.num_nodes)
+    data.num_nodes = mask.sum().item()
+    return data
 
 
 def load_and_preprocess(args):
