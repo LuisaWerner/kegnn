@@ -1,16 +1,14 @@
 import argparse
 
 import torch
-from tqdm import tqdm
 import torch.nn.functional as F
-
 from torch_geometric.data import GraphSAINTRandomWalkSampler, NeighborSampler
-from torch_geometric.nn import SAGEConv
+from torch_geometric.nn import GraphConv
 from torch_geometric.utils import subgraph
-
-from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
+from tqdm import tqdm
 
 from logger import Logger
+from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 
 
 class SAGE(torch.nn.Module):
@@ -19,10 +17,10 @@ class SAGE(torch.nn.Module):
         super(SAGE, self).__init__()
 
         self.convs = torch.nn.ModuleList()
-        self.convs.append(SAGEConv(in_channels, hidden_channels))
+        self.convs.append(GraphConv(in_channels, hidden_channels))
         for _ in range(num_layers - 2):
-            self.convs.append(SAGEConv(hidden_channels, hidden_channels))
-        self.convs.append(SAGEConv(hidden_channels, out_channels))
+            self.convs.append(GraphConv(hidden_channels, hidden_channels))
+        self.convs.append(GraphConv(hidden_channels, out_channels))
 
         self.dropout = dropout
 
@@ -69,9 +67,13 @@ def train(model, loader, optimizer, device):
     for data in loader:
         data = data.to(device)
         optimizer.zero_grad()
-        out = model(data.x, data.edge_index)
+        if data.edge_weight is None:
+            data.edge_weight = torch.ones(data.edge_norm.size())
+        data.edge_weight = data.edge_norm * data.edge_weight  # edge normalization
+        out = model(data.x, data.edge_index, data.edge_weight)
         y = data.y.squeeze(1)
         loss = F.nll_loss(out[data.train_mask], y[data.train_mask])
+        loss = (loss * data.node_norm)  # node normalization
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
@@ -158,7 +160,8 @@ def main():
                                          batch_size=args.batch_size,
                                          walk_length=args.walk_length,
                                          num_steps=args.num_steps,
-                                         sample_coverage=0,
+                                         sample_coverage=1,
+                                         # if sample coverage set to 0, loader contains no normalization coefficients
                                          save_dir=dataset.processed_dir)
 
     model = SAGE(data.x.size(-1), args.hidden_channels, dataset.num_classes,
