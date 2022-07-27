@@ -17,31 +17,28 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint):
     @param range_constraint : weight clipping for parameters
     """
     model.train()
-    total_examples = total_loss = total_correct = 0
 
-    for batch in iter(train_loader):  # todo: do we need iter?
-        optimizer.zero_grad()
+    total_loss = 0
+    # total_examples = total_correct = 0
+
+    for batch in train_loader:
         batch = batch.to(device)
-        out = model(batch.x, batch.edge_index, batch.relations)[:batch.batch_size]
-        loss = criterion(out, batch.y.squeeze(1)[:batch.batch_size])
+        optimizer.zero_grad()
+        out = model(batch.x, batch.edge_index, batch.relations)[batch.train_mask]
+        loss = criterion(out, batch.y.squeeze(1)[batch.train_mask])
         loss.backward()
         optimizer.step()
-        # model.apply(range_constraint)
+        model.apply(range_constraint)
 
-        total_examples += batch.batch_size
-        total_loss += float(loss)
-        total_correct += int((out.argmax(dim=-1) == batch.y.squeeze(1)[:batch.batch_size]).sum())
+        # total_examples += batch.batch_size
+        # total_correct += int((out.argmax(dim=-1) == batch.y.squeeze(1)[:batch.batch_size]).sum())
+        total_loss += float(loss.item())
 
-        print("Outside: input size", batch.size(), "output_size",
-              out.size())  # todo this is only to see if both GPUs are used
-
-    epoch_loss = total_loss / len(train_loader)  # corresponds to num_batches
-
-    return epoch_loss
+    return total_loss / len(train_loader)
 
 
 @torch.no_grad()
-def test(model, loader, criterion, device, evaluator):
+def test(model, loader, criterion, device, evaluator, data):
     """
     validation loop. No gradient updates
     returns accuracy per epoch and loss
@@ -53,20 +50,37 @@ def test(model, loader, criterion, device, evaluator):
     @param device: gpu or cpu
     @param criterion: defined loss function
     """
+    # todo maybe make separate loaders for train valid and test in evaluation
+    # todo test this method
+    # todo progress bar
+    # todo make sure that right arguments are returned !
 
     model.eval()
     epoch_acc = epoch_loss = 0
-    for batch in iter(loader):  # todo: do we need iter?
+
+    preds = []
+    for batch in loader:
+        # todo keep track of loss
         batch = batch.to(device)
         out = model(batch.x, batch.edge_index, batch.relations)[:batch.batch_size]
-        loss = criterion(out, batch.y.squeeze(1)[:batch.batch_size])
+
         y_pred = out.argmax(dim=-1, keepdim=True)
-        batch_acc = evaluator.eval({
-            'y_true': batch.y[:batch.batch_size],
-            'y_pred': y_pred,
-        })['acc']
-        epoch_acc += batch_acc
-        epoch_loss += loss
-        print("Outside: input size", batch.size(), "output_size",
-              out.size())  # todo this is only to see if both GPUs are used
-    return epoch_acc / len(loader), epoch_loss / len(loader)
+        preds.append(y_pred.cpu())
+
+    preds = torch.cat(preds, dim=0)
+
+    train_acc = evaluator.eval({
+        'y_true': data.y[data.train_mask],
+        'y_pred': preds[data.train_mask]
+    })['acc']
+    valid_acc = evaluator.eval({
+        'y_true': data.y[data.valid_mask],
+        'y_pred': preds[data.valid_mask]
+    })['acc']
+    test_acc = evaluator.eval({
+        'y_true': data.y[data.test_mask],
+        'y_pred': preds[data.test_mask]
+    })['acc']
+
+    # return epoch_acc / len(loader), epoch_loss / len(loader)
+    return train_acc, valid_acc, test_acc
