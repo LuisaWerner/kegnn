@@ -5,70 +5,54 @@ from torch_geometric.utils import subgraph
 from ogb.nodeproppred import PygNodePropPredDataset
 
 
-def create_batches(data, split_idx, args):
+def sample_batches(data, args):
     """
-    @param data: Input graph PygNodePropPredDataset
-    @param split_idx: indices for train, valid test
-    @param args: hyper parameters
-    Creates batches for training, validation and test given the procedure defined in the arguments.
-    If not specified, follow GraphSAGE sampling
+    samples batches for testing
     """
+    loader = NeighborLoader(data,
+                            num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
+                            shuffle=True,
+                            input_nodes=None,
+                            batch_size=args.batch_size,
+                            num_workers=args.num_workers)
+    return loader
 
+
+def sample_train_batches(data, args):
     if args.batch_size > data.num_nodes or args.full_batch:
         print('Full batch training ')
         args.batch_size = data.num_nodes
 
-    if args.graph_saint:
-        train_loader = GraphSAINTNodeSampler(data, batch_size=args.batch_size)
+    if args.mode == 'inductive':
+        data = to_inductive(data)
 
-    elif args.cluster_sampling:
-        # todo: not sure yet if this is inductive or transductive setting, appy different way to handle inductive vs transductive
-        # asked this question at https://github.com/pyg-team/pytorch_geometric/discussions/5030
+    if args.train_sampling == 'cluster':
         train_loader = ClusterLoader(
-            data=ClusterData(data.subgraph(split_idx['train']) if args.mode == 'inductive' else data,
-                             num_parts=args.cluster_sampling_num_partitions),
+            data=ClusterData(data, num_parts=args.cluster_sampling_num_partitions),
             batch_size=args.batch_size,
             shuffle=True,
             num_workers=args.num_workers)
 
+    elif args.train_sampling == 'graph_saint':
+        train_loader = GraphSAINTRandomWalkSampler(data,
+                                                   batch_size=args.batch_size,
+                                                   walk_length=args.walk_length,
+                                                   num_steps=args.num_steps,
+                                                   sample_coverage=args.sample_coverage,
+                                                   # todo : if sample coverage set to 0, loader contains no
+                                                   # normalization coefficients
+                                                   num_workers=args.num_workers)
+
     else:
-        train_loader = NeighborLoader(data=data.subgraph(split_idx['train']) if args.mode == 'inductive' else data,
-                                      num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
-                                      shuffle=True,
-                                      input_nodes=None,
-                                      batch_size=args.batch_size,
-                                      num_workers=args.num_workers)
+        "If nothing specified, create batches in the same way as for testing"
+        train_loader = sample_batches(data, args)
 
-    # always take Neighbor loader for valid and test
-    valid_loader = NeighborLoader(data=data.subgraph(split_idx['valid']) if args.mode == 'inductive' else data,
-                                  num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
-                                  shuffle=True,
-                                  input_nodes=None,
-                                  batch_size=args.batch_size)
-
-    test_loader = NeighborLoader(data=data.subgraph(split_idx['test']) if args.mode == 'inductive' else data,
-                                 num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
-                                 shuffle=True,
-                                 input_nodes=None,
-                                 batch_size=args.batch_size)
-
-    return train_loader, valid_loader, test_loader
-
-
-def get_mask(split_idx, data):
-    """
-    todo
-    """
-    for key, idx in split_idx.items():
-        mask = torch.zeros(data.num_nodes, dtype=torch.bool)
-        mask[idx] = True
-        data[f'{key}_mask'] = mask
-    return data
+    return train_loader
 
 
 def to_inductive(data):
     """
-    todo: find another solution for inductive/transductive that is more intuitive
+    makes training set inductive by removing links to valid and test nodes
     """
     data = data.clone()
     mask = data.train_mask
@@ -76,8 +60,7 @@ def to_inductive(data):
     data.y = data.y[mask]
     data.train_mask = data.train_mask[mask]
     data.test_mask = None
-    data.edge_index, _ = subgraph(mask, data.edge_index, None,
-                                  relabel_nodes=True, num_nodes=data.num_nodes)
+    data.edge_index, _ = subgraph(mask, data.edge_index, None, relabel_nodes=True, num_nodes=data.num_nodes)
     data.num_nodes = mask.sum().item()
     return data
 
@@ -95,8 +78,15 @@ def load_and_preprocess(args):
     data = dataset[0]
     data.num_classes = dataset.num_classes
     data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
+
+    # Convert split indices to boolean masks and add them to `data`.
     split_idx = dataset.get_idx_split()
+    for key, idx in dataset.get_idx_split().items():
+        mask = torch.zeros(data.num_nodes, dtype=torch.bool)
+        mask[idx] = True
+        data[f'{key}_mask'] = mask
 
-    train_loader, valid_loader, test_loader = create_batches(data, split_idx, args)
+    train_loader = sample_train_batches(data, args)
+    test_loader = sample_batches(data, args)
 
-    return data, split_idx, train_loader, valid_loader, test_loader
+    return data, split_idx, train_loader, test_loader
