@@ -29,4 +29,5 @@ dataset/
 **/logs/**
 **/lightning_logs/**
 virtual_env/
+venv
 results/
