@@ -2,7 +2,6 @@
 # this should later on be done in another file but to keep the overview I have it in a separate file now
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 import argparse
-import warnings
 from time import time
 
 import torch
@@ -134,17 +133,17 @@ def main():
     parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--seed', type=int, default=100)
-    parser.add_argument('--cluster_sampling', action='store_true')
-    parser.add_argument('--cluster_sampling_num_partitions', type=int, default=100)  # for cluster sampling
-    # parser.add_argument('--graph_saint', action='store_true')
-    parser.add_argument('--graph_saint', type=bool, default=False)
+    parser.add_argument('--train_sampling', type=str, default=None, help='specify as "cluster", "graph_saint". If '
+                                                                         'not specified, standard GraphSAGE sampling '
+                                                                         'is applied')
+    parser.add_argument('--cluster_sampling_num_partitions', type=int, default=100,
+                        help='argument for cluster sampling')
+    parser.add_argument('--sample_coverage', type=int, default=0, help='argument for graph saint')
+    parser.add_argument('--walk_length', type=int, default=3, help='argument for graph saint')
+    parser.add_argument('--num_steps', type=int, default=30, help='argument for graph saint')
 
     args = parser.parse_args()
     print(args)
-
-    if args.graph_saint and args.cluster_sampling:
-        warnings.warn('Several parameters for sampling are set to True. Do Default Sampling instead ')
-        args.graph_saint, args.cluster_sampling = False
 
     run_experiment(args)
 
