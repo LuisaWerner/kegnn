@@ -67,13 +67,13 @@ def train(model, loader, optimizer, device):
     for data in loader:
         data = data.to(device)
         optimizer.zero_grad()
-        if data.edge_weight is None:
-            data.edge_weight = torch.ones(data.edge_norm.size())
-        data.edge_weight = data.edge_norm * data.edge_weight  # edge normalization
+        # if data.edge_weight is None:
+        #     data.edge_weight = torch.ones(data.edge_norm.size())
+        # data.edge_weight = data.edge_norm * data.edge_weight  # edge normalization
         out = model(data.x, data.edge_index, data.edge_weight)
         y = data.y.squeeze(1)
         loss = F.nll_loss(out[data.train_mask], y[data.train_mask])
-        loss = (loss * data.node_norm)  # node normalization
+        # loss = (loss * data.node_norm)  # node normalization
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
@@ -131,8 +131,8 @@ def main():
     parser.add_argument('--walk_length', type=int, default=3)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--num_steps', type=int, default=30)
-    parser.add_argument('--epochs', type=int, default=20)
-    parser.add_argument('--eval_steps', type=int, default=2)
+    parser.add_argument('--epochs', type=int, default=1)
+    parser.add_argument('--eval_steps', type=int, default=1)
     parser.add_argument('--runs', type=int, default=10)
     args = parser.parse_args()
     print(args)
@@ -140,7 +140,7 @@ def main():
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
 
-    dataset = PygNodePropPredDataset(name='ogbn-products')
+    dataset = PygNodePropPredDataset(name='ogbn-arxiv')  # todo changed
     split_idx = dataset.get_idx_split()
     data = dataset[0]
 
@@ -184,7 +184,7 @@ def main():
                       f'Epoch: {epoch:02d}, '
                       f'Loss: {loss:.4f}')
 
-            if epoch > 9 and epoch % args.eval_steps == 0:
+            if epoch % args.eval_steps == 0:  # todo changed
                 result = test(model, data, evaluator, subgraph_loader, device)
                 logger.add_result(run, result)
                 train_acc, valid_acc, test_acc = result
