@@ -123,7 +123,8 @@ def main():
     parser = argparse.ArgumentParser(description='OGBN-Products (GraphSAINT)')
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--log_steps', type=int, default=1)
-    parser.add_argument('--inductive', action='store_true')
+    # parser.add_argument('--inductive', action='store_true')
+    parser.add_argument('--inductive', type=bool, default=True)
     parser.add_argument('--num_layers', type=int, default=3)
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
@@ -160,7 +161,7 @@ def main():
                                          batch_size=args.batch_size,
                                          walk_length=args.walk_length,
                                          num_steps=args.num_steps,
-                                         sample_coverage=1,
+                                         sample_coverage=0,
                                          # if sample coverage set to 0, loader contains no normalization coefficients
                                          save_dir=dataset.processed_dir)
 

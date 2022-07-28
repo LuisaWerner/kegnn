@@ -132,9 +132,10 @@ def main():
     parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--seed', type=int, default=100)
-    parser.add_argument('--train_sampling', type=str, default=None, help='specify as "cluster", "graph_saint". If '
-                                                                         'not specified, standard GraphSAGE sampling '
-                                                                         'is applied')
+    parser.add_argument('--train_sampling', type=str, default='graph_saint',
+                        help='specify as "cluster", "graph_saint". If '
+                             'not specified, standard GraphSAGE sampling '
+                             'is applied')
     parser.add_argument('--cluster_sampling_num_partitions', type=int, default=100,
                         help='argument for cluster sampling')
     parser.add_argument('--sample_coverage', type=int, default=0, help='argument for graph saint')

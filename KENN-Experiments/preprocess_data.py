@@ -68,6 +68,8 @@ def to_inductive(data):
     mask = data.train_mask
     data.edge_index, _ = subgraph(mask, data.edge_index, None, relabel_nodes=False, num_nodes=data.num_nodes)
     data.relations = data.relations[:data.edge_index.shape[1]]
+
+    # todo : that saint sampler is inductive it needs only train nodes (90941 nodes)
     return data
 
 

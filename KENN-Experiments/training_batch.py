@@ -23,7 +23,10 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint):
         optimizer.zero_grad()
         out = model(batch.x, batch.edge_index,
                     batch.relations)  # the target nodes have always to be the first |batch_size| nodes
-        loss = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size])
+        # loss = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size]) # todo need this for standard
+        loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])  # todo need this for graph saint
+        # todo add normalization coefficients for graph saint
+        # todo there are still train/valid/test nodes for graph saint
         loss.backward()
         optimizer.step()
         model.apply(range_constraint)
