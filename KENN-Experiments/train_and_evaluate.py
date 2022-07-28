@@ -25,84 +25,82 @@ def run_experiment(args):
     device = torch.device(device)
     print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
-    if args.mode == 'transductive':
+    print(f'Start {args.mode} Training')
+    logger = Logger(args)
+    reset_folders(args)
+    range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
 
-        data, split_idx, train_batches, valid_batches, test_batches = load_and_preprocess(args)
+    for run in range(args.runs):
+
+        # load data todo: do this outside or inside the runs loop ?
+        data, train_loader, all_loader = load_and_preprocess(args)
         _ = generate_knowledge(data.num_classes)
 
-        print(f'Start {args.mode} Training')
+        print(f"Run: {run} of {args.runs}")
+        writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
+        model = get_model(data, args).to(device)
+        evaluator = Evaluator(name=args.dataset)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+        criterion = F.nll_loss
 
-        logger = Logger(args)
-        reset_folders(args)
-        range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
+        train_losses = []
+        valid_losses = []
+        train_accuracies = []
+        valid_accuracies = []
+        epoch_time = []
 
-        for run in range(args.runs):
-            print(f"Run: {run} of {args.runs}")
-            writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
-            model = get_model(data, args).to(device)
-            evaluator = Evaluator(name=args.dataset)
-            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-            criterion = F.nll_loss
+        if model.name.startswith('KENN'):
+            clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
+        else:
+            clause_weights_dict = None
 
-            train_losses = []
-            valid_losses = []
-            train_accuracies = []
-            valid_accuracies = []
-            epoch_time = []
+        for epoch in range(args.epochs):
+            print(f'Start batch training of epoch {epoch}')
+            print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_loader)}")
+            start = time()
+            train(model, train_loader, optimizer, device, criterion, range_constraint)
+            t_accuracy, v_accuracy, _, t_loss, v_loss, _ = test(model, all_loader, criterion, device, evaluator, data)
+            end = time()
+
+            # Save stats for tensorboard
+            writer.add_scalar("loss/train", t_loss, epoch)
+            writer.add_scalar("loss/valid", v_loss, epoch)
+            writer.add_scalar("accuracy/train", t_accuracy, epoch)
+            writer.add_scalar("accuracy/valid", v_accuracy, epoch)
+
+            train_accuracies.append(t_accuracy)
+            valid_accuracies.append(v_accuracy)
+            train_losses.append(t_loss)
+            valid_losses.append(v_loss)
+            epoch_time.append(end - start)
 
             if model.name.startswith('KENN'):
-                clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
-            else:
-                clause_weights_dict = None
+                for i in range(args.num_kenn_layers):
+                    clause_weights_dict[f"clause_weights_{i}"].append(
+                        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
 
-            for epoch in range(args.epochs):
-                print(f'Start batch training of epoch {epoch}')
-                print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_batches)}")
-                start = time()
-                t_loss = train(model, train_batches, optimizer, device, criterion, range_constraint)
-                t_accuracy, _ = test(model, train_batches, criterion, device, evaluator)
-                v_accuracy, v_loss = test(model, valid_batches, criterion, device, evaluator)
-                # test_accuracy, _ = test(model, test_batches, criterion, device, evaluator)
-                end = time()
+            if epoch % args.log_steps == 0:
+                print(f'Run: {run + 1:02d}, '
+                      f'Epoch: {epoch:02d}, '
+                      f'Loss: {t_loss:.4f}, '
+                      f'Time: {end - start:.6f} '
+                      f'Train: {100 * t_accuracy:.2f}%, '
+                      f'Valid: {100 * v_accuracy:.2f}% ')
 
-                writer.add_scalar("loss/train", t_loss, epoch)
-                writer.add_scalar("loss/valid", v_loss, epoch)
-                writer.add_scalar("accuracy/train", t_accuracy, epoch)
-                writer.add_scalar("accuracy/valid", v_accuracy, epoch)
+            # early stopping
+            if args.es_enabled and logger.callback_early_stopping(valid_accuracies):
+                break
 
-                train_accuracies.append(t_accuracy)
-                valid_accuracies.append(v_accuracy)
-                train_losses.append(t_loss)
-                valid_losses.append(v_loss)
-                epoch_time.append(end - start)
+        # test_accuracy = test(model, test_batches, criterion, device, evaluator)
+        _, _, test_accuracy, _, _, _ = test(model, all_loader, criterion, device, evaluator, data)
+        logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
+                          epoch_time,
+                          clause_weights_dict)
+        logger.print_results_run(run)
+        writer.close()
 
-                if model.name.startswith('KENN'):
-                    for i in range(args.num_kenn_layers):
-                        clause_weights_dict[f"clause_weights_{i}"].append(
-                            [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
-
-                if epoch % args.log_steps == 0:
-                    print(f'Run: {run + 1:02d}, '
-                          f'Epoch: {epoch:02d}, '
-                          f'Loss: {t_loss:.4f}, '
-                          f'Time: {end - start:.6f} '
-                          f'Train: {100 * t_accuracy:.2f}%, '
-                          f'Valid: {100 * v_accuracy:.2f}% ')
-                    # f'Test: {100 * test_accuracy:.2f}% ')
-
-                # early stopping
-                if args.es_enabled and logger.callback_early_stopping(valid_accuracies):
-                    break
-
-            test_accuracy = test(model, test_batches, criterion, device, evaluator)
-            logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
-                              epoch_time,
-                              clause_weights_dict)
-            logger.print_results_run(run)
-            writer.close()
-
-        logger.print_results(args)
-        logger.save_results(args)
+    logger.print_results(args)
+    logger.save_results(args)
 
 
 def main():
@@ -119,7 +117,8 @@ def main():
     parser.add_argument('--epochs', type=int, default=300)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='GCN')
-    parser.add_argument('--mode', type=str, default='transductive')  # inductive/transductive
+    parser.add_argument('--mode', type=str, default='inductive',
+                        help='transductive or inductive training mode ')  # inductive/transductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
     parser.add_argument('--num_kenn_layers', type=int, default=3)

@@ -18,23 +18,15 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint):
     """
     model.train()
 
-    total_loss = 0
-    # total_examples = total_correct = 0
-
     for batch in train_loader:
-        batch = batch.to(device)
+        batch = batch.to(device)  # todo reduce relations attribute
         optimizer.zero_grad()
-        out = model(batch.x, batch.edge_index, batch.relations)[batch.train_mask]
-        loss = criterion(out, batch.y.squeeze(1)[batch.train_mask])
+        out = model(batch.x, batch.edge_index,
+                    batch.relations)  # the target nodes have always to be the first |batch_size| nodes
+        loss = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size])
         loss.backward()
         optimizer.step()
         model.apply(range_constraint)
-
-        # total_examples += batch.batch_size
-        # total_correct += int((out.argmax(dim=-1) == batch.y.squeeze(1)[:batch.batch_size]).sum())
-        total_loss += float(loss.item())
-
-    return total_loss / len(train_loader)
 
 
 @torch.no_grad()
@@ -50,24 +42,19 @@ def test(model, loader, criterion, device, evaluator, data):
     @param device: gpu or cpu
     @param criterion: defined loss function
     """
-    # todo maybe make separate loaders for train valid and test in evaluation
-    # todo test this method
-    # todo progress bar
-    # todo make sure that right arguments are returned !
-
     model.eval()
-    epoch_acc = epoch_loss = 0
-
-    preds = []
+    preds, logits = [], []
     for batch in loader:
-        # todo keep track of loss
         batch = batch.to(device)
         out = model(batch.x, batch.edge_index, batch.relations)[:batch.batch_size]
+        logits.append(out.cpu())
 
-        y_pred = out.argmax(dim=-1, keepdim=True)
-        preds.append(y_pred.cpu())
+    all_logits = torch.cat(logits, dim=0)
+    preds = all_logits.argmax(dim=-1, keepdim=True)
 
-    preds = torch.cat(preds, dim=0)
+    train_loss = criterion(all_logits[data.train_mask], data.y.squeeze(1)[data.train_mask])
+    valid_loss = criterion(all_logits[data.valid_mask], data.y.squeeze(1)[data.valid_mask])
+    test_loss = criterion(all_logits[data.test_mask], data.y.squeeze(1)[data.test_mask])
 
     train_acc = evaluator.eval({
         'y_true': data.y[data.train_mask],
@@ -82,5 +69,4 @@ def test(model, loader, criterion, device, evaluator, data):
         'y_pred': preds[data.test_mask]
     })['acc']
 
-    # return epoch_acc / len(loader), epoch_loss / len(loader)
-    return train_acc, valid_acc, test_acc
+    return train_acc, valid_acc, test_acc, train_loss, valid_loss, test_loss
