@@ -67,7 +67,7 @@ def sample_train_batches(data, args):
         train_loader = GraphSAINTRandomWalkSampler(data,
                                                    batch_size=args.batch_size,
                                                    walk_length=args.walk_length,
-                                                   num_steps=args.num_steps,
+                                                   num_steps=round(data.num_nodes / args.batch_size),
                                                    sample_coverage=args.sample_coverage,
                                                    num_workers=args.num_workers
                                                    )
