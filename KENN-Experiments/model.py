@@ -82,9 +82,9 @@ class GCN(torch.nn.Module):
         for bn in self.bns:
             bn.reset_parameters()
 
-    def forward(self, x, edge_index, relations):
+    def forward(self, x, edge_index, relations, edge_weight=None):
         for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, edge_index)
+            x = conv(x, edge_index, edge_weight)
             x = self.bns[i](x)
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
@@ -116,9 +116,9 @@ class SAGE(torch.nn.Module):
         for bn in self.bns:
             bn.reset_parameters()
 
-    def forward(self, x, edge_index, relations):
+    def forward(self, x, edge_index, relations, edge_weight=None):
         for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, edge_index)
+            x = conv(x, edge_index, edge_weight)
             x = self.bns[i](x)
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
@@ -150,7 +150,7 @@ class MLP(torch.nn.Module):
         for bn in self.bns:
             bn.reset_parameters()
 
-    def forward(self, x, edge_index, relations):
+    def forward(self, x, edge_index, relations=None, edge_weight=None):
         for i, lin in enumerate(self.lins[:-1]):
             x = lin(x)
             x = self.bns[i](x)
@@ -182,7 +182,7 @@ class Standard(torch.nn.Module):
         for layer in self.lin_layers:
             layer.reset_parameters()
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index=None, relations=None, edge_weight=None):
         for i, lin in enumerate(self.lin_layers[:-1]):
             x = lin(x)
             x = F.relu(x)
@@ -212,8 +212,8 @@ class KENN_GCN(GCN):
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
-    def forward(self, x, edge_index, relations):
-        z = super().forward(x, edge_index, relations)
+    def forward(self, x, edge_index, relations, edge_weight=None):
+        z = super().forward(x, edge_index, relations, edge_weight)
 
         # call KENN layers
         for layer in self.kenn_layers:
@@ -243,8 +243,8 @@ class KENN_MLP(MLP):
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
-    def forward(self, x, edge_index, relations):
-        z = super().forward(x, edge_index, relations)
+    def forward(self, x, edge_index, relations=None, edge_weight=None):
+        z = super().forward(x, edge_index, relations, edge_weight)
 
         # call KENN layers
         for layer in self.kenn_layers:
@@ -274,8 +274,8 @@ class KENN_SAGE(SAGE):
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
-    def forward(self, x, edge_index, relations):
-        z = super().forward(x, edge_index, relations)
+    def forward(self, x, edge_index, relations, edge_weight=None):
+        z = super().forward(x, edge_index, relations, edge_weight)
 
         # call KENN layers
         for layer in self.kenn_layers:
