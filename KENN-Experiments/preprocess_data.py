@@ -1,8 +1,18 @@
 import torch
 from torch_geometric.loader import *
+from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils import subgraph
 
 from ogb.nodeproppred import PygNodePropPredDataset
+
+
+class RelationsAttribute(BaseTransform):
+    """ makes sure that the tensor with binary preactivations for KENN binary predicates is of correct size """
+
+    def __call__(self, data):
+        num_edges = data.edge_index.shape[1]
+        data.relations = data.relations[:num_edges]
+        return data
 
 
 def sample_batches(data, args):
@@ -15,7 +25,8 @@ def sample_batches(data, args):
                             shuffle=False,  # order needs to be respected here
                             input_nodes=None,
                             batch_size=args.batch_size,
-                            num_workers=args.num_workers)
+                            num_workers=args.num_workers,
+                            transform=RelationsAttribute())
     return loader
 
 
@@ -33,7 +44,8 @@ def sample_train_batches(data, args):
             data=ClusterData(data, num_parts=args.cluster_sampling_num_partitions),
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=args.num_workers)
+            num_workers=args.num_workers,
+            transform=RelationsAttribute())
 
     elif args.train_sampling == 'graph_saint':
         # todo : make sure that target nodes are only from training
@@ -44,7 +56,9 @@ def sample_train_batches(data, args):
                                                    sample_coverage=args.sample_coverage,
                                                    # todo : if sample coverage set to 0, loader contains no
                                                    # normalization coefficients
-                                                   num_workers=args.num_workers)
+                                                   num_workers=args.num_workers
+                                                   # todo transform for relations attribute
+                                                   )
 
     else:
         "If nothing specified, create batches in the same way as for testing"
@@ -54,12 +68,14 @@ def sample_train_batches(data, args):
                                       shuffle=True,
                                       input_nodes=data.train_mask,  # the target nodes are only from training
                                       batch_size=args.batch_size,
-                                      num_workers=args.num_workers)
+                                      num_workers=args.num_workers,
+                                      transform=RelationsAttribute())
 
     return train_loader
 
 
 def to_inductive(data):
+    # todo write as Transform (?)
     """
     Returns the full data set with all nodes but deletes the links between
     train-valid and train-test.
