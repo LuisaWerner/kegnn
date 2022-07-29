@@ -58,8 +58,8 @@ def run_experiment(args):
             print(f'Start batch training of epoch {epoch}')
             print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_loader)}")
             start = time()
-            train(model, train_loader, optimizer, device, criterion, range_constraint)
-            t_accuracy, v_accuracy, _, t_loss, v_loss, _ = test(model, all_loader, criterion, device, evaluator, data)
+            t_loss = train(model, train_loader, optimizer, device, criterion, range_constraint, args)
+            t_accuracy, v_accuracy, _, _, v_loss, _ = test(model, all_loader, criterion, device, evaluator, data)
             end = time()
 
             # Save stats for tensorboard
@@ -138,7 +138,9 @@ def main():
                              'is applied')
     parser.add_argument('--cluster_sampling_num_partitions', type=int, default=100,
                         help='argument for cluster sampling')
-    parser.add_argument('--sample_coverage', type=int, default=0, help='argument for graph saint')
+    parser.add_argument('--sample_coverage', type=int, default=0, help='argument for graph saint, if sample coverage '
+                                                                       'is 0, no normalization of batches is '
+                                                                       'conducted ')
     parser.add_argument('--walk_length', type=int, default=3, help='argument for graph saint')
     parser.add_argument('--num_steps', type=int, default=30, help='argument for graph saint')
 

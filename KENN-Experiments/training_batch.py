@@ -1,7 +1,9 @@
 import torch
 
 
-def train(model, train_loader, optimizer, device, criterion, range_constraint):
+def train(model, train_loader, optimizer, device, criterion, range_constraint, args):
+    # todo: can we take edge weights as binary preactivations for KENN if we have them ?
+    # todo: or multiply binary preactiations by edge weights
     """
     training loop - trains specified model by computing batches
     returns average epoch accuracy and loss
@@ -17,19 +19,57 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint):
     @param range_constraint : weight clipping for parameters
     """
     model.train()
+    total_loss = total_examples = 0
 
     for batch in train_loader:
-        batch = batch.to(device)  # todo reduce relations attribute
+
         optimizer.zero_grad()
-        out = model(batch.x, batch.edge_index,
-                    batch.relations)  # the target nodes have always to be the first |batch_size| nodes
-        # loss = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size]) # todo need this for standard
-        loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])  # todo need this for graph saint
-        # todo add normalization coefficients for graph saint
-        # todo there are still train/valid/test nodes for graph saint
+
+        batch = batch.to(device)
+        if batch.train_mask.sum() == 0:
+            print('sampled batch does not contain any train nodes')
+            continue
+
+        if args.train_sampling == 'cluster':
+            # TODO
+            out = model(batch.x, batch.edge_index, batch.relations, None)  # none for edge weight ?
+            loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
+
+        elif args.train_sampling == 'graph_saint':
+
+            # if sample_coverage is 0, no normalization coefficients are calculated
+            if not hasattr(batch, 'edge_norm'):
+                out = model(batch.x, batch.edge_index, batch.relations)
+                loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
+
+            # if normalization coefficients are calculated
+            else:
+                if batch.edge_weight is None:
+                    batch.edge_weight = torch.ones(batch.edge_index.size()[1])
+
+                batch.edge_weight = batch.edge_norm * batch.edge_weight  # todo how does this affect KENN
+                out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight)
+                loss = criterion(out, batch.y.squeeze(1), reduction='none')
+                loss = (loss * batch.node_norm)[batch.train_mask].sum()
+
+            total_loss += loss.item() * batch.num_nodes
+            total_examples += batch.num_nodes
+
+        else:
+            # The batches are created with Neighbor Loader
+            # the target nodes have always to be the first |batch_size| nodes
+            # each node is only taken into account as target nodes once, while it can be neighbor several times
+            # we are not able to just select by train_mask because neighbors would contribute to loss more than ONCE
+            out = model(batch.x, batch.edge_index, batch.relations)
+            loss = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size])
+            total_loss += loss.item() * batch.batch_size
+            total_examples += batch.batch_size
+
         loss.backward()
         optimizer.step()
         model.apply(range_constraint)
+
+    return total_loss / total_examples
 
 
 @torch.no_grad()
