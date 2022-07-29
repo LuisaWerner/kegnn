@@ -37,6 +37,7 @@ def run_experiment(args):
         _ = generate_knowledge(data.num_classes)
 
         print(f"Run: {run} of {args.runs}")
+        print(f"Number of Training Batches with batch_size = {args.batch_size}: {len(train_loader)}")
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
         model = get_model(data, args).to(device)
         evaluator = Evaluator(name=args.dataset)
@@ -55,8 +56,6 @@ def run_experiment(args):
             clause_weights_dict = None
 
         for epoch in range(args.epochs):
-            print(f'Start batch training of epoch {epoch}')
-            print(f"Number of Training batches with batch_size = {args.batch_size}: {len(train_loader)}")
             start = time()
             t_loss = train(model, train_loader, optimizer, device, criterion, range_constraint, args)
             t_accuracy, v_accuracy, _, _, v_loss, _ = test(model, all_loader, criterion, device, evaluator, data)
@@ -89,6 +88,7 @@ def run_experiment(args):
 
             # early stopping
             if args.es_enabled and logger.callback_early_stopping(valid_accuracies):
+                print(f'Early Stopping at epoch {epoch}.')
                 break
 
         # test_accuracy = test(model, test_batches, criterion, device, evaluator)

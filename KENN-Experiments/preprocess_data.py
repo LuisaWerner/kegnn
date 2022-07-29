@@ -98,7 +98,6 @@ def load_and_preprocess(args):
     dataset = PygNodePropPredDataset(name=args.dataset)
     data = dataset[0]
     data.num_classes = dataset.num_classes
-    # relations (= artificial preactivations of binary predicates) only needed for KENN model
     data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
 
     # Convert split indices to boolean masks and add them to `data`.
