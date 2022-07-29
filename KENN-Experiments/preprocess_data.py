@@ -15,6 +15,22 @@ class RelationsAttribute(BaseTransform):
         return data
 
 
+def to_inductive(data):
+    """ Prepares data object for inductive training """
+    data = data.clone()
+    mask = data.train_mask
+    data.edge_index, _ = subgraph(mask, data.edge_index, None, relabel_nodes=True, num_nodes=data.num_nodes)
+    data.relations = data.relations[:data.edge_index.shape[1]]  # todo this should be done later
+    data.x = data.x[mask]
+    data.y = data.y[mask]
+    data.train_mask = data.train_mask[mask]
+    data.test_mask, data.valid_mask = None, None
+    data.node_year = data.node_year[mask]
+    data.num_nodes = mask.sum().item()
+
+    return data
+
+
 def sample_batches(data, args):
     """
     samples batches for testing
@@ -39,25 +55,21 @@ def sample_train_batches(data, args):
         data = to_inductive(data)
 
     if args.train_sampling == 'cluster':
-        # todo : make sure that target nodes are only from training
+        # TODO
         train_loader = ClusterLoader(
             data=ClusterData(data, num_parts=args.cluster_sampling_num_partitions),
             batch_size=args.batch_size,
             shuffle=True,
             num_workers=args.num_workers,
-            transform=RelationsAttribute())
+            transform=RelationsAttribute())  # todo  doesnt have transform attribute
 
     elif args.train_sampling == 'graph_saint':
-        # todo : make sure that target nodes are only from training
         train_loader = GraphSAINTRandomWalkSampler(data,
                                                    batch_size=args.batch_size,
                                                    walk_length=args.walk_length,
                                                    num_steps=args.num_steps,
                                                    sample_coverage=args.sample_coverage,
-                                                   # todo : if sample coverage set to 0, loader contains no
-                                                   # normalization coefficients
                                                    num_workers=args.num_workers
-                                                   # todo transform for relations attribute
                                                    )
 
     else:
@@ -66,27 +78,12 @@ def sample_train_batches(data, args):
                                       num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
                                       # todo : depends also on kenn layers/ base NN structure, --> to verify !
                                       shuffle=True,
-                                      input_nodes=data.train_mask,  # the target nodes are only from training
+                                      input_nodes=None,  # data.train_mask,  # the target nodes are only from training
                                       batch_size=args.batch_size,
                                       num_workers=args.num_workers,
                                       transform=RelationsAttribute())
 
     return train_loader
-
-
-def to_inductive(data):
-    # todo write as Transform (?)
-    """
-    Returns the full data set with all nodes but deletes the links between
-    train-valid and train-test.
-    """
-    data = data.clone()
-    mask = data.train_mask
-    data.edge_index, _ = subgraph(mask, data.edge_index, None, relabel_nodes=False, num_nodes=data.num_nodes)
-    data.relations = data.relations[:data.edge_index.shape[1]]
-
-    # todo : that saint sampler is inductive it needs only train nodes (90941 nodes)
-    return data
 
 
 def load_and_preprocess(args):
@@ -102,8 +99,7 @@ def load_and_preprocess(args):
     data = dataset[0]
     data.num_classes = dataset.num_classes
     # relations (= artificial preactivations of binary predicates) only needed for KENN model
-    data.relations = torch.full(size=(data.num_edges, 1),
-                                fill_value=args.binary_preactivation)  # todo relations size is not adapted for batches, see https://github.com/pyg-team/pytorch_geometric/discussions/5077
+    data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
 
     # Convert split indices to boolean masks and add them to `data`.
     for key, idx in dataset.get_idx_split().items():
