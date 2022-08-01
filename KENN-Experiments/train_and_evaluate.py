@@ -110,14 +110,15 @@ def main():
     parser.add_argument('--log_steps', type=int, default=1)
     parser.add_argument('--use_node_embedding', action='store_true')
     parser.add_argument('--num_layers', type=int, default=3)  # todo
-    parser.add_argument('--num_layers_sampling', type=int, default=1)  # have to correspond when GCN used
+    parser.add_argument('--num_layers_sampling', type=int,
+                        default=1)  # has to correspond to the number of KENN/GCN Layers
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=300)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='GCN')
-    parser.add_argument('--mode', type=str, default='inductive',
+    parser.add_argument('--mode', type=str, default='transductive',
                         help='transductive or inductive training mode ')  # inductive/transductive
     parser.add_argument('--save_results', action='store_true')
     parser.add_argument('--binary_preactivation', type=float, default=500.0)
@@ -128,15 +129,15 @@ def main():
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=3)
     parser.add_argument('--sampling_neighbor_size', type=int, default=-1)  # all neighbors will be included with -1
-    parser.add_argument('--batch_size', type=int, default=500)
+    parser.add_argument('--batch_size', type=int, default=10)
     parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--seed', type=int, default=100)
-    parser.add_argument('--train_sampling', type=str, default='graph_saint',
+    parser.add_argument('--train_sampling', type=str, default='cluster',
                         help='specify as "cluster", "graph_saint". If '
                              'not specified, standard GraphSAGE sampling '
                              'is applied')
-    parser.add_argument('--cluster_sampling_num_partitions', type=int, default=100,
+    parser.add_argument('--cluster_sampling_num_partitions', type=int, default=15,
                         help='argument for cluster sampling')
     parser.add_argument('--sample_coverage', type=int, default=0, help='argument for graph saint, if sample coverage '
                                                                        'is 0, no normalization of batches is '

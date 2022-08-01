@@ -31,9 +31,10 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint, a
             continue
 
         if args.train_sampling == 'cluster':
-            # TODO
             out = model(batch.x, batch.edge_index, batch.relations, None)  # none for edge weight ?
             loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
+            total_loss += loss.item() * torch.sum(batch.train_mask)
+            total_examples += torch.sum(batch.train_mask).item()  # some nodes might be sampled more than once
 
         elif args.train_sampling == 'graph_saint':
 
@@ -74,6 +75,8 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint, a
 
 @torch.no_grad()
 def test(model, loader, criterion, device, evaluator, data):
+    # TODO: why is in graph_saint.py and cluster_gcn.py iterated over convolutions?
+    # todo: maybe a property of the Neighbor Sampler?
     """
     validation loop. No gradient updates
     returns accuracy per epoch and loss

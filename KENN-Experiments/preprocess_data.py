@@ -1,4 +1,7 @@
+import warnings
+
 import torch
+from torch_geometric.data import Data
 from torch_geometric.loader import *
 from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils import subgraph
@@ -15,7 +18,17 @@ class RelationsAttribute(BaseTransform):
         return data
 
 
-def to_inductive(data):
+def get_partition_sizes(cluster_data: ClusterData) -> list:
+    """ returns list of sizes of partitions in cluster data """
+    part_sizes = []
+    for i in range(len(cluster_data.partptr) - 1):
+        size = cluster_data.partptr[i + 1] - cluster_data.partptr[i]
+        part_sizes.append(size.item())
+
+    return part_sizes
+
+
+def to_inductive(data: Data) -> Data:
     """ Prepares data object for inductive training """
     data = data.clone()
     mask = data.train_mask
@@ -31,7 +44,7 @@ def to_inductive(data):
     return data
 
 
-def sample_batches(data, args):
+def sample_batches(data: Data, args) -> NeighborLoader:
     """
     samples batches for testing
     """
@@ -46,7 +59,7 @@ def sample_batches(data, args):
     return loader
 
 
-def sample_train_batches(data, args):
+def sample_train_batches(data: Data, args) -> DataLoader:
     if args.batch_size > data.num_nodes or args.full_batch:
         print('Full batch training ')
         args.batch_size = data.num_nodes
@@ -55,13 +68,28 @@ def sample_train_batches(data, args):
         data = to_inductive(data)
 
     if args.train_sampling == 'cluster':
-        # TODO
+        # TODO SIGSEV error if too many num_parts 100 doesnt pass, 50 passes
+
+        # if the partitions have already more nodes than a batch should have...
+        if (data.num_nodes / args.cluster_sampling_num_partitions) < round(data.num_nodes / args.batch_size):
+            warnings.warn('cluster_sampling_partitions is too low. Partitions have to be smaller than '
+                          'args.batch_size to form batches in cluster sampling. '
+                          'If possible, set num_partitions to a high value')
+            args.cluster_sampling_num_partitions = round(data.num_nodes / args.batch_size) + 1
+
+        cluster_data = ClusterData(data, num_parts=args.cluster_sampling_num_partitions, recursive=False)
+
+        partition_sizes = get_partition_sizes(cluster_data)
+        avg_partition_size = sum(partition_sizes) / len(partition_sizes)
+        print(f'Partition sizes: {partition_sizes}')
+
         train_loader = ClusterLoader(
-            data=ClusterData(data, num_parts=args.cluster_sampling_num_partitions),
-            batch_size=args.batch_size,
+            cluster_data=cluster_data,
+            batch_size=round(args.batch_size / avg_partition_size),
             shuffle=True,
-            num_workers=args.num_workers,
-            transform=RelationsAttribute())  # todo  doesnt have transform attribute
+            num_workers=args.num_workers)
+
+        print(f'# Partitions to form a batch: {round(args.batch_size / avg_partition_size)}')
 
     elif args.train_sampling == 'graph_saint':
         train_loader = GraphSAINTRandomWalkSampler(data,
