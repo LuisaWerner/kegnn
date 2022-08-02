@@ -4,19 +4,52 @@
 import argparse
 from time import time
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
 
+import wandb
 from KENN.RangeConstraint import RangeConstraint
+from app_stats import RunStats, ExperimentStats
 from generate_knowledge import generate_knowledge
-from logger import Logger
 from logger import reset_folders
 from model import get_model
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training_batch import train, test
+
+
+def callback_early_stopping(valid_accuracies, es_patience, es_min_delta):
+    """
+    Takes as argument the list with all the validation accuracies.
+    If patience=k, checks if the mean of the last k accuracies is higher than the mean of the
+    previous k accuracies (i.e. we check that we are not overfitting). If not, stops learning.
+    @param valid_accuracies - list(float) , validation accuracy per epoch
+    @param es_patience: early stopping patience
+    @param es_min_delta: early stopping delta. Minimum threshold above which the model is considered improving.
+    @return bool - if training stops or not
+
+    """
+    epoch = len(valid_accuracies)
+
+    # no early stopping for 2 * patience epochs
+    if epoch // es_patience < 2:
+        return False
+
+    # Mean loss for last patience epochs and second-last patience epochs
+    mean_previous = np.mean(valid_accuracies[epoch - 2 * es_patience:epoch - es_patience])
+    mean_recent = np.mean(valid_accuracies[epoch - es_patience:epoch])
+    delta = mean_recent - mean_previous
+    if delta <= es_min_delta:
+        print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % es_patience)
+        print("*CB_ES* delta:", delta)
+        print("callback_early_stopping signal received at epoch= %d" % len(valid_accuracies))
+        print("Terminating training")
+        return True
+    else:
+        return False
 
 
 def run_experiment(args):
@@ -26,9 +59,9 @@ def run_experiment(args):
     print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
     print(f'Start {args.mode} Training')
-    logger = Logger(args)
     reset_folders(args)
     range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
+    xp_stats = ExperimentStats()
 
     for run in range(args.runs):
 
@@ -39,6 +72,7 @@ def run_experiment(args):
         print(f"Run: {run} of {args.runs}")
         print(f"Number of Training Batches with batch_size = {args.batch_size}: {len(train_loader)}")
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
+
         model = get_model(data, args).to(device)
         evaluator = Evaluator(name=args.dataset)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -87,20 +121,21 @@ def run_experiment(args):
                       f'Valid: {100 * v_accuracy:.2f}% ')
 
             # early stopping
-            if args.es_enabled and logger.callback_early_stopping(valid_accuracies):
+            if args.es_enabled and callback_early_stopping(valid_accuracies):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
         # test_accuracy = test(model, test_batches, criterion, device, evaluator)
         _, _, test_accuracy, _, _, _ = test(model, all_loader, criterion, device, evaluator, data)
-        logger.add_result(train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, run,
-                          epoch_time,
-                          clause_weights_dict)
-        logger.print_results_run(run)
+        rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time)
+        xp_stats.add_run(rs)
+        print(rs)
+        wandb.log(rs.to_dict())
         writer.close()
 
-    logger.print_results(args)
-    logger.save_results(args)
+        xp_stats.end_experiment()
+        print(xp_stats)
+        wandb.log(xp_stats.to_dict())
 
 
 def main():
@@ -115,7 +150,7 @@ def main():
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=300)  # 500
+    parser.add_argument('--epochs', type=int, default=1)  # 500
     parser.add_argument('--runs', type=int, default=1)  # 10
     parser.add_argument('--model', type=str, default='GCN')
     parser.add_argument('--mode', type=str, default='transductive',
@@ -129,7 +164,7 @@ def main():
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=3)
     parser.add_argument('--sampling_neighbor_size', type=int, default=-1)  # all neighbors will be included with -1
-    parser.add_argument('--batch_size', type=int, default=10)
+    parser.add_argument('--batch_size', type=int, default=20000)
     parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--seed', type=int, default=100)

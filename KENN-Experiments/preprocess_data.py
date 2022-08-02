@@ -85,7 +85,7 @@ def sample_train_batches(data: Data, args) -> DataLoader:
 
         train_loader = ClusterLoader(
             cluster_data=cluster_data,
-            batch_size=round(args.batch_size / avg_partition_size),
+            batch_size=round(args.batch_size / avg_partition_size) + 1,
             shuffle=True,
             num_workers=args.num_workers)
 
