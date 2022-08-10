@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, SAGEConv
 
-from parsers import *
+from kenn.parsers import *
 
 
 def get_model(data, args):
@@ -28,7 +28,7 @@ def get_model(data, args):
                        num_layers=args.num_layers,
                        dropout=args.dropout)
 
-    # KENN network
+    # kenn-sub network
     elif args.model.startswith('KENN'):
         if args.model == 'KENN_MLP':
             _class = KENN_MLP
@@ -162,7 +162,7 @@ class MLP(torch.nn.Module):
 
 
 class Standard(torch.nn.Module):
-    """ Original Base Neural Network by KENN paper """
+    """ Original Base Neural Network by kenn-sub paper """
 
     # in_channels =
     # out_channels = 6
@@ -192,20 +192,19 @@ class Standard(torch.nn.Module):
 
 
 class KENN_GCN(GCN):
-    """ KENN with GCN as base NN"""
+    """ kenn-sub with GCN as base NN"""
 
-    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
-                 explainer_object=None):
+    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers,
+                 dropout):
         super().__init__(in_channels=in_channels, out_channels=out_channels,
                          hidden_channels=hidden_channels,
                          num_layers=num_layers, dropout=dropout)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
-        self.explainer_object = explainer_object
         self.kenn_layers = torch.nn.ModuleList()
 
         for _ in range(num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file, explainer_object=explainer_object))
+            self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file))
 
     def reset_parameters(self):
         super().reset_parameters()  # should call reset parameter function of MLP
@@ -215,7 +214,7 @@ class KENN_GCN(GCN):
     def forward(self, x, edge_index, relations, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight)
 
-        # call KENN layers
+        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
@@ -223,20 +222,19 @@ class KENN_GCN(GCN):
 
 
 class KENN_MLP(MLP):
-    """ KENN with MLP (from ogb) as base NN"""
+    """ kenn-sub with MLP (from ogb) as base NN"""
 
-    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
-                 explainer_object=None):
+    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers,
+                 dropout):
         super().__init__(in_channels=in_channels, out_channels=out_channels,
                          hidden_channels=hidden_channels,
                          num_layers=num_layers, dropout=dropout)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
-        self.explainer_object = explainer_object
         self.kenn_layers = torch.nn.ModuleList()
 
         for _ in range(num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file, explainer_object=explainer_object))
+            self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file))
 
     def reset_parameters(self):
         super().reset_parameters()
@@ -246,7 +244,7 @@ class KENN_MLP(MLP):
     def forward(self, x, edge_index, relations=None, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight)
 
-        # call KENN layers
+        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
@@ -254,20 +252,19 @@ class KENN_MLP(MLP):
 
 
 class KENN_SAGE(SAGE):
-    """ KENN with GraphSage (from ogb) as base NN"""
+    """ kenn-sub with GraphSage (from ogb) as base NN"""
 
-    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers, dropout,
-                 explainer_object=None):
+    def __init__(self, knowledge_file, hidden_channels, in_channels, out_channels, num_layers, num_kenn_layers,
+                 dropout):
         super().__init__(in_channels=in_channels, out_channels=out_channels,
                          hidden_channels=hidden_channels,
                          num_layers=num_layers, dropout=dropout)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
-        self.explainer_object = explainer_object
         self.kenn_layers = torch.nn.ModuleList()
 
         for _ in range(num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file, explainer_object=explainer_object))
+            self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file))
 
     def reset_parameters(self):
         super().reset_parameters()  # should call reset parameter function of MLP
@@ -277,7 +274,7 @@ class KENN_SAGE(SAGE):
     def forward(self, x, edge_index, relations, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight)
 
-        # call KENN layers
+        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 

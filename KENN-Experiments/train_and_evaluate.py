@@ -1,4 +1,4 @@
-# train KENN-Experiments here
+# train kenn-sub-Experiments here
 # this should later on be done in another file but to keep the overview I have it in a separate file now
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 import argparse
@@ -11,7 +11,6 @@ import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
 
 import wandb
-from KENN.RangeConstraint import RangeConstraint
 from app_stats import RunStats, ExperimentStats
 from generate_knowledge import generate_knowledge
 from logger import reset_folders
@@ -60,13 +59,13 @@ def run_experiment(args):
 
     print(f'Start {args.mode} Training')
     reset_folders(args)
-    range_constraint = RangeConstraint(lower=args.range_constraint_lower, upper=args.range_constraint_upper)
     xp_stats = ExperimentStats()
 
     for run in range(args.runs):
 
         # load data todo: do this outside or inside the runs loop ?
-        data, train_loader, all_loader = load_and_preprocess(args)
+        data, train_loader, all_loader = load_and_preprocess(
+            args)  # todo is this supposed to be outside of the loop? I dont think so
         _ = generate_knowledge(data.num_classes)
 
         print(f"Run: {run} of {args.runs}")
@@ -84,14 +83,11 @@ def run_experiment(args):
         valid_accuracies = []
         epoch_time = []
 
-        if model.name.startswith('KENN'):
-            clause_weights_dict = {f"clause_weights_{i}": [] for i in range(args.num_kenn_layers)}
-        else:
-            clause_weights_dict = None
+        clause_weights_dict = None
 
         for epoch in range(args.epochs):
             start = time()
-            t_loss = train(model, train_loader, optimizer, device, criterion, range_constraint, args)
+            t_loss = train(model, train_loader, optimizer, device, criterion, args)
             t_accuracy, v_accuracy, _, _, v_loss, _ = test(model, all_loader, criterion, device, evaluator, data)
             end = time()
 
@@ -107,10 +103,6 @@ def run_experiment(args):
             valid_losses.append(v_loss)
             epoch_time.append(end - start)
 
-            if model.name.startswith('KENN'):
-                for i in range(args.num_kenn_layers):
-                    clause_weights_dict[f"clause_weights_{i}"].append(
-                        [ce.clause_weight for ce in model.kenn_layers[i].binary_ke.clause_enhancers])
 
             if epoch % args.log_steps == 0:
                 print(f'Run: {run + 1:02d}, '
@@ -146,7 +138,7 @@ def main():
     parser.add_argument('--use_node_embedding', action='store_true')
     parser.add_argument('--num_layers', type=int, default=3)  # todo
     parser.add_argument('--num_layers_sampling', type=int,
-                        default=1)  # has to correspond to the number of KENN/GCN Layers
+                        default=1)  # has to correspond to the number of kenn-sub/GCN Layers
     parser.add_argument('--hidden_channels', type=int, default=256)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
@@ -165,15 +157,15 @@ def main():
     parser.add_argument('--es_patience', type=int, default=3)
     parser.add_argument('--sampling_neighbor_size', type=int, default=-1)  # all neighbors will be included with -1
     parser.add_argument('--batch_size', type=int, default=20000)
-    parser.add_argument('--full_batch', type=bool, default=False)
+    parser.add_argument('--full_batch', type=bool, default=True)
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--seed', type=int, default=100)
-    parser.add_argument('--train_sampling', type=str, default='cluster',
+    parser.add_argument('--train_sampling', type=str, default='graph_saint',
                         help='specify as "cluster", "graph_saint". If '
                              'not specified, standard GraphSAGE sampling '
                              'is applied')
     parser.add_argument('--cluster_sampling_num_partitions', type=int, default=15,
-                        help='argument for cluster sampling')
+                        help='argument for cluster sampling: In how many partitions should the graph be clustered.')
     parser.add_argument('--sample_coverage', type=int, default=0, help='argument for graph saint, if sample coverage '
                                                                        'is 0, no normalization of batches is '
                                                                        'conducted ')

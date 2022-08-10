@@ -10,7 +10,7 @@ from ogb.nodeproppred import PygNodePropPredDataset
 
 
 class RelationsAttribute(BaseTransform):
-    """ makes sure that the tensor with binary preactivations for KENN binary predicates is of correct size """
+    """ makes sure that the tensor with binary preactivations for kenn-sub binary predicates is of correct size """
 
     def __call__(self, data):
         num_edges = data.edge_index.shape[1]
@@ -50,7 +50,7 @@ def sample_batches(data: Data, args) -> NeighborLoader:
     """
     loader = NeighborLoader(data,
                             num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
-                            # todo : depends also on kenn layers/ base NN structure, --> to verify !
+                            # todo : depends also on kenn-sub layers/ base NN structure, --> to verify !
                             shuffle=False,  # order needs to be respected here
                             input_nodes=None,
                             batch_size=args.batch_size,
@@ -77,7 +77,8 @@ def sample_train_batches(data: Data, args) -> DataLoader:
                           'If possible, set num_partitions to a high value')
             args.cluster_sampling_num_partitions = round(data.num_nodes / args.batch_size) + 1
 
-        cluster_data = ClusterData(data, num_parts=args.cluster_sampling_num_partitions, recursive=False)
+        cluster_data = ClusterData(data, num_parts=args.cluster_sampling_num_partitions, recursive=False,
+                                   save_dir=f'{args.dataset}/processed')
 
         partition_sizes = get_partition_sizes(cluster_data)
         avg_partition_size = sum(partition_sizes) / len(partition_sizes)
@@ -104,7 +105,7 @@ def sample_train_batches(data: Data, args) -> DataLoader:
         "If nothing specified, create batches in the same way as for testing"
         train_loader = NeighborLoader(data,
                                       num_neighbors=[args.sampling_neighbor_size] * args.num_layers_sampling,
-                                      # todo : depends also on kenn layers/ base NN structure, --> to verify !
+                                      # todo : depends also on kenn-sub layers/ base NN structure, --> to verify !
                                       shuffle=True,
                                       input_nodes=None,  # data.train_mask,  # the target nodes are only from training
                                       batch_size=args.batch_size,

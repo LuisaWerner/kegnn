@@ -2,7 +2,7 @@
 """
 At the moment it only works for base NN 
 TODO: 
-- adapt a script for KENN-Experiments and add a script that runs everything 
+- adapt a script for kenn-sub-Experiments and add a script that runs everything 
 - early stopping ? 
 - to discuss: use to_symmetric() for links 
 - prepare for inductive and transductive setting -IN PROGRESS 

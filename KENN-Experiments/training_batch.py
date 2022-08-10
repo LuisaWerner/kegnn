@@ -1,8 +1,8 @@
 import torch
 
 
-def train(model, train_loader, optimizer, device, criterion, range_constraint, args):
-    # todo: can we take edge weights as binary preactivations for KENN if we have them ?
+def train(model, train_loader, optimizer, device, criterion, args):
+    # todo: can we take edge weights as binary preactivations for kenn-sub if we have them ?
     # todo: or multiply binary preactiations by edge weights
     """
     training loop - trains specified model by computing batches
@@ -48,7 +48,7 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint, a
                 if batch.edge_weight is None:
                     batch.edge_weight = torch.ones(batch.edge_index.size()[1])
 
-                batch.edge_weight = batch.edge_norm * batch.edge_weight  # todo how does this affect KENN
+                batch.edge_weight = batch.edge_norm * batch.edge_weight  # todo how does this affect kenn-sub
                 out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight)
                 loss = criterion(out, batch.y.squeeze(1), reduction='none')
                 loss = (loss * batch.node_norm)[batch.train_mask].sum()
@@ -68,7 +68,7 @@ def train(model, train_loader, optimizer, device, criterion, range_constraint, a
 
         loss.backward()
         optimizer.step()
-        model.apply(range_constraint)
+        # model.apply(range_constraint)
 
     return total_loss / total_examples
 
