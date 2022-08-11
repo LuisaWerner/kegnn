@@ -43,6 +43,7 @@ class KnowledgeEnhancer(torch.nn.Module):
         weights = []
         # TODO: parllelize over clauses
         for enhancer in self.clause_enhancers:
+            print(torch.cuda.memory_summary())
             scattered_delta, delta = enhancer(ground_atoms)
             scatter_deltas_list.append(scattered_delta)
             if self.save_training_data:

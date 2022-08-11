@@ -49,7 +49,7 @@ class ClauseEnhancer(torch.nn.Module):
 
         # Setup indexing of the literals
         gather_literal_indices = []
-        self.scatter_literal_indices = []
+        scatter_literal_indices = []
         signs = []
 
         for literal in literals:
@@ -63,12 +63,12 @@ class ClauseEnhancer(torch.nn.Module):
             gather_literal_indices.append(literal_index)
             # What's the difference? This just creates singletons of the same list as above.
             # gather is [n], scatter is [n, 1]...
-            self.scatter_literal_indices.append([literal_index])
+            scatter_literal_indices.append([literal_index])
             signs.append(sign)
 
-        self.gather_literal_indices = torch.tensor(gather_literal_indices)
-
-        self.signs = torch.tensor(signs, dtype=torch.float32)
+        self.register_buffer('signs', torch.tensor(signs, dtype=torch.float32))
+        self.register_buffer('gather_literal_indices', torch.Tensor(gather_literal_indices).to(torch.long))
+        self.register_buffer('scatter_literal_indices', torch.Tensor(scatter_literal_indices).to(torch.long))
 
     def select_predicates(self, ground_atoms: torch.Tensor) -> torch.Tensor:
         """Find the grounding of the clause
