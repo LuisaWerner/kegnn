@@ -94,4 +94,4 @@ class ClauseEnhancer(torch.nn.Module):
         scattered_delta = torch.zeros_like(ground_atoms)
         scattered_delta[..., self.gather_literal_indices] = delta
 
-        return scattered_delta, delta
+        return delta, self.scatter_literal_indices

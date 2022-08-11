@@ -1,6 +1,6 @@
 import torch
 from kenn.ClauseEnhancer import ClauseEnhancer
-
+from torch_scatter import scatter_add
 from kenn.boost_functions import GodelBoostConormApprox
 
 
@@ -41,16 +41,26 @@ class KnowledgeEnhancer(torch.nn.Module):
         scatter_deltas_list: [torch.Tensor] = []
         light_deltas_list = []
         weights = []
+        deltas_list = []
+        indexes_list = []
         # TODO: parllelize over clauses
         for enhancer in self.clause_enhancers:
-            print(torch.cuda.memory_summary())
-            scattered_delta, delta = enhancer(ground_atoms)
-            scatter_deltas_list.append(scattered_delta)
+            #print(torch.cuda.memory_summary())
+            #scattered_delta, delta = enhancer(ground_atoms)
+            delta, indices = enhancer(ground_atoms)
+            deltas_list.append(delta)
+            indexes_list.append(indices)
+            #scatter_deltas_list.append(scattered_delta)
             if self.save_training_data:
                 light_deltas_list.append(delta)
                 weights.append(enhancer.clause_weight.numpy()[0][0])
 
         deltas_data = [light_deltas_list, weights]
+
+        all_deltas = torch.cat(deltas_list, dim=1)
+        all_indices = torch.cat(indexes_list, dim=0)
+
+
         # The sum can be refactored into the for loop above.
         if using_max:
             # TODO: the max is not performed at the level of groupby (sum is still used there)
@@ -58,4 +68,5 @@ class KnowledgeEnhancer(torch.nn.Module):
             _, indexes = torch.abs(stacked_deltas).max(dim=0)
             return torch.gather(stacked_deltas, 0, indexes.unsqueeze(0)), deltas_data
         else:
-            return torch.stack(scatter_deltas_list).sum(dim=0), deltas_data
+            return torch.transpose(scatter_add(src=torch.transpose(all_deltas, 0, 1), index=all_indices, dim=0), 0, 1)
+            # return torch.stack(scatter_deltas_list).sum(dim=0), deltas_data
