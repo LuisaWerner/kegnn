@@ -1,5 +1,3 @@
-import time
-
 import torch
 from kenn.ClauseEnhancer import ClauseEnhancer
 from kenn.boost_functions import GodelBoostConormApprox
@@ -70,8 +68,5 @@ class KnowledgeEnhancer(torch.nn.Module):
             _, indexes = torch.abs(stacked_deltas).max(dim=0)
             return torch.gather(stacked_deltas, 0, indexes.unsqueeze(0)), deltas_data
         else:
-            start = time.time()
             result = scatter_add(src=torch.transpose(all_deltas, 0, 1), index=all_indices, dim=0)
-            end = time.time()
-            print(f' scatter time: {end - start}')
             return torch.transpose(result, 0, 1), deltas_data
