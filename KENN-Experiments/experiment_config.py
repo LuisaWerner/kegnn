@@ -3,7 +3,6 @@ class ExperimentConf(object):
     def __init__(self, conf_dict):
         self.dataset = conf_dict['dataset']
         self.device = conf_dict['device']
-        self.log_steps = conf_dict['log_steps']
         self.use_node_embedding = conf_dict['use_node_embedding']
         self.num_layers = conf_dict['num_layers']
         self.num_layers_sampling = conf_dict['num_layers_sampling']
@@ -32,3 +31,4 @@ class ExperimentConf(object):
         self.sample_coverage = conf_dict['sample_coverage']
         self.walk_length = conf_dict['walk_length']
         self.num_steps = conf_dict['num_steps']
+        self.eval_steps = conf_dict['eval_steps']

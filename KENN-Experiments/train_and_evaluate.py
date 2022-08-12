@@ -63,9 +63,7 @@ def run_experiment(args):
 
     for run in range(args.runs):
 
-        # load data todo: do this outside or inside the runs loop ?
-        data, train_loader, all_loader = load_and_preprocess(
-            args)  # todo is this supposed to be outside of the loop? I dont think so
+        data, train_loader, all_loader = load_and_preprocess(args)
         _ = generate_knowledge(data.num_classes)
 
         print(f"Run: {run} of {args.runs}")
@@ -87,28 +85,29 @@ def run_experiment(args):
 
         for epoch in range(args.epochs):
             start = time()
-            t_loss = train(model, train_loader, optimizer, device, criterion, args)
-            t_accuracy, v_accuracy, _, _, v_loss, _ = test(model, all_loader, criterion, device, evaluator, data)
+            _ = train(model, train_loader, optimizer, device, criterion, args)
             end = time()
 
-            # Save stats for tensorboard
-            writer.add_scalar("loss/train", t_loss, epoch)
-            writer.add_scalar("loss/valid", v_loss, epoch)
-            writer.add_scalar("accuracy/train", t_accuracy, epoch)
-            writer.add_scalar("accuracy/valid", v_accuracy, epoch)
+            if epoch % args.eval_steps == 0:
+                t_accuracy, v_accuracy, _, t_loss, v_loss, _ = test(model, all_loader, criterion, device, evaluator,
+                                                                    data)
 
-            train_accuracies.append(t_accuracy)
-            valid_accuracies.append(v_accuracy)
-            train_losses.append(t_loss)
-            valid_losses.append(v_loss)
-            epoch_time.append(end - start)
+                # Save stats for tensorboard
+                writer.add_scalar("loss/train", t_loss, epoch)
+                writer.add_scalar("loss/valid", v_loss, epoch)
+                writer.add_scalar("accuracy/train", t_accuracy, epoch)
+                writer.add_scalar("accuracy/valid", v_accuracy, epoch)
 
+                train_accuracies.append(t_accuracy)
+                valid_accuracies.append(v_accuracy)
+                train_losses.append(t_loss)
+                valid_losses.append(v_loss)
+                epoch_time.append(end - start)
 
-            if epoch % args.log_steps == 0:
                 print(f'Run: {run + 1:02d}, '
                       f'Epoch: {epoch:02d}, '
                       f'Loss: {t_loss:.4f}, '
-                      f'Time: {end - start:.6f} '
+                      f'Time per Train Step: {end - start:.6f} '
                       f'Train: {100 * t_accuracy:.2f}%, '
                       f'Valid: {100 * v_accuracy:.2f}% ')
 
@@ -117,7 +116,6 @@ def run_experiment(args):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
-        # test_accuracy = test(model, test_batches, criterion, device, evaluator)
         _, _, test_accuracy, _, _, _ = test(model, all_loader, criterion, device, evaluator, data)
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time)
         xp_stats.add_run(rs)
@@ -134,7 +132,6 @@ def main():
     parser = argparse.ArgumentParser(description='Experiments')
     parser.add_argument('--dataset', type=str, default='ogbn-arxiv')  # alternatively products
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--log_steps', type=int, default=1)
     parser.add_argument('--use_node_embedding', action='store_true')
     parser.add_argument('--num_layers', type=int, default=3)  # todo
     parser.add_argument('--num_layers_sampling', type=int,
@@ -171,6 +168,9 @@ def main():
                                                                        'conducted ')
     parser.add_argument('--walk_length', type=int, default=3, help='argument for graph saint')
     parser.add_argument('--num_steps', type=int, default=30, help='argument for graph saint')
+    parser.add_argument('--eval_steps', type=int, default=1,
+                        help='How often should the model be evaluated: Default: Every epoch. Set to a higher value to reduce overall epoch time and '
+                             'evaluate only every i-th step.  ')
 
     args = parser.parse_args()
     print(args)

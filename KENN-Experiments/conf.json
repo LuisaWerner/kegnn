@@ -3,7 +3,6 @@
     {
       "dataset": "ogbn-arxiv",
       "device": 0,
-      "log_steps": 1,
       "use_node_embedding": "store_true",
       "num_layers": 3,
       "num_layers_sampling": 1,
@@ -31,7 +30,8 @@
       "cluster_sampling_num_partitions": 15,
       "sample_coverage": 0,
       "walk_length": 3,
-      "num_steps": 30
+      "num_steps": 30,
+      "eval_steps": 5
     }
   ]
 }
