@@ -1,5 +1,6 @@
 """generates the knowledge of type CLASS(x) AND CITE(X.Y) => CLASS(Y) for each class """
 
+
 def generate_knowledge(num_classes):
     """
     creates the knowledge file based on unary predicates = document classes

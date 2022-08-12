@@ -74,5 +74,4 @@ class KnowledgeEnhancer(torch.nn.Module):
             result = scatter_add(src=torch.transpose(all_deltas, 0, 1), index=all_indices, dim=0)
             end = time.time()
             print(f' scatter time: {end - start}')
-            return torch.transpose(result, 0, 1)
-            # return torch.stack(scatter_deltas_list).sum(dim=0), deltas_data
+            return torch.transpose(result, 0, 1), deltas_data

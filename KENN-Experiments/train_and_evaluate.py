@@ -12,8 +12,8 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 import wandb
 from app_stats import RunStats, ExperimentStats
+from app_stats import reset_folders
 from generate_knowledge import generate_knowledge
-from logger import reset_folders
 from model import get_model
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
