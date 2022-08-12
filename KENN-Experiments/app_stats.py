@@ -1,4 +1,21 @@
+import os
+import shutil
+
 import numpy as np
+
+
+def reset_folders(args):
+    """ clears folders from past runs """
+
+    # clear tensorboard folders
+    if os.path.exists('./runs/' + args.dataset + '/' + args.mode):
+        shutil.rmtree('./runs/' + args.dataset + '/' + args.mode)
+
+    # clear result folders
+    if os.path.exists('results/' + args.dataset + '/' + args.mode):
+        shutil.rmtree('results/' + args.dataset + '/' + args.mode)
+
+    print(' Deleted old directories results and runs')
 
 
 class RunStats(object):
