@@ -161,8 +161,9 @@ def main():
                         help='specify as "cluster", "graph_saint". If '
                              'not specified, standard GraphSAGE sampling '
                              'is applied')
-    parser.add_argument('--cluster_sampling_num_partitions', type=int, default=15,
-                        help='argument for cluster sampling: In how many partitions should the graph be clustered.')
+    parser.add_argument('--cluster_partition_size', type=int, default=100,
+                        help='argument for cluster sampling: Approximate size of partitions. Should be smaller than batch size. '
+                             'If larger than batch size, 1 partition = 1 batch ')
     parser.add_argument('--sample_coverage', type=int, default=0, help='argument for graph saint, if sample coverage '
                                                                        'is 0, no normalization of batches is '
                                                                        'conducted ')

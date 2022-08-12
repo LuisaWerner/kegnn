@@ -70,27 +70,25 @@ def sample_train_batches(data: Data, args) -> DataLoader:
     if args.train_sampling == 'cluster':
         # TODO SIGSEV error if too many num_parts 100 doesnt pass, 50 passes
 
-        # if the partitions have already more nodes than a batch should have...
-        if (data.num_nodes / args.cluster_sampling_num_partitions) < round(data.num_nodes / args.batch_size):
-            warnings.warn('cluster_sampling_partitions is too low. Partitions have to be smaller than '
-                          'args.batch_size to form batches in cluster sampling. '
-                          'If possible, set num_partitions to a high value')
-            args.cluster_sampling_num_partitions = round(data.num_nodes / args.batch_size) + 1
+        # if partition size is larger than batch size, set partition size to batch size
+        if args.cluster_partition_size > args.batch_size:
+            warnings.warn('batch size smaller than partition size: use one partition as a batch now')
+            args.cluster_partition_size = args.batch_size
 
-        cluster_data = ClusterData(data, num_parts=args.cluster_sampling_num_partitions, recursive=False,
-                                   save_dir=f'{args.dataset}/processed')
+        num_partitions = round(data.num_nodes / args.cluster_partition_size) + 1
+        cluster_data = ClusterData(data, num_parts=num_partitions, recursive=False)
 
         partition_sizes = get_partition_sizes(cluster_data)
         avg_partition_size = sum(partition_sizes) / len(partition_sizes)
-        print(f'Partition sizes: {partition_sizes}')
+        print(f'Avg Partition size: {avg_partition_size}')
 
         train_loader = ClusterLoader(
             cluster_data=cluster_data,
-            batch_size=round(args.batch_size / avg_partition_size) + 1,
+            batch_size=round(args.batch_size / args.cluster_partition_size) + 1,
             shuffle=True,
             num_workers=args.num_workers)
 
-        print(f'# Partitions to form a batch: {round(args.batch_size / avg_partition_size)}')
+        print(f'# Partitions to form a batch: {round(args.batch_size / args.cluster_partition_size) + 1}')
 
     elif args.train_sampling == 'graph_saint':
         train_loader = GraphSAINTRandomWalkSampler(data,

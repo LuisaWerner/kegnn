@@ -27,7 +27,7 @@ class ExperimentConf(object):
         self.num_workers = conf_dict['num_workers']
         self.seed = conf_dict['seed']
         self.train_sampling = conf_dict['train_sampling']
-        self.cluster_sampling_num_partitions = conf_dict['cluster_sampling_num_partitions']
+        self.cluster_partition_size = conf_dict['cluster_partition_size']
         self.sample_coverage = conf_dict['sample_coverage']
         self.walk_length = conf_dict['walk_length']
         self.num_steps = conf_dict['num_steps']
