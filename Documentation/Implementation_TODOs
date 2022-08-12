@@ -4,7 +4,7 @@ TODO
 
 CLEAN THE GIT
 - merge relevant and stable code into the master
-- delete unnecessary files
+- delete unnecessary files                                                                                              [Luisa, started 12.08.]
 
 
 KENN LAYER
@@ -19,7 +19,7 @@ DDP/Performance
 - try with 2 machines
 - parallelize validation and test
 - try PytochLightning
-- Evaluation every x epochs                                             [Luisa, started 12.08.]
+- Evaluation every x epochs                                                                                             [Luisa, started 12.08.]
 - determine when KENN crashes (on ogb products) because of OOM
 - M1 vs server
 
@@ -50,5 +50,10 @@ Other
 - error of cluster sampling on arxiv.
     - many batches and small data, works with a low number of partitions
 - Adapt ReadMe
+
+RUNS
+
+1. 12.08.22: Goal: Compare different models MLP, GCN, KENN_MLP, KENN_GCN
+-full-batch, transductive, ogbn-arxiv
 
 
