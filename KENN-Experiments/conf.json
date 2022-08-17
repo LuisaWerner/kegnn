@@ -10,8 +10,8 @@
       "hidden_channels": 256,
       "dropout": 0.5,
       "lr": 0.01,
-      "epochs": 500,
-      "runs": 1,
+      "epochs": 100,
+      "runs": 5,
       "model": "MLP",
       "mode": "transductive",
       "save_results": "store_true",
@@ -19,7 +19,7 @@
       "num_kenn_layers": 3,
       "range_constraint_lower": 0,
       "range_constraint_upper": 500,
-      "es_enabled": true,
+      "es_enabled": false,
       "es_min_delta": 0.001,
       "es_patience": 3,
       "sampling_neighbor_size": 10,
@@ -32,7 +32,7 @@
       "sample_coverage": 0,
       "walk_length": 3,
       "num_steps": 30,
-      "eval_steps": 10
+      "eval_steps": 1
     },
     {
       "dataset": "CiteSeer",
@@ -43,8 +43,8 @@
       "hidden_channels": 256,
       "dropout": 0.5,
       "lr": 0.01,
-      "epochs": 500,
-      "runs": 1,
+      "epochs": 100,
+      "runs": 5,
       "model": "KENN_MLP",
       "mode": "transductive",
       "save_results": "store_true",
@@ -52,7 +52,7 @@
       "num_kenn_layers": 3,
       "range_constraint_lower": 0,
       "range_constraint_upper": 500,
-      "es_enabled": true,
+      "es_enabled": false,
       "es_min_delta": 0.001,
       "es_patience": 3,
       "sampling_neighbor_size": 10,
@@ -65,7 +65,7 @@
       "sample_coverage": 0,
       "walk_length": 3,
       "num_steps": 30,
-      "eval_steps": 10
+      "eval_steps": 1
     },
     {
       "dataset": "CiteSeer",
@@ -76,8 +76,8 @@
       "hidden_channels": 256,
       "dropout": 0.5,
       "lr": 0.01,
-      "epochs": 500,
-      "runs": 1,
+      "epochs": 100,
+      "runs": 5,
       "model": "GCN",
       "mode": "transductive",
       "save_results": "store_true",
@@ -85,7 +85,7 @@
       "num_kenn_layers": 3,
       "range_constraint_lower": 0,
       "range_constraint_upper": 500,
-      "es_enabled": true,
+      "es_enabled": false,
       "es_min_delta": 0.001,
       "es_patience": 3,
       "sampling_neighbor_size": 10,
@@ -98,7 +98,7 @@
       "sample_coverage": 0,
       "walk_length": 3,
       "num_steps": 30,
-      "eval_steps": 10
+      "eval_steps": 1
     },
     {
       "dataset": "CiteSeer",
@@ -109,8 +109,8 @@
       "hidden_channels": 256,
       "dropout": 0.5,
       "lr": 0.01,
-      "epochs": 500,
-      "runs": 1,
+      "epochs": 100,
+      "runs": 5,
       "model": "KENN_GCN",
       "mode": "transductive",
       "save_results": "store_true",
@@ -118,7 +118,7 @@
       "num_kenn_layers": 3,
       "range_constraint_lower": 0,
       "range_constraint_upper": 500,
-      "es_enabled": true,
+      "es_enabled": false,
       "es_min_delta": 0.001,
       "es_patience": 3,
       "sampling_neighbor_size": 10,
@@ -131,7 +131,7 @@
       "sample_coverage": 0,
       "walk_length": 3,
       "num_steps": 30,
-      "eval_steps": 10
+      "eval_steps": 1
     }
   ]
 }
