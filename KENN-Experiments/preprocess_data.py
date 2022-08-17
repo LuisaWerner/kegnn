@@ -123,15 +123,19 @@ def load_and_preprocess(args):
     @return train_loader, valid_loader, test_loader: train/valid/test set split into batches,
     samples neighbors specified in args in an transductive
     """
-    # if True: args.dataset == 'CiteSeer':
-    dataset1 = torch_geometric.datasets.Planetoid(root="CiteSeer", name='CiteSeer')
+    if args.dataset == 'CiteSeer':
+        # todo : add more arguments to conf/Experiment Config
+        dataset = torch_geometric.datasets.Planetoid(root="CiteSeer", name='CiteSeer', split="public")
 
-    # else:
-    dataset = PygNodePropPredDataset(name=args.dataset)
+    else:
+        dataset = PygNodePropPredDataset(name=args.dataset)
 
     data = dataset[0]
     data.num_classes = dataset.num_classes
     data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
+
+    if dataset.data.y.dim() == 1:
+        data.y = data.y.unsqueeze(1)
 
     # Convert split indices to boolean masks and add them to `data`.
     if not hasattr(data, "train_mask"):
@@ -140,6 +144,8 @@ def load_and_preprocess(args):
             mask[idx] = True
             data[f'{key}_mask'] = mask
 
+    if not hasattr(data, "num_nodes"):
+        data.num_nodes = data.x.shape[0]
     train_loader = sample_train_batches(data, args)
     all_loader = sample_batches(data, args)
 

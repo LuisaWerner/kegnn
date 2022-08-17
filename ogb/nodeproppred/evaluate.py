@@ -15,16 +15,34 @@ class Evaluator:
     def __init__(self, name):
         self.name = name
 
-        meta_info = pd.read_csv(os.path.join(os.path.dirname(__file__), 'master.csv'), index_col = 0)
-        if not self.name in meta_info:
+        # todo for more generic use put in another file
+        if self.name == 'CiteSeer':
+            meta_info = pd.DataFrame(columns=[name],
+                                     index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
+                                            'additional node files', 'additional edge files', 'is hetero', 'is binary'])
+            meta_info[name]['num tasks'] = 1
+            meta_info[name]['eval metric'] = 'acc'
+            meta_info[name]['task type'] = 'multiclass classification'
+            meta_info[name]['has node attr'] = True
+            meta_info[name]['has edge attr'] = False
+            meta_info[name]['additional node files'] = None
+            meta_info[name]['additional edge files'] = None
+            meta_info[name]['is hetero'] = False
+            meta_info[name]['is binary'] = False
+            self.meta_info = meta_info
+
+        else:
+            self.meta_info = pd.read_csv(os.path.join(os.path.dirname(__file__), 'master.csv'), index_col=0)
+
+        if not self.name in self.meta_info:
             print(self.name)
             error_mssg = 'Invalid dataset name {}.\n'.format(self.name)
             error_mssg += 'Available datasets are as follows:\n'
-            error_mssg += '\n'.join(meta_info.keys())
+            error_mssg += '\n'.join(self.meta_info.keys())
             raise ValueError(error_mssg)
 
-        self.num_tasks = int(meta_info[self.name]['num tasks'])
-        self.eval_metric = meta_info[self.name]['eval metric']
+        self.num_tasks = int(self.meta_info[self.name]['num tasks'])
+        self.eval_metric = self.meta_info[self.name]['eval metric']
 
     def _parse_and_check_input(self, input_dict):
         if self.eval_metric == 'rocauc' or self.eval_metric == 'acc':

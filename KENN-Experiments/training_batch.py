@@ -62,7 +62,7 @@ def train(model, train_loader, optimizer, device, criterion, args):
             # each node is only taken into account as target nodes once, while it can be neighbor several times
             # we are not able to just select by train_mask because neighbors would contribute to loss more than ONCE
             out = model(batch.x, batch.edge_index, batch.relations)
-            loss = criterion(out[:batch.batch_size], batch.y[:batch.batch_size])
+            loss = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size])
             total_loss += loss.item() * batch.batch_size
             total_examples += batch.batch_size
 
@@ -98,20 +98,20 @@ def test(model, loader, criterion, device, evaluator, data):
     all_logits = torch.cat(logits, dim=0)
     # preds = all_logits.argmax(dim=-1, keepdim=True)[data.train_mask]
 
-    train_loss = criterion(all_logits[data.train_mask], data.y[data.train_mask])
-    valid_loss = criterion(all_logits[data.val_mask], data.y[data.val_mask])
-    test_loss = criterion(all_logits[data.test_mask], data.y[data.test_mask])
+    train_loss = criterion(all_logits[data.train_mask], data.y.squeeze(1)[data.train_mask])
+    valid_loss = criterion(all_logits[data.val_mask], data.y.squeeze(1)[data.val_mask])
+    test_loss = criterion(all_logits[data.test_mask], data.y.squeeze(1)[data.test_mask])
 
     train_acc = evaluator.eval({
-        'y_true': data.y.unsqueeze(1)[data.train_mask],
+        'y_true': data.y[data.train_mask],
         'y_pred': all_logits.argmax(dim=-1, keepdim=True)[data.train_mask]
     })['acc']
     valid_acc = evaluator.eval({
-        'y_true': data.y.unsqueeze(1)[data.val_mask],
+        'y_true': data.y[data.val_mask],
         'y_pred': all_logits.argmax(dim=-1, keepdim=True)[data.val_mask]
     })['acc']
     test_acc = evaluator.eval({
-        'y_true': data.y.unsqueeze(1)[data.test_mask],
+        'y_true': data.y[data.test_mask],
         'y_pred': all_logits.argmax(dim=-1, keepdim=True)[data.test_mask]
     })['acc']
 
