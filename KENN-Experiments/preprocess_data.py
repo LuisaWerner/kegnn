@@ -1,6 +1,7 @@
 import warnings
 
 import torch
+import torch_geometric.datasets
 from torch_geometric.data import Data
 from torch_geometric.loader import *
 from torch_geometric.transforms import BaseTransform
@@ -122,16 +123,22 @@ def load_and_preprocess(args):
     @return train_loader, valid_loader, test_loader: train/valid/test set split into batches,
     samples neighbors specified in args in an transductive
     """
+    # if True: args.dataset == 'CiteSeer':
+    dataset1 = torch_geometric.datasets.Planetoid(root="CiteSeer", name='CiteSeer')
+
+    # else:
     dataset = PygNodePropPredDataset(name=args.dataset)
+
     data = dataset[0]
     data.num_classes = dataset.num_classes
     data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
 
     # Convert split indices to boolean masks and add them to `data`.
-    for key, idx in dataset.get_idx_split().items():
-        mask = torch.zeros(data.num_nodes, dtype=torch.bool)
-        mask[idx] = True
-        data[f'{key}_mask'] = mask
+    if not hasattr(data, "train_mask"):
+        for key, idx in dataset.get_idx_split().items():
+            mask = torch.zeros(data.num_nodes, dtype=torch.bool)
+            mask[idx] = True
+            data[f'{key}_mask'] = mask
 
     train_loader = sample_train_batches(data, args)
     all_loader = sample_batches(data, args)
