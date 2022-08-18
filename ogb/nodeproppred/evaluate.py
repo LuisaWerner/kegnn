@@ -31,6 +31,36 @@ class Evaluator:
             meta_info[name]['is binary'] = False
             self.meta_info = meta_info
 
+        elif self.name == 'Cora':
+            meta_info = pd.DataFrame(columns=[name],
+                                     index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
+                                            'additional node files', 'additional edge files', 'is hetero', 'is binary'])
+            meta_info[name]['num tasks'] = 1
+            meta_info[name]['eval metric'] = 'acc'
+            meta_info[name]['task type'] = 'multiclass classification'
+            meta_info[name]['has node attr'] = True
+            meta_info[name]['has edge attr'] = False
+            meta_info[name]['additional node files'] = None
+            meta_info[name]['additional edge files'] = None
+            meta_info[name]['is hetero'] = False
+            meta_info[name]['is binary'] = False
+            self.meta_info = meta_info
+
+        elif self.name == 'PubMed':
+            meta_info = pd.DataFrame(columns=[name],
+                                     index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
+                                            'additional node files', 'additional edge files', 'is hetero', 'is binary'])
+            meta_info[name]['num tasks'] = 1
+            meta_info[name]['eval metric'] = 'acc'
+            meta_info[name]['task type'] = 'multiclass classification'
+            meta_info[name]['has node attr'] = True
+            meta_info[name]['has edge attr'] = False
+            meta_info[name]['additional node files'] = None
+            meta_info[name]['additional edge files'] = None
+            meta_info[name]['is hetero'] = False
+            meta_info[name]['is binary'] = False
+            self.meta_info = meta_info
+
         else:
             self.meta_info = pd.read_csv(os.path.join(os.path.dirname(__file__), 'master.csv'), index_col=0)
 

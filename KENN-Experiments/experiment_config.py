@@ -2,6 +2,7 @@
 class ExperimentConf(object):
     def __init__(self, conf_dict):
         self.dataset = conf_dict['dataset']
+        self.planetoid_split = conf_dict['planetoid_split']
         self.device = conf_dict['device']
         self.use_node_embedding = conf_dict['use_node_embedding']
         self.num_layers = conf_dict['num_layers']
