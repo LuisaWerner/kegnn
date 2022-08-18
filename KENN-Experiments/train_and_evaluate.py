@@ -26,7 +26,7 @@ def callback_early_stopping(valid_accuracies, es_patience, es_min_delta):
     If patience=k, checks if the mean of the last k accuracies is higher than the mean of the
     previous k accuracies (i.e. we check that we are not overfitting). If not, stops learning.
     @param valid_accuracies - list(float) , validation accuracy per epoch
-    @param es_patience: early stopping patience
+    @param es_patience: how many epochs to take into account: patience refers to * how many evaluation epochs * to take into account
     @param es_min_delta: early stopping delta. Minimum threshold above which the model is considered improving.
     @return bool - if training stops or not
 
@@ -44,7 +44,7 @@ def callback_early_stopping(valid_accuracies, es_patience, es_min_delta):
     if delta <= es_min_delta:
         print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % es_patience)
         print("*CB_ES* delta:", delta)
-        print("callback_early_stopping signal received at epoch= %d" % len(valid_accuracies))
+        print("callback_early_stopping signal received at epoch= %d" % len(valid_accuracies) * args.eval_steps)
         print("Terminating training")
         return True
     else:
@@ -130,7 +130,10 @@ def run_experiment(args):
 
 def main():
     parser = argparse.ArgumentParser(description='Experiments')
-    parser.add_argument('--dataset', type=str, default='ogbn-arxiv')  # alternatively products
+    parser.add_argument('--dataset', type=str, default='ogbn-arxiv',
+                        help='alternatively ogbn-products, ogbn-arxiv , CiteSeer, PubMed, Cora')
+    parser.add_argument('--planetoid_split', type=str, default="public",
+                        help="full, geom-gcn, random: see torch-geometric.data.planetoid documentation")
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--use_node_embedding', action='store_true')
     parser.add_argument('--num_layers', type=int, default=3)  # todo
