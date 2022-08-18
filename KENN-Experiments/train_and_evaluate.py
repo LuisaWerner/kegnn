@@ -20,7 +20,7 @@ from preprocess_data import load_and_preprocess
 from training_batch import train, test
 
 
-def callback_early_stopping(valid_accuracies, es_patience, es_min_delta):
+def callback_early_stopping(valid_accuracies, epoch, args):
     """
     Takes as argument the list with all the validation accuracies.
     If patience=k, checks if the mean of the last k accuracies is higher than the mean of the
@@ -31,18 +31,19 @@ def callback_early_stopping(valid_accuracies, es_patience, es_min_delta):
     @return bool - if training stops or not
 
     """
-    epoch = len(valid_accuracies)
-
+    step = len(valid_accuracies)
+    patience = args.es_patience // args.eval_steps
     # no early stopping for 2 * patience epochs
-    if epoch // es_patience < 2:
+    if epoch < 2 * args.es_patience:
         return False
 
     # Mean loss for last patience epochs and second-last patience epochs
-    mean_previous = np.mean(valid_accuracies[epoch - 2 * es_patience:epoch - es_patience])
-    mean_recent = np.mean(valid_accuracies[epoch - es_patience:epoch])
+
+    mean_previous = np.mean(valid_accuracies[step - 2 * patience:step - patience])
+    mean_recent = np.mean(valid_accuracies[step - patience:step])
     delta = mean_recent - mean_previous
-    if delta <= es_min_delta:
-        print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % es_patience)
+    if delta <= args.es_min_delta:
+        print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % args.es_patience)
         print("*CB_ES* delta:", delta)
         print("callback_early_stopping signal received at epoch= %d" % len(valid_accuracies) * args.eval_steps)
         print("Terminating training")
@@ -112,7 +113,7 @@ def run_experiment(args):
                       f'Valid: {100 * v_accuracy:.2f}% ')
 
             # early stopping
-            if args.es_enabled and callback_early_stopping(valid_accuracies):
+            if args.es_enabled and callback_early_stopping(valid_accuracies, epoch, args):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
@@ -143,7 +144,7 @@ def main():
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=1)  # 500
-    parser.add_argument('--runs', type=int, default=1)  # 10
+    parser.add_argument('--runs', type=int, default=10)  # 10
     parser.add_argument('--model', type=str, default='GCN')
     parser.add_argument('--mode', type=str, default='transductive',
                         help='transductive or inductive training mode ')  # inductive/transductive
@@ -154,7 +155,7 @@ def main():
     parser.add_argument('--range_constraint_upper', type=float, default=500)
     parser.add_argument('--es_enabled', type=bool, default=False)
     parser.add_argument('--es_min_delta', type=float, default=0.001)
-    parser.add_argument('--es_patience', type=int, default=3)
+    parser.add_argument('--es_patience', type=int, default=10)
     parser.add_argument('--sampling_neighbor_size', type=int, default=-1)  # all neighbors will be included with -1
     parser.add_argument('--batch_size', type=int, default=20000)
     parser.add_argument('--full_batch', type=bool, default=True)
