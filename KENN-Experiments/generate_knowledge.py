@@ -7,7 +7,9 @@ def generate_knowledge(num_classes):
     cite is binary predicate
     num_classes int
     """
+    """
     class_list = list(range(num_classes))
+    #class_list = []
     for i in class_list:
         class_list[i] = 'class_' + str(i)
     # Generate knowledge
@@ -29,7 +31,8 @@ def generate_knowledge(num_classes):
     # nC(x),nCite(x.y),C(y)
     for c in class_list:
         kb += '_:n' + c + '(x),nCite(x.y),' + c + '(y)\n'
-
+    """
+    kb = ''
     with open('knowledge_base', 'w') as kb_file:
         kb_file.write(kb)
 

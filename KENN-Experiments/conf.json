@@ -2,7 +2,7 @@
 {
   "configs": [
     {
-      "dataset": "Cora",
+      "dataset": "ogbn-arxiv",
       "planetoid_split": "public",
       "device": 0,
       "use_node_embedding": "store_true",
@@ -11,8 +11,8 @@
       "hidden_channels": 256,
       "dropout": 0.5,
       "lr": 0.01,
-      "epochs": 20,
-      "runs": 1,
+      "epochs": 400,
+      "runs": 10,
       "model": "KENN_MLP",
       "mode": "transductive",
       "save_results": "store_true",
@@ -21,8 +21,8 @@
       "range_constraint_lower": 0,
       "range_constraint_upper": 500,
       "es_enabled": true,
-      "es_min_delta": 0.01,
-      "es_patience": 3,
+      "es_min_delta": 0.001,
+      "es_patience": 10,
       "sampling_neighbor_size": 10,
       "batch_size": 1000,
       "full_batch": true,
