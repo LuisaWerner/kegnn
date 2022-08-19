@@ -118,6 +118,9 @@ class RelationalKenn(torch.nn.Module):
 
             self.join = Join()
             self.group_by = GroupBy(len(unary_predicates))
+        self.register_buffer(name='delta_up', tensor=torch.zeros(1))
+        self.register_buffer(name='delta_bp', tensor=torch.zeros(1))
+
 
     def forward(self, unary: torch.Tensor, binary: torch.Tensor, edge_index: torch.Tensor) \
             -> (torch.Tensor, torch.Tensor):
@@ -143,8 +146,8 @@ class RelationalKenn(torch.nn.Module):
 
             delta_up, delta_bp = self.group_by(u, deltas_sum, index1, index2)
         else:
-            delta_up = torch.zeros(u.shape)
-            delta_bp = torch.zeros(binary.shape)
+            delta_up = self.delta_up.repeat(u.shape)
+            delta_bp = self.delta_bp.repeat(binary.shape)
 
         return self.activation(u + delta_up), self.activation(binary + delta_bp)
 
