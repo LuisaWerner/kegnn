@@ -68,7 +68,10 @@ def run_experiment(args):
         _ = generate_knowledge(data.num_classes)
 
         print(f"Run: {run} of {args.runs}")
-        print(f"Number of Training Batches with batch_size = {args.batch_size}: {len(train_loader)}")
+
+        if not args.full_batch:
+            print(f"Number of Training Batches with batch_size = {args.batch_size}: {len(train_loader)}")
+
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
         model = get_model(data, args).to(device)
