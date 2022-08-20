@@ -29,10 +29,9 @@ def generate_knowledge(num_classes):
     # Binary clauses
 
     # nC(x),nCite(x.y),C(y)
-    for c in class_list[:3]:
+    for c in class_list[:15]:
         kb += '_:n' + c + '(x),nCite(x.y),' + c + '(y)\n'
 
-    kb = ''
     with open('knowledge_base', 'w') as kb_file:
         kb_file.write(kb)
 
