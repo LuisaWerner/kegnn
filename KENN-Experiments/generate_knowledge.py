@@ -32,7 +32,6 @@ def generate_knowledge(num_classes):
     for c in class_list[:3]:
         kb += '_:n' + c + '(x),nCite(x.y),' + c + '(y)\n'
 
-    kb = ''
     with open('knowledge_base', 'w') as kb_file:
         kb_file.write(kb)
 
