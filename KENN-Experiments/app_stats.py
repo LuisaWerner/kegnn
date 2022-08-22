@@ -1,21 +1,6 @@
-import os
-import shutil
+import statistics
 
 import numpy as np
-
-
-def reset_folders(args):
-    """ clears folders from past runs """
-
-    # clear tensorboard folders
-    if os.path.exists('./runs/' + args.dataset + '/' + args.mode):
-        shutil.rmtree('./runs/' + args.dataset + '/' + args.mode)
-
-    # clear result folders
-    if os.path.exists('results/' + args.dataset + '/' + args.mode):
-        shutil.rmtree('results/' + args.dataset + '/' + args.mode)
-
-    print(' Deleted old directories results and runs')
 
 
 class RunStats(object):
@@ -69,6 +54,7 @@ class ExperimentStats(object):
         self.highest_train_accuracy = -1
         self.highest_valid_accuracy = -1
         self.avg_epoch_time = -1
+        self.sd_test_accuracy = -1
 
     def add_run(self, run_stats: RunStats):
         self.run_stats.append(run_stats)
@@ -82,7 +68,10 @@ class ExperimentStats(object):
         self.avg_valid_accuracy = np.mean(max_valid_accuracies)
         self.highest_valid_accuracy = max(max_valid_accuracies)
         self.avg_epoch_time = np.mean([rs.avg_epoch_time for rs in self.run_stats])
-        self.avg_test_accuracy = np.mean([rs.test_accuracy for rs in self.run_stats])
+        accuracies = [rs.test_accuracy for rs in self.run_stats]
+        self.avg_test_accuracy = np.mean(accuracies)
+        if len(accuracies) > 1:
+            self.sd_test_accuracy = statistics.stdev(accuracies)
 
     def to_dict(self):
         return {
@@ -91,7 +80,8 @@ class ExperimentStats(object):
             "avg_test_accuracy": self.avg_test_accuracy,
             "highest_valid_accuracy": self.highest_valid_accuracy,
             "highest_train_accuracy": self.highest_train_accuracy,
-            "avg_epoch_time": self.avg_epoch_time
+            "avg_epoch_time": self.avg_epoch_time,
+            "sd_test_accuracy": self.sd_test_accuracy
         }
 
     def __str__(self):

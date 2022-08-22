@@ -12,7 +12,6 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 import wandb
 from app_stats import RunStats, ExperimentStats
-from app_stats import reset_folders
 from generate_knowledge import generate_knowledge
 from model import get_model
 from ogb.nodeproppred import Evaluator
@@ -59,7 +58,6 @@ def run_experiment(args):
     print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
     print(f'Start {args.mode} Training')
-    reset_folders(args)
     xp_stats = ExperimentStats()
 
     for run in range(args.runs):
