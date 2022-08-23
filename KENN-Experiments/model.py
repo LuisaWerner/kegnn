@@ -158,7 +158,8 @@ class MLP(torch.nn.Module):
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lins[-1](x)
         # todo: which one to use log or normal?
-        return torch.log_softmax(x, dim=-1)
+        # return torch.log_softmax(x, dim=-1)
+        return x.log_softmax(dim=-1)
 
 
 class Standard(torch.nn.Module):
@@ -188,7 +189,8 @@ class Standard(torch.nn.Module):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lin_layers[-1](x)
-        return F.softmax(x, dim=-1)
+        # return F.softmax(x, dim=-1)
+        return x.log_softmax(dim=-1)
 
 
 class KENN_GCN(GCN):
@@ -218,7 +220,8 @@ class KENN_GCN(GCN):
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
-        return F.softmax(z, dim=-1)
+        # return F.softmax(z, dim=-1)
+        return z.log_softmax(dim=-1)
 
 
 class KENN_MLP(MLP):
@@ -248,7 +251,8 @@ class KENN_MLP(MLP):
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
-        return F.softmax(z, dim=-1)
+        # return F.softmax(z, dim=-1)
+        return z.log_softmax(dim=-1)
 
 
 class KENN_SAGE(SAGE):
@@ -278,4 +282,4 @@ class KENN_SAGE(SAGE):
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
-        return F.softmax(z, dim=-1)
+        return z.log_softmax(dim=-1)
