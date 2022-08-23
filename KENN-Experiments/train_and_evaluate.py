@@ -2,6 +2,7 @@
 # this should later on be done in another file but to keep the overview I have it in a separate file now
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 import argparse
+import os.path
 from time import time
 
 import numpy as np
@@ -56,6 +57,13 @@ def run_experiment(args):
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
     print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
+
+    if os.path.exists('knowledge_base'):
+        os.remove('knowledge_base')
+        print('knowledge base deleted')
+    if os.path.exists('data_stats'):
+        os.remove('data_stats')
+        print('data stats deleted')
 
     print(f'Start {args.mode} Training')
     xp_stats = ExperimentStats()

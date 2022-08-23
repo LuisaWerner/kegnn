@@ -1,12 +1,12 @@
+import os.path
 import warnings
 
 import torch
 import torch_geometric.datasets
-from torch_geometric.data import Data
 from torch_geometric.loader import *
 from torch_geometric.transforms import BaseTransform
-from torch_geometric.utils import subgraph
 
+from data_stats import *
 from ogb.nodeproppred import PygNodePropPredDataset
 
 
@@ -150,5 +150,10 @@ def load_and_preprocess(args):
 
     train_loader = sample_train_batches(data, args)
     all_loader = sample_batches(data, args)
+
+    # if args.save_data_stats:
+    if args.save_data_stats and not os.path.exists('data_stats'):
+        print('Saving Data Stats..... ')
+        save_data_stats(data, args)
 
     return data, train_loader, all_loader

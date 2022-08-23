@@ -32,3 +32,4 @@ virtual_env/
 venv
 results/
 knowledge_base
+data_stats

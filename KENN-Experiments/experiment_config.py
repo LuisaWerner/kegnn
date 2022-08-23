@@ -33,3 +33,4 @@ class ExperimentConf(object):
         self.walk_length = conf_dict['walk_length']
         self.num_steps = conf_dict['num_steps']
         self.eval_steps = conf_dict['eval_steps']
+        self.save_data_stats = conf_dict['save_data_stats']
