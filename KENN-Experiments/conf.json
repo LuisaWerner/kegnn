@@ -2,7 +2,7 @@
 {
   "configs": [
     {
-      "dataset": "CiteSeer",
+      "dataset": "ogbn-arxiv",
       "planetoid_split": "public",
       "device": 0,
       "use_node_embedding": "store_true",

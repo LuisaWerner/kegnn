@@ -25,7 +25,7 @@ def train(model, train_loader, optimizer, device, criterion, args):
 
         optimizer.zero_grad()
 
-        # batch = batch.to(device)
+        batch = batch.to(device)
         if batch.train_mask.sum() == 0:
             print('sampled batch does not contain any train nodes')
             continue
@@ -61,9 +61,6 @@ def train(model, train_loader, optimizer, device, criterion, args):
             # the target nodes have always to be the first |batch_size| nodes
             # each node is only taken into account as target nodes once, while it can be neighbor several times
             # we are not able to just select by train_mask because neighbors would contribute to loss more than ONCE
-            batch.x.to(device)
-            batch.edge_index.to(device)
-            batch.relations.to(device)
             out = model(batch.x, batch.edge_index, batch.relations)
             loss = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size])
             total_loss += loss.item() * batch.batch_size
