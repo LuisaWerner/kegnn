@@ -71,7 +71,7 @@ def run_experiment(args):
     for run in range(args.runs):
 
         data, train_loader, all_loader = load_and_preprocess(args)
-        _ = generate_knowledge(data.num_classes)
+        generate_knowledge(data.num_classes, args)
 
         print(f"Run: {run} of {args.runs}")
 
@@ -185,6 +185,9 @@ def main():
     parser.add_argument('--eval_steps', type=int, default=1,
                         help='How often should the model be evaluated: Default: Every epoch. Set to a higher value to reduce overall epoch time and '
                              'evaluate only every i-th step.  ')
+    parser.add_argument('--knowledge_base', type=str, default='', help='specify knowledge file manually for test ')
+    parser.add_argument('--create-kb', type=bool, default=True,
+                        help='if true, create a clause per class. Set to false if manually added kb should be used ')
 
     args = parser.parse_args()
     print(args)

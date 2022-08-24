@@ -34,3 +34,5 @@ class ExperimentConf(object):
         self.num_steps = conf_dict['num_steps']
         self.eval_steps = conf_dict['eval_steps']
         self.save_data_stats = conf_dict['save_data_stats']
+        self.create_kb = conf_dict['create_kb']
+        self.knowledge_base = conf_dict['knowledge_base']
