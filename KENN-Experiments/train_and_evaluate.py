@@ -4,13 +4,13 @@
 import argparse
 import os.path
 from time import time
-from torch.nn.parallel import DistributedDataParallel as DDP
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
-from torch_geometric.loader import *
+
 import wandb
 from app_stats import RunStats, ExperimentStats
 from generate_knowledge import generate_knowledge
@@ -18,7 +18,6 @@ from model import get_model
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training_batch import train, test
-import torch.distributed as dist
 
 
 def callback_early_stopping(valid_accuracies, epoch, args):
@@ -53,12 +52,11 @@ def callback_early_stopping(valid_accuracies, epoch, args):
         return False
 
 
-def run_experiment(rank, world_size, args):
+def run_experiment(args):
     torch_geometric.seed_everything(args.seed)
-    # device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
-    dist.init_process_group('nccl', rank=rank, world_size=world_size)
+    device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
+    device = torch.device(device)
+    print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
     if os.path.exists('knowledge_base'):
         os.remove('knowledge_base')
@@ -72,20 +70,8 @@ def run_experiment(rank, world_size, args):
 
     for run in range(args.runs):
 
-        data, _, _ = load_and_preprocess(args)
-        train_idx = data.train_mask.nonzero(as_tuple=False).view(-1)
-        train_idx = train_idx.split(train_idx.size(0) // world_size)[rank]
-
-        train_loader = NeighborSampler(data.edge_index, node_idx=train_idx,
-                                       sizes=[25, 10], batch_size=1024,
-                                       shuffle=True, num_workers=0)
-
-        if rank == 0:
-            all_loader = NeighborSampler(data.edge_index, node_idx=None,
-                                              sizes=[-1], batch_size=2048,
-                                              shuffle=False, num_workers=6)
-
-        _ = generate_knowledge(data.num_classes)
+        data, train_loader, all_loader = load_and_preprocess(args)
+        generate_knowledge(data.num_classes, args)
 
         print(f"Run: {run} of {args.runs}")
 
@@ -94,9 +80,7 @@ def run_experiment(rank, world_size, args):
 
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
-        #model = get_model(data, args).to(device)
-        model = get_model(data, args).to(rank)
-        model = DDP(model, device_ids=[rank])
+        model = get_model(data, args).to(device)
         evaluator = Evaluator(name=args.dataset)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = F.nll_loss
@@ -111,13 +95,11 @@ def run_experiment(rank, world_size, args):
 
         for epoch in range(args.epochs):
             start = time()
-            _ = train(model, train_loader, optimizer, rank, criterion, args)
+            _ = train(model, train_loader, optimizer, device, criterion, args)
             end = time()
 
-            dist.barrier()
-
-            if rank == 0 and epoch % args.eval_steps == 0:
-                t_accuracy, v_accuracy, _, t_loss, v_loss, _ = test(model, all_loader, criterion, rank, evaluator,
+            if epoch % args.eval_steps == 0:
+                t_accuracy, v_accuracy, _, t_loss, v_loss, _ = test(model, all_loader, criterion, device, evaluator,
                                                                     data)
 
                 # Save stats for tensorboard
@@ -139,14 +121,12 @@ def run_experiment(rank, world_size, args):
                       f'Train: {100 * t_accuracy:.2f}%, '
                       f'Valid: {100 * v_accuracy:.2f}% ')
 
-            dist.barrier()
-
             # early stopping
             if args.es_enabled and callback_early_stopping(valid_accuracies, epoch, args):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
-        _, _, test_accuracy, _, _, _ = test(model, all_loader, criterion, rank, evaluator, data)
+        _, _, test_accuracy, _, _, _ = test(model, all_loader, criterion, device, evaluator, data)
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time)
         xp_stats.add_run(rs)
         print(rs)
@@ -205,6 +185,9 @@ def main():
     parser.add_argument('--eval_steps', type=int, default=1,
                         help='How often should the model be evaluated: Default: Every epoch. Set to a higher value to reduce overall epoch time and '
                              'evaluate only every i-th step.  ')
+    parser.add_argument('--knowledge_base', type=str, default='', help='specify knowledge file manually for test ')
+    parser.add_argument('--create-kb', type=bool, default=True,
+                        help='if true, create a clause per class. Set to false if manually added kb should be used ')
 
     args = parser.parse_args()
     print(args)
