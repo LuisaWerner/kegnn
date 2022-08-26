@@ -4,7 +4,7 @@ from torch_geometric.data import Data
 from torch_geometric.utils import subgraph
 
 
-def get_y_stats(data: Data, key: str, n_rows=10):
+def get_y_stats(data: Data, key: str, n_rows=40):
     """
     Returns an overview of the class distribution in the data set as string
     @param data: PyG data object
