@@ -133,9 +133,9 @@ def run_experiment(args):
         wandb.log(rs.to_dict())
         writer.close()
 
-        xp_stats.end_experiment()
-        print(xp_stats)
-        wandb.log(xp_stats.to_dict())
+    xp_stats.end_experiment()
+    print(xp_stats)
+    wandb.log(xp_stats.to_dict())
 
 
 def main():
