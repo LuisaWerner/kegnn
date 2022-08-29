@@ -10,7 +10,8 @@ class RunStats(object):
                  valid_losses: list,
                  valid_accuracies: list,
                  test_acc: float,
-                 epoch_time: list):
+                 epoch_time: list,
+                 test_accuracies: list):
         self.run = run
         self.train_losses = train_losses
         self.train_accuracies = train_accuracies
@@ -18,6 +19,7 @@ class RunStats(object):
         self.valid_accuracies = valid_accuracies
         self.test_accuracy = test_acc
         self.epoch_time = epoch_time
+        self.test_accuracies = test_accuracies
 
         self.max_valid_accuracy = max(valid_accuracies)
         self.max_train_accuracy = max(train_accuracies)

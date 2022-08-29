@@ -68,6 +68,8 @@ def run_experiment(args):
     print(f'Start {args.mode} Training')
     xp_stats = ExperimentStats()
 
+    test_accuracies = []
+
     for run in range(args.runs):
 
         data, train_loader, all_loader = load_and_preprocess(args)
@@ -127,7 +129,9 @@ def run_experiment(args):
                 break
 
         _, _, test_accuracy, _, _, _ = test(model, all_loader, criterion, device, evaluator, data)
-        rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time)
+        test_accuracies.append(test_accuracy)
+        rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
+                      test_accuracies)
         xp_stats.add_run(rs)
         print(rs)
         wandb.log(rs.to_dict())
