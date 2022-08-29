@@ -45,7 +45,7 @@ def callback_early_stopping(valid_accuracies, epoch, args):
     if delta <= args.es_min_delta:
         print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % args.es_patience)
         print("*CB_ES* delta:", delta)
-        print("callback_early_stopping signal received at epoch= %d" % len(valid_accuracies) * args.eval_steps)
+        print(f"callback_early_stopping signal received at epoch {epoch}")
         print("Terminating training")
         return True
     else:
@@ -135,6 +135,7 @@ def run_experiment(args):
         xp_stats.add_run(rs)
         print(rs)
         wandb.log(rs.to_dict())
+        wandb.run.summary["test_accuracies"] = test_accuracies
         writer.close()
 
     xp_stats.end_experiment()

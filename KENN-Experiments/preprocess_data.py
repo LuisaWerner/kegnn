@@ -4,7 +4,7 @@ import warnings
 import torch
 import torch_geometric.datasets
 from torch_geometric.loader import *
-from torch_geometric.transforms import BaseTransform
+from torch_geometric.transforms import BaseTransform, ToUndirected
 
 from data_stats import *
 from ogb.nodeproppred import PygNodePropPredDataset
@@ -130,6 +130,7 @@ def load_and_preprocess(args):
         dataset = PygNodePropPredDataset(name=args.dataset)
 
     data = dataset[0]
+    data = ToUndirected()(data)  # this is needed for
     data.num_classes = dataset.num_classes
     data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
 
