@@ -21,6 +21,7 @@ def train(model, train_loader, optimizer, device, criterion, args):
     model.train()
     total_loss = total_examples = 0
 
+    i = 0
     for batch in train_loader:
 
         optimizer.zero_grad()
@@ -68,6 +69,8 @@ def train(model, train_loader, optimizer, device, criterion, args):
 
         loss.backward()
         optimizer.step()
+        print(f'Training: Batch {i} of {len(train_loader)} completed')
+        i = i + 1
         # model.apply(range_constraint)
 
     return total_loss / total_examples
@@ -90,10 +93,13 @@ def test(model, loader, criterion, device, evaluator, data):
     """
     model.eval()
     preds, logits = [], []
+    i = 0
     for batch in loader:
         batch = batch.to(device)
         out = model(batch.x, batch.edge_index, batch.relations)[:batch.batch_size]
         logits.append(out.cpu())
+        print(f'Evaluating: Batch {i} of {len(loader)} completed')
+        i = i + 1
 
     all_logits = torch.cat(logits, dim=0)
     # preds = all_logits.argmax(dim=-1, keepdim=True)[data.train_mask]
