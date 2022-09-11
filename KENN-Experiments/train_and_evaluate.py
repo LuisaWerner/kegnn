@@ -7,6 +7,7 @@ from time import time
 
 import numpy as np
 import torch
+import torch.backends.mps
 import torch.nn.functional as F
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -54,8 +55,11 @@ def callback_early_stopping(valid_accuracies, epoch, args):
 
 def run_experiment(args):
     torch_geometric.seed_everything(args.seed)
+    print(f"backend available {torch.backends.mps.is_available()}")
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
+    # mps_device = torch.device("mps") # todo: add to enable mps backend
+    # device = torch.device(mps_device)
     print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
     if os.path.exists('knowledge_base'):
