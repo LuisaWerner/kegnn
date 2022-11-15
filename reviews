@@ -1,0 +1,22 @@
+
+Link to the paper on Open Review:
+
+https://openreview.net/forum?id=ICnJjGxIDQU&referrer=[the%20profile%20of%20Luisa%20Werner](/profile?id=~Luisa_Werner1)
+Link to Overleaf of revised paper: https://de.overleaf.com/project/6360f2576dcf38ead8ea4b26
+Link to the revised paper as PDF on Google Drive: https://drive.google.com/file/d/1nDqoKSaLmFlAVKb6pmSIki9yrWFfv2cB/view?usp=sharing
+
+See large-scale benchmarking study here :
+https://github.com/VITA-Group/Large_Scale_GCN_Benchmarking
+
+Future Experiments recommended in the reviews:
+- Test with different sets of knowledge
+- Test with other Base NN:  GraphSAGE+KENN, GIN+KENN, GAT+ KENN
+- Take a look at OGB leaderboard and take baselines from there
+- solve link prediction task with KENN
+- Space complexity limited to unary OR unary OR binary, n-ary predicates? individual node degrees
+- other graph sampling strategies
+- hyperparameter tuning
+- more infos on runs, resources used etc. (GPU graphs)
+see paper https://arxiv.org/pdf/2210.07494.pdf for performance benchmarks etc. (analyzes on GPU memory usage etc., time per iteration etc. )
+- Make some experiments with incomplete knowledge and delete links (see if KENN brings more improvement there)
+- Datasets from mentioned paper above: YELP, FLICKR, REDDIt (already available in PyG), question: knowledge formulation

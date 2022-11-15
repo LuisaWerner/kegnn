@@ -10,59 +10,36 @@ except ImportError:
     torch = None
 
 
-### Evaluator for node property prediction
+def update_meta_info():
+    """
+    completes and stores meta info document for all datasets beyond OGB so that a evaluator can be instantiated
+    according to the defined metrics here
+    """
+    ogb_meta_info = pd.read_csv(os.path.join(os.path.dirname(__file__), 'master.csv'), index_col=0)
+    datasets = ['CiteSeer', 'Cora', 'PubMed', 'Reddit2', 'AmazonProducts', 'Yelp', 'Flickr']
+    for name in datasets:
+        meta_info = pd.DataFrame(columns=[name],
+                                 index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
+                                        'additional node files', 'additional edge files', 'is hetero', 'is binary'])
+        meta_info[name]['num tasks'] = 1
+        meta_info[name]['eval metric'] = 'acc'
+        meta_info[name]['task type'] = 'multiclass classification'
+        meta_info[name]['has node attr'] = True
+        meta_info[name]['has edge attr'] = False
+        meta_info[name]['additional node files'] = None
+        meta_info[name]['additional edge files'] = None
+        meta_info[name]['is hetero'] = False
+        meta_info[name]['is binary'] = False
+
+        ogb_meta_info = pd.concat([ogb_meta_info, meta_info], axis=1)
+    ogb_meta_info.to_csv(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'master_all.csv'))
+
+
 class Evaluator:
     def __init__(self, name):
         self.name = name
-
-        # todo for more generic use put in another file
-        if self.name == 'CiteSeer':
-            meta_info = pd.DataFrame(columns=[name],
-                                     index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
-                                            'additional node files', 'additional edge files', 'is hetero', 'is binary'])
-            meta_info[name]['num tasks'] = 1
-            meta_info[name]['eval metric'] = 'acc'
-            meta_info[name]['task type'] = 'multiclass classification'
-            meta_info[name]['has node attr'] = True
-            meta_info[name]['has edge attr'] = False
-            meta_info[name]['additional node files'] = None
-            meta_info[name]['additional edge files'] = None
-            meta_info[name]['is hetero'] = False
-            meta_info[name]['is binary'] = False
-            self.meta_info = meta_info
-
-        elif self.name == 'Cora':
-            meta_info = pd.DataFrame(columns=[name],
-                                     index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
-                                            'additional node files', 'additional edge files', 'is hetero', 'is binary'])
-            meta_info[name]['num tasks'] = 1
-            meta_info[name]['eval metric'] = 'acc'
-            meta_info[name]['task type'] = 'multiclass classification'
-            meta_info[name]['has node attr'] = True
-            meta_info[name]['has edge attr'] = False
-            meta_info[name]['additional node files'] = None
-            meta_info[name]['additional edge files'] = None
-            meta_info[name]['is hetero'] = False
-            meta_info[name]['is binary'] = False
-            self.meta_info = meta_info
-
-        elif self.name == 'PubMed':
-            meta_info = pd.DataFrame(columns=[name],
-                                     index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
-                                            'additional node files', 'additional edge files', 'is hetero', 'is binary'])
-            meta_info[name]['num tasks'] = 1
-            meta_info[name]['eval metric'] = 'acc'
-            meta_info[name]['task type'] = 'multiclass classification'
-            meta_info[name]['has node attr'] = True
-            meta_info[name]['has edge attr'] = False
-            meta_info[name]['additional node files'] = None
-            meta_info[name]['additional edge files'] = None
-            meta_info[name]['is hetero'] = False
-            meta_info[name]['is binary'] = False
-            self.meta_info = meta_info
-
-        else:
-            self.meta_info = pd.read_csv(os.path.join(os.path.dirname(__file__), 'master.csv'), index_col=0)
+        update_meta_info()
+        self.meta_info = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'master_all.csv'), index_col=0)
 
         if not self.name in self.meta_info:
             print(self.name)
@@ -111,19 +88,18 @@ class Evaluator:
             return y_true, y_pred
 
         else:
-            raise ValueError('Undefined eval metric %s ' % (self.eval_metric))
+            raise ValueError('Undefined eval metric %s ' % self.eval_metric)
 
-
-    def eval(self, input_dict):
-
+    def eval(self, input_dictionary):
+        """ Evaluation function, returns eval_metric"""
         if self.eval_metric == 'rocauc':
-            y_true, y_pred = self._parse_and_check_input(input_dict)
+            y_true, y_pred = self._parse_and_check_input(input_dictionary)
             return self._eval_rocauc(y_true, y_pred)
         elif self.eval_metric == 'acc':
-            y_true, y_pred = self._parse_and_check_input(input_dict)
+            y_true, y_pred = self._parse_and_check_input(input_dictionary)
             return self._eval_acc(y_true, y_pred)
         else:
-            raise ValueError('Undefined eval metric %s ' % (self.eval_metric))
+            raise ValueError('Undefined eval metric %s ' % self.eval_metric)
 
     @property
     def expected_input_format(self):
@@ -143,7 +119,7 @@ class Evaluator:
             desc += 'num_task is {}, and '.format(self.num_tasks)
             desc += 'each row corresponds to one node.\n'
         else:
-            raise ValueError('Undefined eval metric %s ' % (self.eval_metric))
+            raise ValueError('Undefined eval metric %s ' % self.eval_metric)
 
         return desc
 
@@ -157,7 +133,7 @@ class Evaluator:
             desc += '{\'acc\': acc}\n'
             desc += '- acc (float): Accuracy score averaged across {} task(s)\n'.format(self.num_tasks)
         else:
-            raise ValueError('Undefined eval metric %s ' % (self.eval_metric))
+            raise ValueError('Undefined eval metric %s ' % self.eval_metric)
 
         return desc
 
@@ -189,10 +165,8 @@ class Evaluator:
 
         return {'acc': sum(acc_list)/len(acc_list)}
 
+
 if __name__ == '__main__':
-    ### rocauc case
-
-
 
     evaluator = Evaluator('ogbn-proteins')
     print(evaluator.expected_input_format)
