@@ -76,13 +76,12 @@ def run_experiment(args):
 
     for run in range(args.runs):
 
-        data, train_loader, all_loader = load_and_preprocess(args)
+        # todo return only loaded and preprocessed data object and do samplers along with model instantiation
+        # data, train_loader, all_loader = load_and_preprocess(args)
+        data = load_and_preprocess(args)
         generate_knowledge(data.num_classes, args)
 
         print(f"Run: {run} of {args.runs}")
-
-        if not args.full_batch:
-            print(f"Number of Training Batches with batch_size = {args.batch_size}: {len(train_loader)}")
 
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
@@ -99,14 +98,16 @@ def run_experiment(args):
 
         clause_weights_dict = None
 
+        if not args.full_batch:
+            print(f"Number of Training Batches with batch_size = {args.batch_size}: {len(model.train_loader)}")
+
         for epoch in range(args.epochs):
             start = time()
-            _ = train(model, train_loader, optimizer, device, criterion, args)
+            _ = train(model, optimizer, device, criterion, args)
             end = time()
 
             if epoch % args.eval_steps == 0:
-                t_accuracy, v_accuracy, _, t_loss, v_loss, _ = test(model, all_loader, criterion, device, evaluator,
-                                                                    data)
+                t_accuracy, v_accuracy, _, t_loss, v_loss, _ = test(model, criterion, device, evaluator, data)
 
                 # Save stats for tensorboard
                 writer.add_scalar("loss/train", t_loss, epoch)
@@ -132,7 +133,7 @@ def run_experiment(args):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
-        _, _, test_accuracy, _, _, _ = test(model, all_loader, criterion, device, evaluator, data)
+        _, _, test_accuracy, _, _, _ = test(model, criterion, device, evaluator, data)
         test_accuracies.append(test_accuracy)
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
                       test_accuracies)
@@ -149,7 +150,7 @@ def run_experiment(args):
 
 def main():
     parser = argparse.ArgumentParser(description='Experiments')
-    parser.add_argument('--dataset', type=str, default='ogbn-arxiv',
+    parser.add_argument('--dataset', type=str, default='Reddit2',
                         help='alternatively ogbn-products, ogbn-arxiv , CiteSeer, PubMed, Cora')
     parser.add_argument('--planetoid_split', type=str, default="public",
                         help="full, geom-gcn, random: see torch-geometric.data.planetoid documentation")
@@ -162,8 +163,8 @@ def main():
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=1)  # 500
-    parser.add_argument('--runs', type=int, default=10)  # 10
-    parser.add_argument('--model', type=str, default='GCN')
+    parser.add_argument('--runs', type=int, default=1)  # 10
+    parser.add_argument('--model', type=str, default='MLP')
     parser.add_argument('--mode', type=str, default='transductive',
                         help='transductive or inductive training mode ')  # inductive/transductive
     parser.add_argument('--save_results', action='store_true')
@@ -175,11 +176,11 @@ def main():
     parser.add_argument('--es_min_delta', type=float, default=0.001)
     parser.add_argument('--es_patience', type=int, default=10)
     parser.add_argument('--sampling_neighbor_size', type=int, default=-1)  # all neighbors will be included with -1
-    parser.add_argument('--batch_size', type=int, default=20000)
-    parser.add_argument('--full_batch', type=bool, default=True)
+    parser.add_argument('--batch_size', type=int, default=50000)
+    parser.add_argument('--full_batch', type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--seed', type=int, default=100)
-    parser.add_argument('--train_sampling', type=str, default='graph_saint',
+    parser.add_argument('--train_sampling', type=str, default='standard',
                         help='specify as "cluster", "graph_saint". If '
                              'not specified, standard GraphSAGE sampling '
                              'is applied')
@@ -197,6 +198,7 @@ def main():
     parser.add_argument('--knowledge_base', type=str, default='', help='specify knowledge file manually for test ')
     parser.add_argument('--create-kb', type=bool, default=True,
                         help='if true, create a clause per class. Set to false if manually added kb should be used ')
+    parser.add_argument('--save_data_stats', type=bool, default=False, help='if true saves statistics about input data')
 
     args = parser.parse_args()
     print(args)

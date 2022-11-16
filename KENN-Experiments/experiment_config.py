@@ -4,6 +4,7 @@ class ExperimentConf(object):
         self.dataset = conf_dict['dataset']
         self.planetoid_split = conf_dict['planetoid_split']
         self.device = conf_dict['device']
+        self.use_norm = conf_dict['use_norm']
         self.use_node_embedding = conf_dict['use_node_embedding']
         self.num_layers = conf_dict['num_layers']
         self.num_layers_sampling = conf_dict['num_layers_sampling']

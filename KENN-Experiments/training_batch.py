@@ -1,7 +1,7 @@
 import torch
 
 
-def train(model, train_loader, optimizer, device, criterion, args):
+def train(model, optimizer, device, criterion, args):
     # todo: can we take edge weights as binary preactivations for kenn-sub if we have them ?
     # todo: or multiply binary preactiations by edge weights
     """
@@ -22,35 +22,33 @@ def train(model, train_loader, optimizer, device, criterion, args):
     total_loss = total_examples = 0
 
     i = 0
-    for batch in train_loader:
+    # todo instantiate the train_loader in the model class and call it with model.train_loader()
+    for batch in model.train_loader:
 
         optimizer.zero_grad()
-
         batch = batch.to(device)
         if batch.train_mask.sum() == 0:
             print('sampled batch does not contain any train nodes')
             continue
 
-        if args.train_sampling == 'cluster':
-            out = model(batch.x, batch.edge_index, batch.relations, None)  # none for edge weight ?
-            loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
-            total_loss += loss.item() * torch.sum(batch.train_mask)
-            total_examples += torch.sum(batch.train_mask).item()  # some nodes might be sampled more than once
+        #if args.train_sampling == 'cluster':
+        #    out = model(batch.x, batch.edge_index, batch.relations, None)  # none for edge weight ?
+        #    loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
+        #    total_loss += loss.item() * torch.sum(batch.train_mask)
+        #    total_examples += torch.sum(batch.train_mask).item()  # some nodes might be sampled more than once
 
-        elif args.train_sampling == 'graph_saint':
+        if 'SAINT' in model.name:
 
             # if sample_coverage is 0, no normalization coefficients are calculated
-            if not hasattr(batch, 'edge_norm'):
+            #if not hasattr(batch, 'edge_norm'): # todo debug this
+            if not model.use_norm or not hasattr(batch, 'edge_norm') or not hasattr(batch, 'node_norm'):
                 out = model(batch.x, batch.edge_index, batch.relations)
                 loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
 
             # if normalization coefficients are calculated
             else:
-                if batch.edge_weight is None:
-                    batch.edge_weight = torch.ones(batch.edge_index.size()[1])
-
                 batch.edge_weight = batch.edge_norm * batch.edge_weight  # todo how does this affect kenn-sub
-                out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight)
+                out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight) # todo call in right order
                 loss = criterion(out, batch.y.squeeze(1), reduction='none')
                 loss = (loss * batch.node_norm)[batch.train_mask].sum()
 
@@ -69,7 +67,7 @@ def train(model, train_loader, optimizer, device, criterion, args):
 
         loss.backward()
         optimizer.step()
-        print(f'Training: Batch {i} of {len(train_loader)} completed')
+        print(f'Training: Batch {i} of {len(model.train_loader)} completed')
         i = i + 1
         # model.apply(range_constraint)
 
@@ -77,7 +75,7 @@ def train(model, train_loader, optimizer, device, criterion, args):
 
 
 @torch.no_grad()
-def test(model, loader, criterion, device, evaluator, data):
+def test(model, criterion, device, evaluator, data):
     # TODO: why is in graph_saint.py and cluster_gcn.py iterated over convolutions?
     # todo: maybe a property of the Neighbor Sampler?
     """
@@ -94,11 +92,11 @@ def test(model, loader, criterion, device, evaluator, data):
     model.eval()
     preds, logits = [], []
     i = 0
-    for batch in loader:
+    for batch in model.test_loader:
         batch = batch.to(device)
         out = model(batch.x, batch.edge_index, batch.relations)[:batch.batch_size]
         logits.append(out.cpu())
-        print(f'Evaluating: Batch {i} of {len(loader)} completed')
+        print(f'Evaluating: Batch {i} of {len(model.test_loader)} completed')
         i = i + 1
 
     all_logits = torch.cat(logits, dim=0)

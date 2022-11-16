@@ -2,7 +2,8 @@
 {
   "configs": [
     {
-      "dataset": "Reddit2",
+      "dataset": "Flickr",
+      "use_norm": false,
       "planetoid_split": "public",
       "device": 0,
       "use_node_embedding": "store_true",
@@ -13,7 +14,7 @@
       "lr": 0.01,
       "epochs": 2,
       "runs": 1,
-      "model": "MLP",
+      "model": "KENN_SAINT",
       "mode": "transductive",
       "save_results": "store_true",
       "binary_preactivation": 500.0,
@@ -25,12 +26,12 @@
       "es_patience": 10,
       "sampling_neighbor_size": 10,
       "batch_size": 100000,
-      "full_batch": false,
+      "full_batch": true,
       "num_workers": 0,
       "seed": 100,
       "train_sampling": "default",
       "cluster_partition_size": 8000,
-      "sample_coverage": 0,
+      "sample_coverage": 100,
       "walk_length": 3,
       "num_steps": 30,
       "eval_steps": 10,

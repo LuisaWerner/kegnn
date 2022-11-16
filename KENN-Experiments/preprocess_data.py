@@ -1,6 +1,5 @@
 import os.path
 import warnings
-
 import torch
 import torch_geometric.datasets
 from torch_geometric.loader import *
@@ -39,8 +38,10 @@ def to_inductive(data: Data) -> Data:
     data.y = data.y[mask]
     data.train_mask = data.train_mask[mask]
     data.test_mask, data.valid_mask = None, None
-    data.node_year = data.node_year[mask]
     data.num_nodes = mask.sum().item()
+
+    if hasattr(data, 'node_year'):
+        data.node_year = data.node_year[mask]
 
     return data
 
@@ -126,8 +127,14 @@ def load_and_preprocess(args):
     if args.dataset in ['CiteSeer', 'Cora', 'PubMed']:
         dataset = torch_geometric.datasets.Planetoid(root=args.dataset, name=args.dataset, split=args.planetoid_split)
 
-    else:
+    elif args.dataset in ['ogbn-products', 'ogbn-arxiv']:
         dataset = PygNodePropPredDataset(name=args.dataset)
+
+    elif args.dataset in ["Reddit2", "Flickr", "AmazonProducts", "Yelp"]:
+        dataset = getattr(torch_geometric.datasets, args.dataset)(root=args.dataset)
+    else:
+        raise ValueError('Unknown dataset specified. Use one out of: '
+                         '{CiteSeer, Cora, Pubmed , ogbn-products, ogbn-arxiv, Reddit, Flickr, AmazonProducts, Yelp}')
 
     data = dataset[0]
     data = ToUndirected()(data)  # this is needed for
@@ -149,12 +156,19 @@ def load_and_preprocess(args):
     if not hasattr(data, "num_nodes"):
         data.num_nodes = data.x.shape[0]
 
-    train_loader = sample_train_batches(data, args)
-    all_loader = sample_batches(data, args)
+    if not hasattr(data, "num_features"):
+        data.num_featuers = data.x.shape[1]
+
+    # create edge weight with ones if there's no edge weight stored by default
+    if data.edge_weight is None:
+        data.edge_weight = torch.ones(data.edge_index.size()[1])
+
+    # train_loader = sample_train_batches(data, args)
+    # all_loader = sample_batches(data, args)
 
     # if args.save_data_stats:
     if args.save_data_stats and not os.path.exists('data_stats'):
         print('Saving Data Stats..... ')
-        save_data_stats(data, args)
+        save_data_stats(data, args) # todo does this work for Reddit etc.?
 
-    return data, train_loader, all_loader
+    return data  # , train_loader, all_loader # todo do the loaders in the model class

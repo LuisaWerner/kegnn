@@ -121,7 +121,6 @@ class RelationalKenn(torch.nn.Module):
         self.register_buffer(name='delta_up', tensor=torch.zeros(1))
         self.register_buffer(name='delta_bp', tensor=torch.zeros(1))
 
-
     def forward(self, unary: torch.Tensor, binary: torch.Tensor, edge_index: torch.Tensor) \
             -> (torch.Tensor, torch.Tensor):
         """Forward step of Kenn model for relational data.
