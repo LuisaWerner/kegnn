@@ -28,7 +28,7 @@ class BoostFunction(torch.nn.Module, abc.ABC):
         pass
 
     def reset_parameters(self):
-        torch.nn.init.constant(self.clause_weight, self.initial_weight)
+        torch.nn.init.constant_(self.clause_weight, self.initial_weight)
 
 
 class GodelBoostConormApprox(BoostFunction):

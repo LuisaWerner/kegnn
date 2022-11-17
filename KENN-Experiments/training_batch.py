@@ -25,11 +25,12 @@ def train(model, optimizer, device, criterion, args):
     # todo instantiate the train_loader in the model class and call it with model.train_loader()
     for batch in model.train_loader:
 
-        optimizer.zero_grad()
         batch = batch.to(device)
         if batch.train_mask.sum() == 0:
             print('sampled batch does not contain any train nodes')
             continue
+
+        optimizer.zero_grad()
 
         #if args.train_sampling == 'cluster':
         #    out = model(batch.x, batch.edge_index, batch.relations, None)  # none for edge weight ?
@@ -40,7 +41,6 @@ def train(model, optimizer, device, criterion, args):
         if 'SAINT' in model.name:
 
             # if sample_coverage is 0, no normalization coefficients are calculated
-            #if not hasattr(batch, 'edge_norm'): # todo debug this
             if not model.use_norm or not hasattr(batch, 'edge_norm') or not hasattr(batch, 'node_norm'):
                 out = model(batch.x, batch.edge_index, batch.relations)
                 loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
@@ -52,8 +52,7 @@ def train(model, optimizer, device, criterion, args):
                 loss = criterion(out, batch.y.squeeze(1), reduction='none')
                 loss = (loss * batch.node_norm)[batch.train_mask].sum()
 
-            total_loss += loss.item() * batch.num_nodes
-            total_examples += batch.num_nodes
+            total_loss += float(loss.item()) # * batch.num_nodes # todo do we need to multiply here?
 
         else:
             # The batches are created with Neighbor Loader
@@ -62,8 +61,7 @@ def train(model, optimizer, device, criterion, args):
             # we are not able to just select by train_mask because neighbors would contribute to loss more than ONCE
             out = model(batch.x, batch.edge_index, batch.relations)
             loss = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size])
-            total_loss += loss.item() * batch.batch_size
-            total_examples += batch.batch_size
+            total_loss += float(loss.item()) # * batch.batch_size todo do we multiply here
 
         loss.backward()
         optimizer.step()
@@ -71,7 +69,7 @@ def train(model, optimizer, device, criterion, args):
         i = i + 1
         # model.apply(range_constraint)
 
-    return total_loss / total_examples
+    return total_loss / len(model.train_loader)
 
 
 @torch.no_grad()
@@ -102,9 +100,9 @@ def test(model, criterion, device, evaluator, data):
     all_logits = torch.cat(logits, dim=0)
     # preds = all_logits.argmax(dim=-1, keepdim=True)[data.train_mask]
 
-    train_loss = criterion(all_logits[data.train_mask], data.y.squeeze(1)[data.train_mask])
-    valid_loss = criterion(all_logits[data.val_mask], data.y.squeeze(1)[data.val_mask])
-    test_loss = criterion(all_logits[data.test_mask], data.y.squeeze(1)[data.test_mask])
+    train_loss = criterion(all_logits[data.train_mask], data.y.squeeze(1)[data.train_mask]) / len(all_logits)
+    valid_loss = criterion(all_logits[data.val_mask], data.y.squeeze(1)[data.val_mask]) / len(all_logits)
+    test_loss = criterion(all_logits[data.test_mask], data.y.squeeze(1)[data.test_mask]) / len(all_logits)
 
     train_acc = evaluator.eval({
         'y_true': data.y[data.train_mask],

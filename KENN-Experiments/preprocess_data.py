@@ -3,19 +3,9 @@ import warnings
 import torch
 import torch_geometric.datasets
 from torch_geometric.loader import *
-from torch_geometric.transforms import BaseTransform, ToUndirected
-
+import Transforms as T
 from data_stats import *
 from ogb.nodeproppred import PygNodePropPredDataset
-
-
-class RelationsAttribute(BaseTransform):
-    """ makes sure that the tensor with binary preactivations for kenn-sub binary predicates is of correct size """
-
-    def __call__(self, data):
-        num_edges = data.edge_index.shape[1]
-        data.relations = data.relations[:num_edges]
-        return data
 
 
 def get_partition_sizes(cluster_data: ClusterData) -> list:
@@ -26,24 +16,6 @@ def get_partition_sizes(cluster_data: ClusterData) -> list:
         part_sizes.append(size.item())
 
     return part_sizes
-
-
-def to_inductive(data: Data) -> Data:
-    """ Prepares data object for inductive training """
-    data = data.clone()
-    mask = data.train_mask
-    data.edge_index, _ = subgraph(mask, data.edge_index, None, relabel_nodes=True, num_nodes=data.num_nodes)
-    data.relations = data.relations[:data.edge_index.shape[1]]  # todo this should be done later
-    data.x = data.x[mask]
-    data.y = data.y[mask]
-    data.train_mask = data.train_mask[mask]
-    data.test_mask, data.valid_mask = None, None
-    data.num_nodes = mask.sum().item()
-
-    if hasattr(data, 'node_year'):
-        data.node_year = data.node_year[mask]
-
-    return data
 
 
 def sample_batches(data: Data, args) -> NeighborLoader:
@@ -57,7 +29,7 @@ def sample_batches(data: Data, args) -> NeighborLoader:
                             input_nodes=None,
                             batch_size=args.batch_size,
                             num_workers=args.num_workers,
-                            transform=RelationsAttribute())
+                            transform=T.RelationsAttribute())
     return loader
 
 
@@ -65,9 +37,6 @@ def sample_train_batches(data: Data, args) -> DataLoader:
     if args.batch_size > data.num_nodes or args.full_batch:
         print('Full batch training ')
         args.batch_size = data.num_nodes
-
-    if args.mode == 'inductive':
-        data = to_inductive(data)
 
     if args.train_sampling == 'cluster':
         # TODO SIGSEV error if too many num_parts 100 doesnt pass, 50 passes
@@ -110,7 +79,7 @@ def sample_train_batches(data: Data, args) -> DataLoader:
                                       input_nodes=None,  # data.train_mask,  # the target nodes are only from training
                                       batch_size=args.batch_size,
                                       num_workers=args.num_workers,
-                                      transform=RelationsAttribute())
+                                      transform=T.RelationsAttribute())
 
     return train_loader
 
@@ -137,7 +106,7 @@ def load_and_preprocess(args):
                          '{CiteSeer, Cora, Pubmed , ogbn-products, ogbn-arxiv, Reddit, Flickr, AmazonProducts, Yelp}')
 
     data = dataset[0]
-    data = ToUndirected()(data)  # this is needed for
+    data = T.ToUndirected()(data)  # this is needed for
     data.num_classes = dataset.num_classes
     data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
 
@@ -171,8 +140,6 @@ def load_and_preprocess(args):
         print('Saving Data Stats..... ')
         save_data_stats(data, args) # todo does this work for Reddit etc.?
 
-    # todo verify
-    if args.mode == 'inductive':
-        data = to_inductive(data)
+    data.n_id = torch.arange(data.num_nodes) # store original node ids # todo needed?
 
     return data  # , train_loader, all_loader # todo do the loaders in the model class

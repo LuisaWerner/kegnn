@@ -3,12 +3,12 @@ from abc import abstractmethod
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, SAGEConv, Linear
-from torch_geometric.data import NeighborSampler
-from torch_geometric.loader import NeighborLoader
+from torch_geometric.utils import subgraph
+from torch_geometric.loader import *
 from kenn.parsers import *
-from torch_geometric.transforms import BaseTransform, ToUndirected
 from torch_geometric.loader import GraphSAINTRandomWalkSampler as RWSampler
 from torch_geometric.utils import degree
+import Transforms as T
 
 
 def get_model(data, args):
@@ -54,15 +54,6 @@ def get_model(data, args):
     return model
 
 
-class RelationsAttribute(BaseTransform):
-    """ makes sure that the tensor with binary preactivations for kenn-sub binary predicates is of correct size """
-
-    def __call__(self, data):
-        num_edges = data.edge_index.shape[1]
-        data.relations = data.relations[:num_edges]
-        return data
-
-
 class _GraphSampling(torch.nn.Module):
     """
     Super Class for sampling batches in mini-batch training
@@ -74,6 +65,7 @@ class _GraphSampling(torch.nn.Module):
         super(_GraphSampling, self).__init__()
         # define parameter and structures required for all nodes
         self.batch_size = args.batch_size
+        self.inductive = True if args.mode == 'inductive' else False
         self.hidden_channels = args.hidden_channels
         self.num_features = data.num_features
         self.out_channels = data.num_classes
@@ -84,18 +76,14 @@ class _GraphSampling(torch.nn.Module):
         self.num_workers = args.num_workers
         self.sampling_neighbor_size = args.sampling_neighbor_size
         self.num_layers_sampling = args.num_layers_sampling
-        """
         self.test_loader = NeighborLoader(data,
                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling, # needed?
                                           shuffle=False,  # order needs to be respected here
                                           input_nodes=None,
                                           batch_size=self.batch_size,
                                           num_workers=self.num_workers,
-                                          transform=RelationsAttribute(),
+                                          transform=T.RelationsAttribute(),
                                           neighbor_sampler=None)
-        """
-        self.test_loader = NeighborSampler(data.edge_index, sizes=[self.sampling_neighbor_size] * self.num_layers_sampling, transform=RelationsAttribute(),
-                                           batch_size=124, shuffle=False, drop_last=False, num_workers=self.num_workers)
 
     @abstractmethod
     def forward(self, **kwargs):
@@ -125,7 +113,7 @@ class GraphSAINT(_GraphSampling):
         data.edge_weight = 1.0 / degree(col, data.num_nodes)[col]
 
         self.train_loader = RWSampler(
-            data,
+            T.ToInductive()(data) if self.inductive else data,
             batch_size=self.batch_size,
             walk_length=args.walk_length,
             num_steps=args.num_steps,
@@ -160,10 +148,10 @@ class KENN_SAINT(GraphSAINT):
             self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file))
 
     def reset_parameters(self):
+        """ resets parameters to default initialization: Base NN and KENN clause weights """
         super().reset_parameters()  # should call reset parameter function of MLP
         for layer in self.kenn_layers:
             layer.reset_parameters()
-            print('test')
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight=None)
