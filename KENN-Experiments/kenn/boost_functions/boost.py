@@ -10,6 +10,7 @@ class BoostFunction(torch.nn.Module, abc.ABC):
     def __init__(self, initial_weight: float, fixed_weight: bool,
                  min_weight, max_weight):
         super().__init__()
+        self.initial_weight = initial_weight
         self.register_parameter(
             name='clause_weight',
             param=torch.nn.Parameter(torch.tensor(initial_weight)))
@@ -25,6 +26,9 @@ class BoostFunction(torch.nn.Module, abc.ABC):
         :return: [b, l] The delta given by the boost function
         """
         pass
+
+    def reset_parameters(self):
+        torch.nn.init.constant(self.clause_weight, self.initial_weight)
 
 
 class GodelBoostConormApprox(BoostFunction):

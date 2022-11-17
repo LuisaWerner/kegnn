@@ -84,6 +84,7 @@ class _GraphSampling(torch.nn.Module):
         self.num_workers = args.num_workers
         self.sampling_neighbor_size = args.sampling_neighbor_size
         self.num_layers_sampling = args.num_layers_sampling
+        """
         self.test_loader = NeighborLoader(data,
                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling, # needed?
                                           shuffle=False,  # order needs to be respected here
@@ -92,6 +93,9 @@ class _GraphSampling(torch.nn.Module):
                                           num_workers=self.num_workers,
                                           transform=RelationsAttribute(),
                                           neighbor_sampler=None)
+        """
+        self.test_loader = NeighborSampler(data.edge_index, sizes=[self.sampling_neighbor_size] * self.num_layers_sampling, transform=RelationsAttribute(),
+                                           batch_size=124, shuffle=False, drop_last=False, num_workers=self.num_workers)
 
     @abstractmethod
     def forward(self, **kwargs):
@@ -116,7 +120,7 @@ class GraphSAINT(_GraphSampling):
             conv = SAGEConv(self.hidden_channels, self.hidden_channels)
             conv.aggr = self.aggr
             self.convs.append(conv)
-        self.lin = Linear(self.num_layers * self.hidden_channels, self.out_channels)
+        self.lin = Linear(self.hidden_channels, self.out_channels)
         row, col = self.edge_index = data.edge_index
         data.edge_weight = 1.0 / degree(col, data.num_nodes)[col]
 
@@ -124,11 +128,10 @@ class GraphSAINT(_GraphSampling):
             data,
             batch_size=self.batch_size,
             walk_length=args.walk_length,
-            num_steps=args.num_steps,  # originally we had round(data.num_nodes / args.batch_size)
+            num_steps=args.num_steps,
             num_workers=self.num_workers,
             sample_coverage=args.sample_coverage,
         )
-        # self.reset_parameters()
 
     def reset_parameters(self):
         self.lin.reset_parameters()
@@ -160,6 +163,7 @@ class KENN_SAINT(GraphSAINT):
         super().reset_parameters()  # should call reset parameter function of MLP
         for layer in self.kenn_layers:
             layer.reset_parameters()
+            print('test')
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight=None)

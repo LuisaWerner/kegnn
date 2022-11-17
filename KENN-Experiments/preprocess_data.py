@@ -171,4 +171,8 @@ def load_and_preprocess(args):
         print('Saving Data Stats..... ')
         save_data_stats(data, args) # todo does this work for Reddit etc.?
 
+    # todo verify
+    if args.mode == 'inductive':
+        data = to_inductive(data)
+
     return data  # , train_loader, all_loader # todo do the loaders in the model class

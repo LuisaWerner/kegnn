@@ -121,6 +121,17 @@ class RelationalKenn(torch.nn.Module):
         self.register_buffer(name='delta_up', tensor=torch.zeros(1))
         self.register_buffer(name='delta_bp', tensor=torch.zeros(1))
 
+    def reset_parameters(self):
+        if hasattr(self, 'binary_ke'):
+            for clause_enhancer in self.binary_ke.clause_enhancers:
+                clause_enhancer.conorm_boost.reset_parameters()
+        elif hasattr(self, 'unary_ke'):
+            for clause_enhancer in self.binary_ke.clause_enhancers:
+                clause_enhancer.conorm_boost.reset_parameters()
+        else:
+            pass
+
+
     def forward(self, unary: torch.Tensor, binary: torch.Tensor, edge_index: torch.Tensor) \
             -> (torch.Tensor, torch.Tensor):
         """Forward step of Kenn model for relational data.

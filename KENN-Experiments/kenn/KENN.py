@@ -28,6 +28,10 @@ class Kenn(torch.nn.Module):
         self.knowledge_enhancer = KnowledgeEnhancer(
             predicates, clauses, initial_clause_weight, save_training_data, boost_function=boost_function)
 
+    def reset_parameters(self):
+        # todo do we need this
+        super().reset_parameters()
+
     def forward(self, inputs: torch.Tensor) -> (torch.Tensor, [torch.Tensor, torch.Tensor]):
         """Improve the satisfaction level of a set of clauses.
         :param ground_atoms: the tensor containing the pre-activation values of the ground atoms
