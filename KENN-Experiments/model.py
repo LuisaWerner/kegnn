@@ -24,7 +24,7 @@ def get_model(data, args):
             _class = SAGE
         elif args.model == 'SAINT':
             _class = GraphSAINT
-        elif args.model == 'CLUSTER':
+        elif args.model == 'ClusterGCN':
             _class = ClusterGCN
         else:
             NotImplementedError(msg)
@@ -97,16 +97,18 @@ class _GraphSampling(torch.nn.Module):
 class ClusterGCN(_GraphSampling):
     def __init__(self, data, args, **kwargs):
         super(ClusterGCN, self).__init__(data, args)
+        self.name = 'ClusterGCN'
         self.convs = torch.nn.ModuleList()
         self.convs.append(SAGEConv(self.num_features, self.hidden_channels))
         for _ in range(self.num_layers - 2):
-            self.convs.append(SAGEConv(self.hidden_channelsn, self.hidden_channels))
-        self.convs.append(SAGEConv(self.hidden_channelsn, self.out_channels))
+            self.convs.append(SAGEConv(self.hidden_channels, self.hidden_channels))
+        self.convs.append(SAGEConv(self.hidden_channels, self.out_channels))
 
         sample_size = max(1, int(self.batch_size / (data.num_nodes / args.num_parts)))
-        cluster_data = ClusterData(T.ToInductive()(data) if self.to_inductive else data,
-                                   num_parts=args.num_parts, recursive=False, save_dir=self.save_dir)
+        cluster_data = ClusterData(T.ToInductive()(data) if self.inductive else data,
+                                   num_parts=100, recursive=False) # todo num_partitions in parametres
         self.train_loader = ClusterLoader(cluster_data, batch_size=sample_size, shuffle=True)
+        # todo: how do we make sure that there's only training data in training?
 
     def reset_parameters(self):
         for conv in self.convs:
@@ -114,7 +116,8 @@ class ClusterGCN(_GraphSampling):
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         for i, conv in enumerate(self.convs):
-            x = conv(x, edge_index)
+
+            x = conv(x, edge_index) # no edge weight for SAGEConv
             if i != self.num_layers - 1:
                 x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -139,7 +142,7 @@ class KENN_ClusterGCN(ClusterGCN):
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations, edge_weight=None):
-        z = super().forward(x, edge_index, relations, edge_weight=None)
+        z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
         # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
@@ -179,7 +182,7 @@ class GraphSAINT(_GraphSampling):
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         for i, conv in enumerate(self.convs):
-            x = conv(x, edge_index)
+            x = conv(x, edge_index) # no edge_weight for SAGEConv
             if i != len(self.convs) - 1:
                 x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training) # todo is self.training activated?
@@ -205,7 +208,7 @@ class KENN_SAINT(GraphSAINT):
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations, edge_weight=None):
-        z = super().forward(x, edge_index, relations, edge_weight=None)
+        z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
         # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
@@ -248,7 +251,7 @@ class GCN(_GraphSampling):
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, edge_index, edge_weight)
+            x = conv(x, edge_index, edge_weight=edge_weight)
             x = self.bns[i](x)
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
@@ -288,7 +291,7 @@ class SAGE(_GraphSampling):
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, edge_index, edge_weight)
+            x = conv(x, edge_index) # no edge_weight for SAGEConv
             x = self.bns[i](x)
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
@@ -417,7 +420,7 @@ class KENN_MLP(MLP):
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations=None, edge_weight=None):
-        z = super().forward(x, edge_index, relations, edge_weight)
+        z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
 
         # call kenn-sub layers
         for layer in self.kenn_layers:
@@ -443,10 +446,11 @@ class KENN_SAGE(SAGE):
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations, edge_weight=None):
-        z = super().forward(x, edge_index, relations, edge_weight)
+        z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
 
         # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
         return z.log_softmax(dim=-1)
+

@@ -37,3 +37,5 @@ class ExperimentConf(object):
         self.save_data_stats = conf_dict['save_data_stats']
         self.create_kb = conf_dict['create_kb']
         self.knowledge_base = conf_dict['knowledge_base']
+        self.num_parts = conf_dict['num_parts']
+        self.normalize_edges = conf_dict['normalize_edges']

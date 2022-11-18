@@ -10,6 +10,7 @@ from torch_geometric.utils import degree
 
 
 def get_partition_sizes(cluster_data: ClusterData) -> list:
+    # todo still neede?
     """ returns list of sizes of partitions in cluster data """
     part_sizes = []
     for i in range(len(cluster_data.partptr) - 1):
@@ -131,9 +132,13 @@ def load_and_preprocess(args):
 
     # create edge weight with ones if there's no edge weight stored by default
     if data.edge_weight is None:
-        # data.edge_weight = torch.ones(data.edge_index.size()[1])
+        data.edge_weight = torch.ones(data.edge_index.size()[1])
+    else:
+        UserWarning('Dataset has weighted edges that might require treatment such as normalization')
+
+    if args.normalize_edges:
         row, col = data.edge_index
-        data.edge_weight = 1.0 / degree(col, data.num_nodes)[col]
+        data.edge_weight = data.edge_weight[col] / degree(col, data.num_nodes)[col]
 
     # train_loader = sample_train_batches(data, args)
     # all_loader = sample_batches(data, args)

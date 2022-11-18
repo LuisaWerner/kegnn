@@ -59,8 +59,9 @@ def train(model, optimizer, device, criterion, args):
             # the target nodes have always to be the first |batch_size| nodes
             # each node is only taken into account as target nodes once, while it can be neighbor several times
             # we are not able to just select by train_mask because neighbors would contribute to loss more than ONCE
-            out = model(batch.x, batch.edge_index, batch.relations)
-            loss = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size])
+            out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight)
+            # loss_Old = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size])
+            loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
             total_loss += float(loss.item()) # * batch.batch_size todo do we multiply here
 
         loss.backward()
