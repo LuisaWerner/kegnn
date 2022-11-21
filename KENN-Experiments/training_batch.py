@@ -22,7 +22,6 @@ def train(model, optimizer, device, criterion, args):
     total_loss = total_examples = 0
 
     i = 0
-    # todo instantiate the train_loader in the model class and call it with model.train_loader()
     for batch in model.train_loader:
 
         batch = batch.to(device)
@@ -32,51 +31,38 @@ def train(model, optimizer, device, criterion, args):
 
         optimizer.zero_grad()
 
-        #if args.train_sampling == 'cluster':
-        #    out = model(batch.x, batch.edge_index, batch.relations, None)  # none for edge weight ?
-        #    loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
-        #    total_loss += loss.item() * torch.sum(batch.train_mask)
-        #    total_examples += torch.sum(batch.train_mask).item()  # some nodes might be sampled more than once
 
         if 'SAINT' in model.name:
 
             # if sample_coverage is 0, no normalization coefficients are calculated
             if not model.use_norm or not hasattr(batch, 'edge_norm') or not hasattr(batch, 'node_norm'):
-                out = model(batch.x, batch.edge_index, batch.relations)
+                out = model(batch.x, batch.edge_index, batch.relations).log_softmax(dim=-1)
                 loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
 
             # if normalization coefficients are calculated
             else:
                 batch.edge_weight = batch.edge_norm * batch.edge_weight  # todo how does this affect kenn-sub
-                out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight) # todo call in right order
+                out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight).log_softmax(dim=-1)
                 loss = criterion(out, batch.y.squeeze(1), reduction='none')
                 loss = (loss * batch.node_norm)[batch.train_mask].sum()
 
-            total_loss += float(loss.item()) # * batch.num_nodes # todo do we need to multiply here?
+            total_loss += float(loss.item())
 
         else:
-            # The batches are created with Neighbor Loader
-            # the target nodes have always to be the first |batch_size| nodes
-            # each node is only taken into account as target nodes once, while it can be neighbor several times
-            # we are not able to just select by train_mask because neighbors would contribute to loss more than ONCE
-            out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight)
-            # loss_Old = criterion(out[:batch.batch_size], batch.y.squeeze(1)[:batch.batch_size])
+            out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight).log_softmax(dim=-1)
             loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
-            total_loss += float(loss.item()) # * batch.batch_size todo do we multiply here
+            total_loss += float(loss.item())
 
         loss.backward()
         optimizer.step()
         print(f'Training: Batch {i} of {len(model.train_loader)} completed')
         i = i + 1
-        # model.apply(range_constraint)
 
     return total_loss / len(model.train_loader)
 
 
 @torch.no_grad()
 def test(model, criterion, device, evaluator, data):
-    # TODO: why is in graph_saint.py and cluster_gcn.py iterated over convolutions?
-    # todo: maybe a property of the Neighbor Sampler?
     """
     validation loop. No gradient updates
     returns accuracy per epoch and loss
@@ -93,13 +79,12 @@ def test(model, criterion, device, evaluator, data):
     i = 0
     for batch in model.test_loader:
         batch = batch.to(device)
-        out = model(batch.x, batch.edge_index, batch.relations)[:batch.batch_size]
+        out = model(batch.x, batch.edge_index, batch.relations).log_softmax(dim=-1) [:batch.batch_size]
         logits.append(out.cpu())
         print(f'Evaluating: Batch {i} of {len(model.test_loader)} completed')
         i = i + 1
 
     all_logits = torch.cat(logits, dim=0)
-    # preds = all_logits.argmax(dim=-1, keepdim=True)[data.train_mask]
 
     train_loss = criterion(all_logits[data.train_mask], data.y.squeeze(1)[data.train_mask]) / len(all_logits)
     valid_loss = criterion(all_logits[data.val_mask], data.y.squeeze(1)[data.val_mask]) / len(all_logits)

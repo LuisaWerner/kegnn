@@ -95,19 +95,21 @@ def load_and_preprocess(args):
     @return train_loader, valid_loader, test_loader: train/valid/test set split into batches,
     samples neighbors specified in args in an transductive
     """
-    if args.dataset in ['CiteSeer', 'Cora', 'PubMed']:
+    planet_sets = ['CiteSeer', 'Cora', 'PubMed']
+    ogbn = ['ogbn-products', 'ogbn-arxiv']
+    saint_datasets = ["Reddit2", "Flickr", "AmazonProducts", "Yelp"]
+    if args.dataset in planet_sets:
         dataset = torch_geometric.datasets.Planetoid(root=args.dataset, name=args.dataset, split=args.planetoid_split)
 
-    elif args.dataset in ['ogbn-products', 'ogbn-arxiv']:
+    elif args.dataset in ogbn:
         dataset = PygNodePropPredDataset(name=args.dataset)
 
-    elif args.dataset in ["Reddit2", "Flickr", "AmazonProducts", "Yelp"]:
+    elif args.dataset in saint_datasets:
         dataset = getattr(torch_geometric.datasets, args.dataset)(root=args.dataset)
     else:
-        raise ValueError('Unknown dataset specified. Use one out of: '
-                         '{CiteSeer, Cora, Pubmed , ogbn-products, ogbn-arxiv, Reddit, Flickr, AmazonProducts, Yelp}')
+        raise ValueError(f'Unknown dataset specified. Use one out of: {planet_sets + ogbn + saint_datasets}')
 
-    data = dataset[0]
+    [data] = dataset
     data = T.ToUndirected()(data)  # this is needed for
     data.num_classes = dataset.num_classes
     data.relations = torch.full(size=(data.num_edges, 1), fill_value=args.binary_preactivation)
@@ -128,7 +130,7 @@ def load_and_preprocess(args):
         data.num_nodes = data.x.shape[0]
 
     if not hasattr(data, "num_features"):
-        data.num_featuers = data.x.shape[1]
+        data.num_features = data.x.shape[1]
 
     # create edge weight with ones if there's no edge weight stored by default
     if data.edge_weight is None:

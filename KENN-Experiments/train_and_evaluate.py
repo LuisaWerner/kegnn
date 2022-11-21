@@ -19,6 +19,7 @@ from model import get_model
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training_batch import train, test
+import pathlib
 
 
 def callback_early_stopping(valid_accuracies, epoch, args):
@@ -62,10 +63,11 @@ def run_experiment(args):
     # device = torch.device(mps_device)
     print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
-    if os.path.exists('knowledge_base'):
-        os.remove('knowledge_base')
+    know_base = pathlib.Path('knowledge_base')
+    if know_base.is_file():
+        know_base.unlink()
         print('knowledge base deleted')
-    if os.path.exists('data_stats'):
+    if os.path.exists('data_stats'): # todo
         os.remove('data_stats')
         print('data stats deleted')
 

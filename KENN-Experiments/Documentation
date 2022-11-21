@@ -1,0 +1,16 @@
+WHAT HAS DO BE DONE:
+- Added datasets Flickr, Yelp, AmazonProducts, Reddit2
+- Re-implemented GraphSAINT, ClusterGCN, GraphSAGE
+- Re-implemented Sampling Pipeline: Each model has its own train sampling procedure now
+- Enabled Edge Weights and Edge weight normalization "conf - normalize_edges"
+- Linear and Logistic Regression Pipeline
+- ToInductive() only removes edges between train, valid and test now, not nodes! Nodes are always referenced with masks
+- GAT (Graph Attention Network) added as baseline
+
+TODO
+- Can we do Link Prediction?
+- Set relations to trainable?
+- What happens if we filter the links?
+- Test with different sets of knowledge and mask links
+- More info on resources: Memory consumption etc.
+- Add more baselines: GAT, 
