@@ -15,7 +15,7 @@
       "lr": 0.01,
       "epochs": 1,
       "runs": 1,
-      "model": "ClusterGCN",
+      "model": "GAT",
       "mode": "transductive",
       "save_results": "store_true",
       "binary_preactivation": 500.0,
@@ -39,6 +39,7 @@
       "eval_steps": 10,
       "save_data_stats": false,
       "create_kb": true,
+      "attention_heads": 8,
       "knowledge_base": "class_0,class_1,class_2,class_3,class_4,class_5\nCite\n\n>\n_:nclass_0(x),nCite(x.y),class_0(y)\n_:nclass_1(x),nCite(x.y),class_1(y)\n_:nclass_2(x),nCite(x.y),class_2(y)"
     }
   ]

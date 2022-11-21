@@ -39,3 +39,4 @@ class ExperimentConf(object):
         self.knowledge_base = conf_dict['knowledge_base']
         self.num_parts = conf_dict['num_parts']
         self.normalize_edges = conf_dict['normalize_edges']
+        self.attention_heads = conf_dict['attention_heads']
