@@ -528,6 +528,33 @@ class KENN_SAGE(SAGE):
         return z  # .log_softmax(dim=-1)
 
 
+class KENN_GAT(GAT):
+    """ kenn-sub with GraphSage (from ogb) as base NN"""
+
+    def __init__(self, data, args, knowledge_file):
+        super().__init__(data, args)
+        self.name = str('KENN_' + self.name)
+        self.knowledge_file = knowledge_file
+        self.kenn_layers = ModuleList()
+
+        for _ in range(args.num_kenn_layers):
+            self.kenn_layers.append(relational_parser(knowledge_file=knowledge_file))
+
+    def reset_parameters(self):
+        super().reset_parameters()  # should call reset parameter function of MLP
+        for layer in self.kenn_layers:
+            layer.reset_parameters()
+
+    def forward(self, x, edge_index, relations, edge_weight=None):
+        z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
+
+        # call kenn-sub layers
+        for layer in self.kenn_layers:
+            z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
+
+        return z  # .log_softmax(dim=-1)
+
+
 class KENN_LogisticRegression(LogisticRegression):
     """ kenn-sub with MLP (from ogb) as base NN"""
 

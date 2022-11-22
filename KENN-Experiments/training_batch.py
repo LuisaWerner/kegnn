@@ -79,7 +79,7 @@ def test(model, criterion, device, evaluator, data):
     i = 0
     for batch in model.test_loader:
         batch = batch.to(device)
-        out = model(batch.x, batch.edge_index, batch.relations).log_softmax(dim=-1) [:batch.batch_size]
+        out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight).log_softmax(dim=-1) [:batch.batch_size]
         logits.append(out.cpu())
         print(f'Evaluating: Batch {i} of {len(model.test_loader)} completed')
         i = i + 1
