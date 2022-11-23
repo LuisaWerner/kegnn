@@ -41,7 +41,6 @@ class _GraphSampling(torch.nn.Module):
 
     def __init__(self, data, args):
         super(_GraphSampling, self).__init__()
-        # define parameter and structures required for all nodes
         self.batch_size = args.batch_size
         self.inductive = True if args.mode == 'inductive' else False
         self.hidden_channels = args.hidden_channels
@@ -54,7 +53,6 @@ class _GraphSampling(torch.nn.Module):
         self.num_layers_sampling = args.num_layers_sampling
         self.test_loader = NeighborLoader(data,
                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
-                                          # needed?
                                           shuffle=False,  # order needs to be respected here
                                           input_nodes=None,
                                           batch_size=self.batch_size,
@@ -90,7 +88,7 @@ class LinearRegression(_GraphSampling):
 
     def forward(self, x, edge_index, relations=None, edge_weight=None):
         x = self.lin(x)
-        return x  # .log_softmax(dim=-1)
+        return x
 
 
 class LogisticRegression(_GraphSampling):
@@ -110,9 +108,9 @@ class LogisticRegression(_GraphSampling):
     def reset_parameters(self, **kwargs):
         self.lin.reset_parameters()
 
-    def forward(self, x, edge_index, relations=None, edge_weight=None, **kwargs):
+    def forward(self, x, edge_index, relations, edge_weight):
         x = torch.sigmoid(self.lin(x))
-        return x  # .log_softmax(dim=-1)
+        return x
 
 
 class GAT(_GraphSampling):
@@ -170,10 +168,8 @@ class ClusterGCN(_GraphSampling):
         self.convs.append(SAGEConv(self.hidden_channels, self.out_channels))
 
         sample_size = max(1, int(self.batch_size / (data.num_nodes / args.num_parts)))
-        cluster_data = ClusterData(T.ToInductive()(data) if self.inductive else data,
-                                   num_parts=100, recursive=False)  # todo num_partitions in parametres
+        cluster_data = ClusterData(T.ToInductive()(data) if self.inductive else data, num_parts=args.num_parts, recursive=False)
         self.train_loader = ClusterLoader(cluster_data, batch_size=sample_size, shuffle=True)
-        # todo: how do we make sure that there's only training data in training?
 
     def reset_parameters(self):
         for conv in self.convs:
@@ -186,7 +182,7 @@ class ClusterGCN(_GraphSampling):
             if i != self.num_layers - 1:
                 x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
-        return x  # todo use log_softmax ?
+        return x
 
 
 class KENN_ClusterGCN(ClusterGCN):
@@ -209,18 +205,16 @@ class KENN_ClusterGCN(ClusterGCN):
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
-        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
-        return z  # .log_softmax(dim=-1)
+        return z
 
 
 class GraphSAINT(_GraphSampling):
     # Implemented base on https://github.com/rusty1s/pytorch_geometric/blob/master/examples/graph_saint.py
     def __init__(self, data, args, **kwargs):
         super(GraphSAINT, self).__init__(data, args)
-        # only define GraphSAINT specific structures here
         self.name = 'GraphSAINT'
         self.use_norm = args.use_norm
         self.aggr = "add" if self.use_norm else "mean"
@@ -253,7 +247,7 @@ class GraphSAINT(_GraphSampling):
                 x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)  # todo is self.training activated?
         x = self.lin(x)
-        return x  # todo use log_softmax?
+        return x
 
 
 class KENN_SAINT(GraphSAINT):
@@ -270,17 +264,16 @@ class KENN_SAINT(GraphSAINT):
 
     def reset_parameters(self):
         """ resets parameters to default initialization: Base NN and KENN clause weights """
-        super().reset_parameters()  # should call reset parameter function of MLP
+        super().reset_parameters()
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
-        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
-        return z  # .log_softmax(dim=-1)
+        return z
 
 
 class GCN(_GraphSampling):
@@ -324,7 +317,7 @@ class GCN(_GraphSampling):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.convs[-1](x, edge_index)
-        return x  # .log_softmax(dim=-1)
+        return x
 
 
 class SAGE(_GraphSampling):
@@ -342,12 +335,10 @@ class SAGE(_GraphSampling):
             self.convs.append(SAGEConv(self.hidden_channels, self.hidden_channels))
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.convs.append(SAGEConv(self.hidden_channels, self.out_channels))
-        num_neighbors = [25, 10, 5, 5, 5, 5, 5, 5, 5]  # todo put in arguments
         self.train_loader = NeighborLoader(T.ToInductive()(data),  # always inductive with graphSAGE
-                                           num_neighbors=num_neighbors[:self.num_layers_sampling],
+                                           num_neighbors=args.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=data.train_mask,
-                                           # todo ? maybe this is duplicated, if we only sample input_nodes from train, it would be inductive
                                            batch_size=self.batch_size,
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
@@ -366,7 +357,7 @@ class SAGE(_GraphSampling):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.convs[-1](x, edge_index)
-        return x  # .log_softmax(dim=-1)
+        return x
 
 
 class MLP(_GraphSampling):
@@ -405,7 +396,7 @@ class MLP(_GraphSampling):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lins[-1](x)
-        return x  # .log_softmax(dim=-1)
+        return x
 
 
 class Standard(_GraphSampling):
@@ -442,8 +433,7 @@ class Standard(_GraphSampling):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.lin_layers[-1](x)
-        # return F.softmax(x, dim=-1)
-        return x  # .log_softmax(dim=-1)
+        return x
 
 
 class KENN_GCN(GCN):
@@ -465,13 +455,9 @@ class KENN_GCN(GCN):
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight)
-
-        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
-
-        # return F.softmax(z, dim=-1)
-        return z  # .log_softmax(dim=-1)
+        return z
 
 
 class KENN_MLP(MLP):
@@ -493,12 +479,9 @@ class KENN_MLP(MLP):
 
     def forward(self, x, edge_index, relations=None, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
-
-        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
-        # return F.softmax(z, dim=-1)
-        return z  # .log_softmax(dim=-1)
+        return z
 
 
 class KENN_SAGE(SAGE):
@@ -520,12 +503,9 @@ class KENN_SAGE(SAGE):
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
-
-        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
-
-        return z  # .log_softmax(dim=-1)
+        return z
 
 
 class KENN_GAT(GAT):
@@ -547,12 +527,10 @@ class KENN_GAT(GAT):
 
     def forward(self, x, edge_index, relations, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
-
-        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
 
-        return z  # .log_softmax(dim=-1)
+        return z
 
 
 class KENN_LogisticRegression(LogisticRegression):
@@ -574,12 +552,9 @@ class KENN_LogisticRegression(LogisticRegression):
 
     def forward(self, x, edge_index, relations, edge_weight):
         z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
-
-        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
-        # return F.softmax(z, dim=-1)
-        return z  # .log_softmax(dim=-1)
+        return z
 
 
 class KENN_LinearRegression(LinearRegression):
@@ -601,9 +576,6 @@ class KENN_LinearRegression(LinearRegression):
 
     def forward(self, x, edge_index, relations=None, edge_weight=None):
         z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
-
-        # call kenn-sub layers
         for layer in self.kenn_layers:
             z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
-        # return F.softmax(z, dim=-1)
-        return z  # .log_softmax(dim=-1)
+        return z

@@ -12,7 +12,7 @@ def run_experiments(config_file):
         The schema of the json is described in todo?
     """
 
-    with open(config_file,'r') as f:
+    with open(config_file, 'r') as f:
         json_content = json.loads(f.read())
     for conf in json_content['configs']:
         experiment_conf = ExperimentConf(conf)

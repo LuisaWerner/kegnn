@@ -1,24 +1,17 @@
-# train kenn-sub-Experiments here
-# this should later on be done in another file but to keep the overview I have it in a separate file now
-# Remark: only transductive training at the moment, only one base NN (= MLP)
-import argparse
+
 import os.path
 import pathlib
 from time import time
-
 import numpy as np
-import torch
 import torch.backends.mps
 import torch.nn.functional as F
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
-
 import wandb
 from app_stats import RunStats, ExperimentStats
-from generate_knowledge import generate_knowledge
 from model import get_model
 from ogb.nodeproppred import Evaluator
-from preprocess_data import load_and_preprocess
+from preprocess_data import *
 from training_batch import train, test
 
 
@@ -28,10 +21,9 @@ def callback_early_stopping(valid_accuracies, epoch, args):
     If patience=k, checks if the mean of the last k accuracies is higher than the mean of the
     previous k accuracies (i.e. we check that we are not overfitting). If not, stops learning.
     @param valid_accuracies - list(float) , validation accuracy per epoch
-    @param es_patience: how many epochs to take into account: patience refers to * how many evaluation epochs * to take into account
-    @param es_min_delta: early stopping delta. Minimum threshold above which the model is considered improving.
+    @param epoch: current epoch
+    @param args: argument file [Namespace]
     @return bool - if training stops or not
-
     """
     step = len(valid_accuracies)
     patience = args.es_patience // args.eval_steps
@@ -78,40 +70,30 @@ def run_experiment(args):
 
     for run in range(args.runs):
 
-        # todo return only loaded and preprocessed data object and do samplers along with model instantiation
-        # data, train_loader, all_loader = load_and_preprocess(args)
-        data = load_and_preprocess(args)
-        # data = GenericDataset(args) todo !
-        generate_knowledge(data.num_classes, args)
-
         print(f"Run: {run} of {args.runs}")
-
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
+        data = PygDataset(args).data
         model = get_model(data, args).to(device)
         model.reset_parameters()
         evaluator = Evaluator(name=args.dataset)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = F.nll_loss
 
-        train_losses = []
-        valid_losses = []
-        train_accuracies = []
-        valid_accuracies = []
-        epoch_time = []
+        train_losses, valid_losses, train_accuracies, valid_accuracies, epoch_time = [], [], [], [], []
 
-        clause_weights_dict = None
+        clause_weights_dict = None # todo needed ?
 
         if not args.full_batch:
             print(f"Number of Training Batches with batch_size = {args.batch_size}: {len(model.train_loader)}")
 
         for epoch in range(args.epochs):
             start = time()
-            _ = train(model, optimizer, device, criterion, args)  # todo _ return
+            train(model, optimizer, device, criterion, args)
             end = time()
 
             if epoch % args.eval_steps == 0:
-                t_accuracy, v_accuracy, _, t_loss, v_loss, _ = test(model, criterion, device, evaluator, data)
+                _, t_accuracy, v_accuracy, t_loss, v_loss, _ = test(model, criterion, device, evaluator, data)
 
                 # Save stats for tensorboard
                 writer.add_scalar("loss/train", t_loss, epoch)
@@ -120,10 +102,10 @@ def run_experiment(args):
                 writer.add_scalar("accuracy/valid", v_accuracy, epoch)
 
                 train_accuracies += [t_accuracy]
-                valid_accuracies.append(v_accuracy)  # todo
-                train_losses.append(t_loss)
-                valid_losses.append(v_loss)
-                epoch_time.append(end - start)
+                valid_accuracies += [v_accuracy]
+                train_losses += [t_loss]
+                valid_losses += [v_loss]
+                epoch_time += [end - start]
 
                 print(f'Run: {run + 1:02d}, '
                       f'Epoch: {epoch:02d}, '
@@ -137,8 +119,8 @@ def run_experiment(args):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
-        _, _, test_accuracy, _, _, _ = test(model, criterion, device, evaluator, data)
-        test_accuracies.append(test_accuracy)
+        test_accuracy, *_ = test(model, criterion, device, evaluator, data)
+        test_accuracies += [test_accuracy]
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
                       test_accuracies)
         xp_stats.add_run(rs)
@@ -152,63 +134,3 @@ def run_experiment(args):
     wandb.log(xp_stats.to_dict())
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Experiments')
-    parser.add_argument('--dataset', type=str, default='Reddit2',
-                        help='alternatively ogbn-products, ogbn-arxiv , CiteSeer, PubMed, Cora')
-    parser.add_argument('--planetoid_split', type=str, default="public",
-                        help="full, geom-gcn, random: see torch-geometric.data.planetoid documentation")
-    parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--use_node_embedding', action='store_true')
-    parser.add_argument('--num_layers', type=int, default=3)  # todo
-    parser.add_argument('--num_layers_sampling', type=int,
-                        default=1)  # has to correspond to the number of kenn-sub/GCN Layers
-    parser.add_argument('--hidden_channels', type=int, default=256)
-    parser.add_argument('--dropout', type=float, default=0.5)
-    parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--epochs', type=int, default=1)  # 500
-    parser.add_argument('--runs', type=int, default=1)  # 10
-    parser.add_argument('--model', type=str, default='MLP')
-    parser.add_argument('--mode', type=str, default='transductive',
-                        help='transductive or inductive training mode ')  # inductive/transductive
-    parser.add_argument('--save_results', action='store_true')
-    parser.add_argument('--binary_preactivation', type=float, default=500.0)
-    parser.add_argument('--num_kenn_layers', type=int, default=3)
-    parser.add_argument('--range_constraint_lower', type=float, default=0)
-    parser.add_argument('--range_constraint_upper', type=float, default=500)
-    parser.add_argument('--es_enabled', type=bool, default=False)
-    parser.add_argument('--es_min_delta', type=float, default=0.001)
-    parser.add_argument('--es_patience', type=int, default=10)
-    parser.add_argument('--sampling_neighbor_size', type=int, default=-1)  # all neighbors will be included with -1
-    parser.add_argument('--batch_size', type=int, default=50000)
-    parser.add_argument('--full_batch', type=bool, default=False)
-    parser.add_argument('--num_workers', type=int, default=0)
-    parser.add_argument('--seed', type=int, default=100)
-    parser.add_argument('--train_sampling', type=str, default='standard',
-                        help='specify as "cluster", "graph_saint". If '
-                             'not specified, standard GraphSAGE sampling '
-                             'is applied')
-    parser.add_argument('--cluster_partition_size', type=int, default=100,
-                        help='argument for cluster sampling: Approximate size of partitions. Should be smaller than batch size. '
-                             'If larger than batch size, 1 partition = 1 batch ')
-    parser.add_argument('--sample_coverage', type=int, default=0, help='argument for graph saint, if sample coverage '
-                                                                       'is 0, no normalization of batches is '
-                                                                       'conducted ')
-    parser.add_argument('--walk_length', type=int, default=3, help='argument for graph saint')
-    parser.add_argument('--num_steps', type=int, default=30, help='argument for graph saint')
-    parser.add_argument('--eval_steps', type=int, default=1,
-                        help='How often should the model be evaluated: Default: Every epoch. Set to a higher value to reduce overall epoch time and '
-                             'evaluate only every i-th step.  ')
-    parser.add_argument('--knowledge_base', type=str, default='', help='specify knowledge file manually for test ')
-    parser.add_argument('--create-kb', type=bool, default=True,
-                        help='if true, create a clause per class. Set to false if manually added kb should be used ')
-    parser.add_argument('--save_data_stats', type=bool, default=False, help='if true saves statistics about input data')
-
-    args = parser.parse_args()
-    print(args)
-
-    run_experiment(args)
-
-
-if __name__ == '__main__':
-    main()

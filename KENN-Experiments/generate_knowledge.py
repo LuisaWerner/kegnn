@@ -1,18 +1,16 @@
 """generates the knowledge of type CLASS(x) AND CITE(X.Y) => CLASS(Y) for each class """
 
 
-def generate_knowledge(num_classes, args):
+def generate_knowledge(data, args):
     """
     creates the knowledge file based on unary predicates = document classes
     cite is binary predicate
     num_classes int
     """
-    if not args.create_kb:
-        with open('knowledge_base', 'w') as kb_file:
-            kb_file.write(args.knowledge_base)
+    assert hasattr(data, 'num_classes')
 
     if args.create_kb:
-        class_list = list(range(num_classes))
+        class_list = list(range(data.num_classes))
         # class_list = []
         for i in class_list:
             class_list[i] = 'class_' + str(i)
@@ -37,3 +35,11 @@ def generate_knowledge(num_classes, args):
 
         with open('knowledge_base', 'w') as kb_file:
             kb_file.write(kb)
+
+        return kb
+
+    else:
+        # use the kb defined in args
+        with open('knowledge_base', 'w') as kb_file:
+            kb_file.write(args.knowledge_base)
+        return args.knowledge_base

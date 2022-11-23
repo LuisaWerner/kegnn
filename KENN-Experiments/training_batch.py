@@ -2,28 +2,22 @@ import torch
 
 
 def train(model, optimizer, device, criterion, args):
-    # todo: can we take edge weights as binary preactivations for kenn-sub if we have them ?
-    # todo: or multiply binary preactiations by edge weights
     """
     training loop - trains specified model by computing batches
     returns average epoch accuracy and loss
     parameters are updated with gradient descent
-
     @param model: a model specified in model.py
-    @param train_loader: A PyG NeighborLoader object that returns batches. The first [batch_size] nodes in the batch are target nodes.
-    The following ones are the sampled Neighbors
     @param optimizer: torch.optimizer object
     @param device: gpu or cpu
     @param criterion: defined loss function
     @param args: input parameters
-    @param range_constraint : weight clipping for parameters
     """
     model.train()
-    total_loss = total_examples = 0
+    total_loss = 0
 
     for i_batch, batch in enumerate(model.train_loader):
 
-        batch = batch.to(device)  # todo
+        batch.to(device)
         if batch.train_mask.sum() == 0:
             print('sampled batch does not contain any train nodes')
             continue
@@ -39,7 +33,7 @@ def train(model, optimizer, device, criterion, args):
 
             # if normalization coefficients are calculated
             else:
-                batch.edge_weight = batch.edge_norm * batch.edge_weight  # todo how does this affect kenn-sub
+                batch.edge_weight = batch.edge_norm * batch.edge_weight
                 out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight).log_softmax(dim=-1)
                 loss = criterion(out, batch.y.squeeze(1), reduction='none')
                 loss = (loss * batch.node_norm)[batch.train_mask].sum()
@@ -55,19 +49,15 @@ def train(model, optimizer, device, criterion, args):
         optimizer.step()
         print(f'Training: Batch {i_batch} of {len(model.train_loader)} completed')
 
-    return total_loss / len(model.train_loader)
-
 
 @torch.no_grad()
 def test(model, criterion, device, evaluator, data):
     """
     validation loop. No gradient updates
     returns accuracy per epoch and loss
-
     @param model: a model specified in model.py
-    @param loader: A PyG NeighborLoader object that returns batches.
-    The first [batch_size] nodes in the batch are target nodes.
-    The following ones are the sampled Neighbors
+    @param evaluator: a evaluator instance
+    @param data: a data instance
     @param device: gpu or cpu
     @param criterion: defined loss function
     """
@@ -76,7 +66,8 @@ def test(model, criterion, device, evaluator, data):
     i = 0
     for batch in model.test_loader:
         batch = batch.to(device)
-        out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight).log_softmax(dim=-1) [:batch.batch_size]
+        out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight).log_softmax(dim=-1)[
+              :batch.batch_size]
         logits.append(out.cpu())
         print(f'Evaluating: Batch {i} of {len(model.test_loader)} completed')
         i = i + 1
@@ -100,4 +91,4 @@ def test(model, criterion, device, evaluator, data):
         'y_pred': all_logits.argmax(dim=-1, keepdim=True)[data.test_mask]
     })['acc']
 
-    return train_acc, valid_acc, test_acc, train_loss, valid_loss, test_loss
+    return test_acc, train_acc, valid_acc, train_loss, valid_loss, test_loss

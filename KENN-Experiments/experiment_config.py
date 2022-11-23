@@ -4,7 +4,6 @@ class ExperimentConf(object):
         for key, value in conf_dict.items():
             setattr(self, key, value)
 
-        dbg = 0
 
         # self.dataset = conf_dict['dataset']
         # self.planetoid_split = conf_dict['planetoid_split']

@@ -1,48 +1,21 @@
 import os
-
 import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
-
-try:
-    import torch
-except ImportError:
-    torch = None
-
-
-def update_meta_info():
-    """
-    completes and stores meta info document for all datasets beyond OGB so that a evaluator can be instantiated
-    according to the defined metrics here
-    """
-    ogb_meta_info = pd.read_csv(os.path.join(os.path.dirname(__file__), 'master.csv'), index_col=0)
-    datasets = ['CiteSeer', 'Cora', 'PubMed', 'Reddit2', 'AmazonProducts', 'Yelp', 'Flickr']
-    for name in datasets:
-        meta_info = pd.DataFrame(columns=[name],
-                                 index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
-                                        'additional node files', 'additional edge files', 'is hetero', 'is binary'])
-        meta_info[name]['num tasks'] = 1
-        meta_info[name]['eval metric'] = 'acc'
-        meta_info[name]['task type'] = 'multiclass classification'
-        meta_info[name]['has node attr'] = True
-        meta_info[name]['has edge attr'] = False
-        meta_info[name]['additional node files'] = None
-        meta_info[name]['additional edge files'] = None
-        meta_info[name]['is hetero'] = False
-        meta_info[name]['is binary'] = False
-
-        ogb_meta_info = pd.concat([ogb_meta_info, meta_info], axis=1)
-    ogb_meta_info.to_csv(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'master_all.csv'))
+import torch
+from pathlib import Path
 
 
 class Evaluator:
+    # _meta_path = Path(Path(__file__).parent.parent)
+
     def __init__(self, name):
         self.name = name
-        update_meta_info()
-        self.meta_info = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'master_all.csv'),
-                                     index_col=0)  # todo pathlib
+        self._meta_path = Path(Path(__file__).parent)
+        self.update_meta_info()
+        self.meta_info = pd.read_csv(self._meta_path / 'master_all.csv', index_col=0)
 
-        if not self.name in self.meta_info:
+        if self.name not in self.meta_info:
             print(self.name)
             error_msg = f'Invalid dataset name {self.name}.\n'
             error_msg += 'Available datasets are as follows:\n'
@@ -51,6 +24,30 @@ class Evaluator:
 
         self.num_tasks = int(self.meta_info[self.name]['num tasks'])
         self.eval_metric = self.meta_info[self.name]['eval metric']
+
+    def update_meta_info(self):
+        """
+        completes and stores meta info document for all datasets beyond OGB so that a evaluator can be instantiated
+        according to the defined metrics here
+        """
+        ogb_meta_info = pd.read_csv(self._meta_path / 'master.csv', index_col=0)
+        datasets = ['CiteSeer', 'Cora', 'PubMed', 'Reddit2', 'AmazonProducts', 'Yelp', 'Flickr']
+        for name in datasets:
+            meta_info = pd.DataFrame(columns=[name],
+                                     index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
+                                            'additional node files', 'additional edge files', 'is hetero', 'is binary'])
+            meta_info[name]['num tasks'] = 1
+            meta_info[name]['eval metric'] = 'acc'
+            meta_info[name]['task type'] = 'multiclass classification'
+            meta_info[name]['has node attr'] = True
+            meta_info[name]['has edge attr'] = False
+            meta_info[name]['additional node files'] = None
+            meta_info[name]['additional edge files'] = None
+            meta_info[name]['is hetero'] = False
+            meta_info[name]['is binary'] = False
+
+            ogb_meta_info = pd.concat([ogb_meta_info, meta_info], axis=1)
+        ogb_meta_info.to_csv(self._meta_path / 'master_all.csv')
 
     def _parse_and_check_input(self, input_dict):
         if self.eval_metric == 'rocauc' or self.eval_metric == 'acc':
@@ -68,12 +65,12 @@ class Evaluator:
 
             # converting to torch.Tensor to numpy on cpu
             if torch is not None and isinstance(y_true, torch.Tensor):
-                y_true = y_true.detach().cpu().numpy()
+                y_true.detach().cpu().numpy()
 
             if torch is not None and isinstance(y_pred, torch.Tensor):
-                y_pred = y_pred.detach().cpu().numpy()
+                y_pred.detach().cpu().numpy()
 
-            ## check type
+            # check type
             if not (isinstance(y_true, np.ndarray) and isinstance(y_true, np.ndarray)):
                 raise RuntimeError('Arguments to Evaluator need to be either numpy ndarray or torch tensor')
 
@@ -140,9 +137,7 @@ class Evaluator:
         return desc
 
     def _eval_rocauc(self, y_true, y_pred):
-        '''
-            compute ROC-AUC and AP score averaged across tasks
-        '''
+        '''compute ROC-AUC and AP score averaged across tasks'''
 
         rocauc_list = []
 
