@@ -21,16 +21,14 @@ def train(model, optimizer, device, criterion, args):
     model.train()
     total_loss = total_examples = 0
 
-    i = 0
-    for batch in model.train_loader:
+    for i_batch, batch in enumerate(model.train_loader):
 
-        batch = batch.to(device)
+        batch = batch.to(device)  # todo
         if batch.train_mask.sum() == 0:
             print('sampled batch does not contain any train nodes')
             continue
 
         optimizer.zero_grad()
-
 
         if 'SAINT' in model.name:
 
@@ -55,8 +53,7 @@ def train(model, optimizer, device, criterion, args):
 
         loss.backward()
         optimizer.step()
-        print(f'Training: Batch {i} of {len(model.train_loader)} completed')
-        i = i + 1
+        print(f'Training: Batch {i_batch} of {len(model.train_loader)} completed')
 
     return total_loss / len(model.train_loader)
 

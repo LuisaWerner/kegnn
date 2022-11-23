@@ -39,14 +39,15 @@ class Evaluator:
     def __init__(self, name):
         self.name = name
         update_meta_info()
-        self.meta_info = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'master_all.csv'), index_col=0)
+        self.meta_info = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'master_all.csv'),
+                                     index_col=0)  # todo pathlib
 
         if not self.name in self.meta_info:
             print(self.name)
-            error_mssg = 'Invalid dataset name {}.\n'.format(self.name)
-            error_mssg += 'Available datasets are as follows:\n'
-            error_mssg += '\n'.join(self.meta_info.keys())
-            raise ValueError(error_mssg)
+            error_msg = f'Invalid dataset name {self.name}.\n'
+            error_msg += 'Available datasets are as follows:\n'
+            error_msg += '\n'.join(self.meta_info.keys())
+            raise ValueError(error_msg)
 
         self.num_tasks = int(self.meta_info[self.name]['num tasks'])
         self.eval_metric = self.meta_info[self.name]['eval metric']
@@ -83,7 +84,8 @@ class Evaluator:
                 raise RuntimeError('y_true and y_pred must to 2-dim arrray, {}-dim array given'.format(y_true.ndim))
 
             if not y_true.shape[1] == self.num_tasks:
-                raise RuntimeError('Number of tasks for {} should be {} but {} given'.format(self.name, self.num_tasks, y_true.shape[1]))
+                raise RuntimeError('Number of tasks for {} should be {} but {} given'.format(self.name, self.num_tasks,
+                                                                                             y_true.shape[1]))
 
             return y_true, y_pred
 
@@ -145,34 +147,33 @@ class Evaluator:
         rocauc_list = []
 
         for i in range(y_true.shape[1]):
-            #AUC is only defined when there is at least one positive data.
-            if np.sum(y_true[:,i] == 1) > 0 and np.sum(y_true[:,i] == 0) > 0:
-                is_labeled = y_true[:,i] == y_true[:,i]
-                rocauc_list.append(roc_auc_score(y_true[is_labeled,i], y_pred[is_labeled,i]))
+            # AUC is only defined when there is at least one positive data.
+            if np.sum(y_true[:, i] == 1) > 0 and np.sum(y_true[:, i] == 0) > 0:
+                is_labeled = y_true[:, i] == y_true[:, i]
+                rocauc_list.append(roc_auc_score(y_true[is_labeled, i], y_pred[is_labeled, i]))
 
         if len(rocauc_list) == 0:
             raise RuntimeError('No positively labeled data available. Cannot compute ROC-AUC.')
 
-        return {'rocauc': sum(rocauc_list)/len(rocauc_list)}
+        return {'rocauc': sum(rocauc_list) / len(rocauc_list)}
 
     def _eval_acc(self, y_true, y_pred):
         acc_list = []
 
         for i in range(y_true.shape[1]):
-            is_labeled = y_true[:,i] == y_true[:,i]
-            correct = y_true[is_labeled,i] == y_pred[is_labeled,i]
-            acc_list.append(float(np.sum(correct))/len(correct))
+            is_labeled = y_true[:, i] == y_true[:, i]
+            correct = y_true[is_labeled, i] == y_pred[is_labeled, i]
+            acc_list.append(float(np.sum(correct)) / len(correct))
 
-        return {'acc': sum(acc_list)/len(acc_list)}
+        return {'acc': sum(acc_list) / len(acc_list)}
 
 
 if __name__ == '__main__':
-
     evaluator = Evaluator('ogbn-proteins')
     print(evaluator.expected_input_format)
     print(evaluator.expected_output_format)
-    y_true = torch.tensor(np.random.randint(2, size = (100,112)))
-    y_pred = torch.tensor(np.random.randn(100,112))
+    y_true = torch.tensor(np.random.randint(2, size=(100, 112)))
+    y_pred = torch.tensor(np.random.randn(100, 112))
     input_dict = {'y_true': y_true, 'y_pred': y_pred}
     result = evaluator.eval(input_dict)
     print(result)
@@ -181,8 +182,8 @@ if __name__ == '__main__':
     evaluator = Evaluator('ogbn-products')
     print(evaluator.expected_input_format)
     print(evaluator.expected_output_format)
-    y_true = np.random.randint(5, size = (100,1))
-    y_pred = np.random.randint(5, size = (100,1))
+    y_true = np.random.randint(5, size=(100, 1))
+    y_pred = np.random.randint(5, size=(100, 1))
     input_dict = {'y_true': y_true, 'y_pred': y_pred}
     result = evaluator.eval(input_dict)
     print(result)
@@ -191,11 +192,8 @@ if __name__ == '__main__':
     evaluator = Evaluator('ogbn-arxiv')
     print(evaluator.expected_input_format)
     print(evaluator.expected_output_format)
-    y_true = np.random.randint(5, size = (100,1))
-    y_pred = np.random.randint(5, size = (100,1))
+    y_true = np.random.randint(5, size=(100, 1))
+    y_pred = np.random.randint(5, size=(100, 1))
     input_dict = {'y_true': y_true, 'y_pred': y_pred}
     result = evaluator.eval(input_dict)
     print(result)
-
-
-

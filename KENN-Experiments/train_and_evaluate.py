@@ -3,6 +3,7 @@
 # Remark: only transductive training at the moment, only one base NN (= MLP)
 import argparse
 import os.path
+import pathlib
 from time import time
 
 import numpy as np
@@ -19,7 +20,6 @@ from model import get_model
 from ogb.nodeproppred import Evaluator
 from preprocess_data import load_and_preprocess
 from training_batch import train, test
-import pathlib
 
 
 def callback_early_stopping(valid_accuracies, epoch, args):
@@ -81,6 +81,7 @@ def run_experiment(args):
         # todo return only loaded and preprocessed data object and do samplers along with model instantiation
         # data, train_loader, all_loader = load_and_preprocess(args)
         data = load_and_preprocess(args)
+        # data = GenericDataset(args) todo !
         generate_knowledge(data.num_classes, args)
 
         print(f"Run: {run} of {args.runs}")
@@ -106,7 +107,7 @@ def run_experiment(args):
 
         for epoch in range(args.epochs):
             start = time()
-            _ = train(model, optimizer, device, criterion, args)
+            _ = train(model, optimizer, device, criterion, args)  # todo _ return
             end = time()
 
             if epoch % args.eval_steps == 0:
@@ -118,8 +119,8 @@ def run_experiment(args):
                 writer.add_scalar("accuracy/train", t_accuracy, epoch)
                 writer.add_scalar("accuracy/valid", v_accuracy, epoch)
 
-                train_accuracies.append(t_accuracy)
-                valid_accuracies.append(v_accuracy)
+                train_accuracies += [t_accuracy]
+                valid_accuracies.append(v_accuracy)  # todo
                 train_losses.append(t_loss)
                 valid_losses.append(v_loss)
                 epoch_time.append(end - start)
