@@ -51,9 +51,9 @@ class Evaluator:
 
     def _parse_and_check_input(self, input_dict):
         if self.eval_metric == 'rocauc' or self.eval_metric == 'acc':
-            if not 'y_true' in input_dict:
+            if 'y_true' not in input_dict:
                 raise RuntimeError('Missing key of y_true')
-            if not 'y_pred' in input_dict:
+            if 'y_pred' not in input_dict:
                 raise RuntimeError('Missing key of y_pred')
 
             y_true, y_pred = input_dict['y_true'], input_dict['y_pred']
@@ -71,8 +71,9 @@ class Evaluator:
                 y_pred.detach().cpu().numpy()
 
             # check type
-            if not (isinstance(y_true, np.ndarray) and isinstance(y_true, np.ndarray)):
-                raise RuntimeError('Arguments to Evaluator need to be either numpy ndarray or torch tensor')
+            if not (isinstance(y_true, torch.Tensor) and isinstance(y_pred, torch.Tensor)):
+                y_true, y_pred = torch.Tensor(y_true), torch.Tensor(y_pred)
+                # raise RuntimeError('Arguments to Evaluator need to be either numpy ndarray or torch tensor')
 
             if not y_true.shape == y_pred.shape:
                 raise RuntimeError('Shape of y_true and y_pred must be the same')
@@ -158,7 +159,7 @@ class Evaluator:
         for i in range(y_true.shape[1]):
             is_labeled = y_true[:, i] == y_true[:, i]
             correct = y_true[is_labeled, i] == y_pred[is_labeled, i]
-            acc_list.append(float(np.sum(correct)) / len(correct))
+            acc_list += [float(torch.sum(correct)) / len(correct)]
 
         return {'acc': sum(acc_list) / len(acc_list)}
 

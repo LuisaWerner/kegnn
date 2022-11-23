@@ -3,14 +3,14 @@ from torch_geometric.utils import *
 import torch
 import pathlib
 from data_stats import save_data_stats
+import random
 
 
 class RelationsAttribute(BaseTransform):
     """ makes sure that the tensor with binary preactivations for kenn-sub binary predicates is of correct size """
 
     def __call__(self, data):
-        num_edges = data.edge_index.shape[1]
-        data.relations = data.relations[:num_edges]
+        data.relations = data.relations[:data.num_edges]
         return data
 
 
@@ -27,8 +27,24 @@ class ToInductive(BaseTransform):
         return data
 
 
+class DropTrainEdges(BaseTransform):
+    """ for training: randomly drops edges in training mode """
+
+    def __init__(self, args):
+        super(DropTrainEdges, self).__init__()
+        self.edges_drop_rate = args.edges_drop_rate
+
+    def __call__(self, data):
+        edge_mask = random.choices([True, False], weights=[1-self.edges_drop_rate, self.edges_drop_rate], k=data.num_edges)
+        data.edge_index = data.edge_index[:, edge_mask]
+        data.edge_weight = data.edge_weight[edge_mask]
+        data.relations = data.relations[edge_mask]
+        return data
+
+
 class AddAttributes(BaseTransform):
     """ Adds missing attributes to data object"""
+
     def __init__(self, args):
         self.args = args
 
@@ -65,9 +81,3 @@ class AddAttributes(BaseTransform):
             save_data_stats(data, args)
 
         return data
-
-
-
-
-
-

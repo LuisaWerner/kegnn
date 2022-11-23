@@ -51,6 +51,10 @@ class _GraphSampling(torch.nn.Module):
         self.num_workers = args.num_workers
         self.sampling_neighbor_size = args.sampling_neighbor_size
         self.num_layers_sampling = args.num_layers_sampling
+
+        if self.training: # drop edges only in training mode
+            data = T.DropTrainEdges(args)(data)
+
         self.test_loader = NeighborLoader(data,
                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
                                           shuffle=False,  # order needs to be respected here
