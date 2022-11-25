@@ -39,7 +39,7 @@
       "num_steps": 5,
       "num_neighbors": [25, 10, 5, 5, 5, 5, 5, 5, 5],
       "eval_steps": 10,
-      "save_data_stats": false,
+      "save_data_stats": true,
       "create_kb": true,
       "attention_heads": 8,
       "knowledge_base": "class_0,class_1,class_2,class_3,class_4,class_5\nCite\n\n>\n_:nclass_0(x),nCite(x.y),class_0(y)\n_:nclass_1(x),nCite(x.y),class_1(y)\n_:nclass_2(x),nCite(x.y),class_2(y)"

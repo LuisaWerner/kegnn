@@ -76,8 +76,4 @@ class AddAttributes(BaseTransform):
 
         data.n_id = torch.arange(data.num_nodes)
 
-        if self.args.save_data_stats and not pathlib.Path('data_stats').exists():
-            print('Saving Data Stats..... ')
-            save_data_stats(data, args)
-
         return data
