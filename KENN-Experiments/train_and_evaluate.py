@@ -13,6 +13,7 @@ from model import get_model
 from ogb.nodeproppred import Evaluator
 from preprocess_data import *
 from training_batch import train, test
+import data_stats # todo remove
 
 
 def callback_early_stopping(valid_accuracies, epoch, args):
@@ -74,6 +75,10 @@ def run_experiment(args):
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
         model = get_model(args).to(device)
+        # # todo remove later
+        # if args.save_data_stats and not pathlib.Path('data_stats').exists():
+        #     print('Saving Data Stats..... ')
+        #     _ = data_stats.save_data_stats(model.data, args)
         model.reset_parameters()
         evaluator = Evaluator(name=args.dataset)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -92,9 +97,10 @@ def run_experiment(args):
             end = time()
 
             if epoch % args.eval_steps == 0:
-                _, t_accuracy, v_accuracy, t_loss, v_loss, _ = test(model, criterion, device, evaluator, model.data)
+                _, t_accuracy, v_accuracy, t_loss, v_loss, _ = test(model, criterion, device, evaluator)
 
                 # Save stats for tensorboard
+                writer.add_scalar("loss/train", t_loss, epoch)
                 writer.add_scalar("loss/train", t_loss, epoch)
                 writer.add_scalar("loss/valid", v_loss, epoch)
                 writer.add_scalar("accuracy/train", t_accuracy, epoch)
@@ -118,7 +124,7 @@ def run_experiment(args):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
-        test_accuracy, *_ = test(model, criterion, device, evaluator, model.data)
+        test_accuracy, *_ = test(model, criterion, device, evaluator)
         test_accuracies += [test_accuracy]
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
                       test_accuracies)

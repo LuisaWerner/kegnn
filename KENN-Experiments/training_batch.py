@@ -51,7 +51,7 @@ def train(model, optimizer, device, criterion, args):
 
 
 @torch.no_grad()
-def test(model, criterion, device, evaluator, data):
+def test(model, criterion, device, evaluator):
     """
     validation loop. No gradient updates
     returns accuracy per epoch and loss
@@ -74,21 +74,21 @@ def test(model, criterion, device, evaluator, data):
 
     all_logits = torch.cat(logits, dim=0)
 
-    train_loss = criterion(all_logits[data.train_mask], data.y.squeeze(1)[data.train_mask]) / len(all_logits)
-    valid_loss = criterion(all_logits[data.val_mask], data.y.squeeze(1)[data.val_mask]) / len(all_logits)
-    test_loss = criterion(all_logits[data.test_mask], data.y.squeeze(1)[data.test_mask]) / len(all_logits)
+    train_loss = criterion(all_logits[model.data.train_mask], model.data.y.squeeze(1)[model.data.train_mask]) / len(all_logits)
+    valid_loss = criterion(all_logits[model.data.val_mask], model.data.y.squeeze(1)[model.data.val_mask]) / len(all_logits)
+    test_loss = criterion(all_logits[model.data.test_mask], model.data.y.squeeze(1)[model.data.test_mask]) / len(all_logits)
 
     train_acc = evaluator.eval({
-        'y_true': data.y[data.train_mask],
-        'y_pred': all_logits.argmax(dim=-1, keepdim=True)[data.train_mask]
+        'y_true': model.data.y[model.data.train_mask],
+        'y_pred': all_logits.argmax(dim=-1, keepdim=True)[model.data.train_mask]
     })['acc']
     valid_acc = evaluator.eval({
-        'y_true': data.y[data.val_mask],
-        'y_pred': all_logits.argmax(dim=-1, keepdim=True)[data.val_mask]
+        'y_true': model.data.y[model.data.val_mask],
+        'y_pred': all_logits.argmax(dim=-1, keepdim=True)[model.data.val_mask]
     })['acc']
     test_acc = evaluator.eval({
-        'y_true': data.y[data.test_mask],
-        'y_pred': all_logits.argmax(dim=-1, keepdim=True)[data.test_mask]
+        'y_true': model.data.y[model.data.test_mask],
+        'y_pred': all_logits.argmax(dim=-1, keepdim=True)[model.data.test_mask]
     })['acc']
 
     return test_acc, train_acc, valid_acc, train_loss, valid_loss, test_loss
