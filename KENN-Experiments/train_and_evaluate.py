@@ -73,7 +73,6 @@ def run_experiment(args):
         print(f"Run: {run} of {args.runs}")
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
-        # data = PygDataset(args).data
         model = get_model(args).to(device)
         model.reset_parameters()
         evaluator = Evaluator(name=args.dataset)
@@ -93,7 +92,7 @@ def run_experiment(args):
             end = time()
 
             if epoch % args.eval_steps == 0:
-                _, t_accuracy, v_accuracy, t_loss, v_loss, _ = test(model, criterion, device, evaluator, data)
+                _, t_accuracy, v_accuracy, t_loss, v_loss, _ = test(model, criterion, device, evaluator, model.data)
 
                 # Save stats for tensorboard
                 writer.add_scalar("loss/train", t_loss, epoch)
@@ -119,7 +118,7 @@ def run_experiment(args):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
-        test_accuracy, *_ = test(model, criterion, device, evaluator, data)
+        test_accuracy, *_ = test(model, criterion, device, evaluator, model.data)
         test_accuracies += [test_accuracy]
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
                       test_accuracies)
