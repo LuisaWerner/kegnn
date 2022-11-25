@@ -73,8 +73,8 @@ def run_experiment(args):
         print(f"Run: {run} of {args.runs}")
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
-        data = PygDataset(args).data
-        model = get_model(data, args).to(device)
+        # data = PygDataset(args).data
+        model = get_model(args).to(device)
         model.reset_parameters()
         evaluator = Evaluator(name=args.dataset)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)

@@ -10,9 +10,10 @@ from torch_geometric.loader import GraphSAINTRandomWalkSampler as RWSampler
 import Transforms as T
 import importlib
 import sys, inspect
+from preprocess_data import PygDataset
 
 
-def get_model(data, args):
+def get_model(args):
     """ instantiates the model specified in args """
 
     msg = f'{args.model} is not implemented. Choose a model in the list: ' \
@@ -25,10 +26,10 @@ def get_model(data, args):
 
     # Base neural network
     if args.model.startswith('KENN'):
-        model = _class(data, args, knowledge_file='knowledge_base')
+        model = _class(args, knowledge_file='knowledge_base')
     # kenn-sub network
     else:
-        model = _class(data, args)
+        model = _class(args)
     return model
 
 
@@ -39,23 +40,22 @@ class _GraphSampling(torch.nn.Module):
     and from here https://github.com/VITA-Group/Large_Scale_GCN_Benchmarking/blob/main/GraphSampling/_GraphSampling.py
     """
 
-    def __init__(self, data, args):
+    def __init__(self, args):
         super(_GraphSampling, self).__init__()
+        self.data = PygDataset(args).data
+        self.train_data = T.DropTrainEdges(args)(PygDataset(args).data)
         self.batch_size = args.batch_size
         self.inductive = True if args.mode == 'inductive' else False
         self.hidden_channels = args.hidden_channels
-        self.num_features = data.num_features
-        self.out_channels = data.num_classes
+        self.num_features = self.data.num_features
+        self.out_channels = self.data.num_classes
         self.num_layers = args.num_layers
         self.dropout = args.dropout
         self.num_workers = args.num_workers
         self.sampling_neighbor_size = args.sampling_neighbor_size
         self.num_layers_sampling = args.num_layers_sampling
 
-        if self.training: # drop edges only in training mode
-            data = T.DropTrainEdges(args)(data)  # todo make sure this is done at the right time
-
-        self.test_loader = NeighborLoader(data,
+        self.test_loader = NeighborLoader(self.data,
                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
                                           shuffle=False,  # order needs to be respected here
                                           input_nodes=None,
@@ -63,6 +63,7 @@ class _GraphSampling(torch.nn.Module):
                                           num_workers=self.num_workers,
                                           transform=T.RelationsAttribute(),
                                           neighbor_sampler=None)
+
 
     @abstractmethod
     def forward(self, **kwargs):
@@ -74,11 +75,11 @@ class _GraphSampling(torch.nn.Module):
 
 
 class LinearRegression(_GraphSampling):
-    def __init__(self, data, args, **kwargs):
-        super(LinearRegression, self).__init__(data, args)
+    def __init__(self,args, **kwargs):
+        super(LinearRegression, self).__init__(args)
         self.name = 'LinearRegression'
         self.lin = Linear(self.num_features, self.out_channels)
-        self.train_loader = NeighborLoader(T.ToInductive()(data) if self.inductive else data,
+        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
                                            num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
                                            shuffle=True,
                                            input_nodes=None,
@@ -96,11 +97,11 @@ class LinearRegression(_GraphSampling):
 
 
 class LogisticRegression(_GraphSampling):
-    def __init__(self, data, args, **kwargs):
-        super(LogisticRegression, self).__init__(data, args)
+    def __init__(self, args, **kwargs):
+        super(LogisticRegression, self).__init__(args)
         self.name = 'LinearRegression'
         self.lin = Linear(self.num_features, self.out_channels)
-        self.train_loader = NeighborLoader(T.ToInductive()(data) if self.inductive else data,
+        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
                                            num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
                                            shuffle=True,
                                            input_nodes=None,
@@ -119,8 +120,8 @@ class LogisticRegression(_GraphSampling):
 
 class GAT(_GraphSampling):
     """ Implementation of GAT """
-    def __init__(self, data, args, **kwargs):
-        super(GAT, self).__init__(data, args)
+    def __init__(self, args, **kwargs):
+        super(GAT, self).__init__(args)
         self.name = 'GAT'
         self.in_head = args.attention_heads
         self.out_head = 1
@@ -133,7 +134,7 @@ class GAT(_GraphSampling):
 
         self.conv2 = GATConv(self.hidden_channels * self.in_head, self.out_channels, concat=False,
                              heads=self.out_head, dropout=self.dropout)
-        self.train_loader = NeighborLoader(T.ToInductive()(data) if self.inductive else data,
+        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
                                            num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
                                            shuffle=True,
                                            input_nodes=None,
@@ -162,8 +163,8 @@ class GAT(_GraphSampling):
 
 
 class ClusterGCN(_GraphSampling):
-    def __init__(self, data, args, **kwargs):
-        super(ClusterGCN, self).__init__(data, args)
+    def __init__(self, args, **kwargs):
+        super(ClusterGCN, self).__init__(args)
         self.name = 'ClusterGCN'
         self.convs = torch.nn.ModuleList()
         self.convs.append(SAGEConv(self.num_features, self.hidden_channels))
@@ -171,8 +172,8 @@ class ClusterGCN(_GraphSampling):
             self.convs.append(SAGEConv(self.hidden_channels, self.hidden_channels))
         self.convs.append(SAGEConv(self.hidden_channels, self.out_channels))
 
-        sample_size = max(1, int(self.batch_size / (data.num_nodes / args.num_parts)))
-        cluster_data = ClusterData(T.ToInductive()(data) if self.inductive else data, num_parts=args.num_parts, recursive=False)
+        sample_size = max(1, int(self.batch_size / (self.train_data.num_nodes / args.num_parts)))
+        cluster_data = ClusterData(T.ToInductive()(self.train_data) if self.inductive else self.train_data, num_parts=args.num_parts, recursive=False)
         self.train_loader = ClusterLoader(cluster_data, batch_size=sample_size, shuffle=True)
 
     def reset_parameters(self):
@@ -192,8 +193,8 @@ class ClusterGCN(_GraphSampling):
 class KENN_ClusterGCN(ClusterGCN):
     """ kenn-sub with GraphSage (from ogb) as base NN"""
 
-    def __init__(self, data, args, knowledge_file):
-        super().__init__(data, args)
+    def __init__(self, args, knowledge_file):
+        super().__init__(args)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.kenn_layers = ModuleList()
@@ -217,8 +218,8 @@ class KENN_ClusterGCN(ClusterGCN):
 
 class GraphSAINT(_GraphSampling):
     # Implemented base on https://github.com/rusty1s/pytorch_geometric/blob/master/examples/graph_saint.py
-    def __init__(self, data, args, **kwargs):
-        super(GraphSAINT, self).__init__(data, args)
+    def __init__(self, args, **kwargs):
+        super(GraphSAINT, self).__init__(args)
         self.name = 'GraphSAINT'
         self.use_norm = args.use_norm
         self.aggr = "add" if self.use_norm else "mean"
@@ -231,7 +232,7 @@ class GraphSAINT(_GraphSampling):
         self.lin = Linear(self.hidden_channels, self.out_channels)
 
         self.train_loader = RWSampler(
-            T.ToInductive()(data) if self.inductive else data,
+            T.ToInductive()(self.train_data) if self.inductive else self.train_data,
             batch_size=self.batch_size,
             walk_length=args.walk_length,
             num_steps=args.num_steps,
@@ -257,8 +258,8 @@ class GraphSAINT(_GraphSampling):
 class KENN_SAINT(GraphSAINT):
     """ kenn-sub with GraphSage (from ogb) as base NN"""
 
-    def __init__(self, data, args, knowledge_file):
-        super().__init__(data, args)
+    def __init__(self, args, knowledge_file):
+        super().__init__(args)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.kenn_layers = ModuleList()
@@ -285,8 +286,8 @@ class GCN(_GraphSampling):
     GCN module baseline given by OGB
     """
 
-    def __init__(self, data, args, **kwargs):
-        super(GCN, self).__init__(data, args)
+    def __init__(self, args, **kwargs):
+        super(GCN, self).__init__(args)
         self.name = 'GCN'
         self.convs = ModuleList()
         self.convs.append(GCNConv(self.num_features, self.hidden_channels))
@@ -298,7 +299,8 @@ class GCN(_GraphSampling):
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.convs.append(GCNConv(self.hidden_channels, self.out_channels))
         # self.lin = Linear(self.hidden_channels, self.out_channels)
-        self.train_loader = NeighborLoader(T.ToInductive()(data) if self.inductive else data,
+
+        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
                                            num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
                                            shuffle=True,
                                            input_nodes=None,
@@ -328,8 +330,8 @@ class SAGE(_GraphSampling):
     # TODO compare differences to :https://github.com/VITA-Group/Large_Scale_GCN_Benchmarking/blob/6a3b91c7bdd0459f454c92a364bca2a69e26cda4/GraphSampling/GraphSAGE.py
     """ Implementation of GraphSAGE - ogb baseline  """
 
-    def __init__(self, data, args, **kwargs):
-        super(SAGE, self).__init__(data, args)
+    def __init__(self, args, **kwargs):
+        super(SAGE, self).__init__(args)
         self.name = 'SAGE'
         self.convs = ModuleList()
         self.convs.append(SAGEConv(self.num_features, self.hidden_channels))
@@ -339,10 +341,10 @@ class SAGE(_GraphSampling):
             self.convs.append(SAGEConv(self.hidden_channels, self.hidden_channels))
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.convs.append(SAGEConv(self.hidden_channels, self.out_channels))
-        self.train_loader = NeighborLoader(T.ToInductive()(data),  # always inductive with graphSAGE
+        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data),  # always inductive with graphSAGE
                                            num_neighbors=args.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
-                                           input_nodes=data.train_mask,
+                                           input_nodes=self.train_data.train_mask, # todo is this needed ?
                                            batch_size=self.batch_size,
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
@@ -367,8 +369,8 @@ class SAGE(_GraphSampling):
 class MLP(_GraphSampling):
     """ MLP baseline for OGB """
 
-    def __init__(self, data, args, **kwargs):
-        super(MLP, self).__init__(data, args)
+    def __init__(self, args, **kwargs):
+        super(MLP, self).__init__(args)
         self.name = 'MLP'
         self.lins = ModuleList()
         self.lins.append(Linear(self.num_features, self.hidden_channels))
@@ -378,7 +380,7 @@ class MLP(_GraphSampling):
             self.lins.append(Linear(self.hidden_channels, self.hidden_channels))
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.lins.append(Linear(self.hidden_channels, self.out_channels))
-        self.train_loader = NeighborLoader(T.ToInductive()(data) if self.inductive else data,
+        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
                                            num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
                                            shuffle=True,
                                            input_nodes=None,
@@ -410,15 +412,15 @@ class Standard(_GraphSampling):
     out_channels = 6
     dropout = 0.5
 
-    def __init__(self, data, args, **kwargs):
-        super(Standard, self).__init__(data, args)
+    def __init__(self, args, **kwargs):
+        super(Standard, self).__init__(args)
         self.name = 'Standard'
         self.lin_layers = ModuleList()
         self.lin_layers.append(Linear(self.in_channels, self.hidden_channels))
         self.lin_layers.append(Linear(self.hidden_channels, self.hidden_channels))
         self.lin_layers.append(Linear(self.hidden_channels, self.hidden_channels))
         self.lin_layers.append(Linear(self.hidden_channels, self.out_channels))
-        self.train_loader = NeighborLoader(T.ToInductive()(data) if self.inductive else data,
+        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
                                            num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
                                            shuffle=True,
                                            input_nodes=None,
@@ -443,8 +445,8 @@ class Standard(_GraphSampling):
 class KENN_GCN(GCN):
     """ kenn-sub with GCN as base NN"""
 
-    def __init__(self, data, args, knowledge_file):
-        super().__init__(data, args)
+    def __init__(self, args, knowledge_file):
+        super().__init__(args)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.kenn_layers = ModuleList()
@@ -467,8 +469,8 @@ class KENN_GCN(GCN):
 class KENN_MLP(MLP):
     """ kenn-sub with MLP (from ogb) as base NN"""
 
-    def __init__(self, data, args, knowledge_file):
-        super().__init__(data, args)
+    def __init__(self, args, knowledge_file):
+        super().__init__(args)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.kenn_layers = ModuleList()
@@ -491,8 +493,8 @@ class KENN_MLP(MLP):
 class KENN_SAGE(SAGE):
     """ kenn-sub with GraphSage (from ogb) as base NN"""
 
-    def __init__(self, data, args, knowledge_file):
-        super().__init__(data, args)
+    def __init__(self, args, knowledge_file):
+        super().__init__(args)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.kenn_layers = ModuleList()
@@ -515,8 +517,8 @@ class KENN_SAGE(SAGE):
 class KENN_GAT(GAT):
     """ kenn-sub with GraphSage (from ogb) as base NN"""
 
-    def __init__(self, data, args, knowledge_file):
-        super().__init__(data, args)
+    def __init__(self, args, knowledge_file):
+        super().__init__(args)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.kenn_layers = ModuleList()
@@ -540,8 +542,8 @@ class KENN_GAT(GAT):
 class KENN_LogisticRegression(LogisticRegression):
     """ kenn-sub with MLP (from ogb) as base NN"""
 
-    def __init__(self, data, args, knowledge_file):
-        super().__init__(data, args)
+    def __init__(self, args, knowledge_file):
+        super().__init__(args)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.kenn_layers = ModuleList()
@@ -564,8 +566,8 @@ class KENN_LogisticRegression(LogisticRegression):
 class KENN_LinearRegression(LinearRegression):
     """ kenn-sub with MLP (from ogb) as base NN"""
 
-    def __init__(self, data, args, knowledge_file):
-        super().__init__(data, args)
+    def __init__(self, args, knowledge_file):
+        super().__init__(args)
         self.name = str('KENN_' + self.name)
         self.knowledge_file = knowledge_file
         self.kenn_layers = ModuleList()

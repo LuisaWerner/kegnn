@@ -16,7 +16,7 @@
       "lr": 0.01,
       "epochs": 1,
       "runs": 1,
-      "model": "KENN_GAT",
+      "model": "KENN_GCN",
       "mode": "transductive",
       "save_results": "store_true",
       "binary_preactivation": 500.0,
