@@ -1,5 +1,4 @@
 
-from generate_knowledge import generate_knowledge
 import torch
 import torch_geometric.datasets
 import Transforms as T
@@ -33,7 +32,6 @@ class PygDataset:
                 mask[idx] = True
                 self._data[f'{key}_mask'] = mask
 
-        self._data.kb = generate_knowledge(self._data, args)
         self._data.name = args.dataset
 
     @property

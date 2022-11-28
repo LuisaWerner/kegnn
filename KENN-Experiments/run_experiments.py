@@ -1,8 +1,13 @@
 import argparse
 import json
 import wandb
-from experiment_config import ExperimentConf
 from train_and_evaluate import run_experiment
+
+
+class ExperimentConf(object):
+    def __init__(self, conf_dict):
+        for key, value in conf_dict.items():
+            setattr(self, key, value)
 
 
 def run_experiments(config_file):

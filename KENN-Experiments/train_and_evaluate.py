@@ -1,8 +1,5 @@
 
-import os.path
-import pathlib
 from time import time
-import numpy as np
 import torch.backends.mps
 import torch.nn.functional as F
 import torch_geometric
@@ -13,7 +10,7 @@ from model import get_model
 from ogb.nodeproppred import Evaluator
 from preprocess_data import *
 from training_batch import train, test
-import data_stats # todo remove
+from data_stats import *
 
 
 def callback_early_stopping(valid_accuracies, epoch, args):
@@ -56,14 +53,6 @@ def run_experiment(args):
     # device = torch.device(mps_device)
     print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
-    know_base = pathlib.Path('knowledge_base')
-    if know_base.is_file():
-        know_base.unlink()
-        print('knowledge base deleted')
-    if os.path.exists('data_stats'): # todo
-        os.remove('data_stats')
-        print('data stats deleted')
-
     print(f'Start {args.mode} Training')
     xp_stats = ExperimentStats()
 
@@ -75,6 +64,11 @@ def run_experiment(args):
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
         model = get_model(args).to(device)
+
+        #kg = KnowledgeGenerator(model, args)
+        #kg.compute_clause_stats()
+        #kg.generate_knowledge()
+
         # # todo remove later
         # if args.save_data_stats and not pathlib.Path('data_stats').exists():
         #     print('Saving Data Stats..... ')

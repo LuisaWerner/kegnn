@@ -1,48 +1,25 @@
-
-### TO be deleted later todo
-
 import numpy as np
-import pandas as pd
 from torch_geometric.data import Data
 from torch_geometric.utils import subgraph
+import pathlib
 
 
-def get_y_stats(data: Data, key: str, n_rows=40):
-    """
-    Returns an overview of the class distribution in the data set as string
-    @param data: PyG data object
-    @param key: 'all', 'train', 'val', 'test'
-    @param n_rows: how many rows to print/save
-    """
-    if key == 'all':
-        y = data.y.cpu().detach().numpy()
-    else:
-        mask = key + '_mask'
-        y = data.y[getattr(data, mask)].cpu().detach().numpy()
-
-    unique, counts = np.unique(y, return_counts=True)
-    db = pd.DataFrame.from_dict(dict(zip(unique, counts)), orient='index').sort_values(by=0, ascending=False).rename(
-        columns={0: 'count'})
-
-    if db.shape[0] < data.num_classes:
-        print('some classes have zero nodes')
-    return f'Display the fist {n_rows} rows: \n {db.head(n_rows)}'
-
-
-def clause_compliance(data: Data, cls: int):
+def clause_compliance(data: Data, clause: int):
     """ Calculates the clause_compliance
     Clause compliance = # neighbors that both have the respective class cls / # total num neighbors
     @param data: PyG Data Object
-    @param cls: class [here defined as integer]
+    @param clause: class [here defined as integer]
     """
     y = data.y.cpu().detach().numpy()
     edge_index = np.transpose(data.edge_index.cpu().detach().numpy())
 
-    cls_mask = np.where(y == cls)[0]  # the indexes with cls
+    cls_mask = np.where(y == clause)[0]  # the indexes with cls
     cls_list = []
     for node in cls_mask:
-        edge_mask = edge_index[np.where(np.logical_or([edge_index[:, 0] == node][0], [edge_index[:, 1] == node][0])), :]
-        cls_list.append(np.take(y, edge_mask).squeeze(axis=0))
+        # get the relations that include the node
+        edge_mask = edge_index[
+                    np.where(np.logical_or([edge_index[:, 0] == node][0], [edge_index[:, 1] == node][0])), :]
+        cls_list += [np.take(y, edge_mask).squeeze(axis=0)]
 
     cls_list = np.concatenate(cls_list, axis=0)
     n_neighbors = len(cls_list)
@@ -51,49 +28,157 @@ def clause_compliance(data: Data, cls: int):
     return n_neighbors_equal / n_neighbors
 
 
-def save_data_stats(data: Data, args):
-    """
-    writes and saves the stats in string file
-    @param data: PyG data object
-    @param args: Input parameters
-    """
-    stats = ''
-    stats += f'======================================Statistics for {args.dataset} ====================================' + '\n'
-    stats += '====================================== Clause Compliance =========================================' + '\n'
-    stats += '=========== Overall ===========' + '\n'
-    for i in range(data.num_classes):
-        stats += f'Clause Compliance of Clause Class_{i}(x) AND Cite(x.y) --> Class_{i}(y): {clause_compliance(data, i)}' + '\n'
+class ClauseStats(object):
+    """ for each clause compliance: dict ['all', 'train', ...]: value, store stats"""
+    def __init__(self):
+        super(ClauseStats, self).__init__()
+        self.keys = ['all', 'train', 'val', 'test']
+        self.compliance = dict.fromkeys(self.keys)
+        self.quantity = dict.fromkeys(self.keys)
 
-    stats += '\n' + '=========== Train ===========' + '\n'
-    data_train = Data(x=data.x[data.train_mask], y=data.y[data.train_mask],
-                      edge_index=subgraph(data.train_mask, data.edge_index, relabel_nodes=True)[0])
-    for i in range(data.num_classes):
-        stats += f'Clause Compliance of Clause Class_{i}(x) AND Cite(x.y) --> Class_{i}(y): {clause_compliance(data_train, i)}' + '\n'
 
-    stats += '\n' + '=========== Valid ===========' + '\n'
-    data_val = Data(x=data.x[data.val_mask], y=data.y[data.val_mask],
-                    edge_index=subgraph(data.val_mask, data.edge_index, relabel_nodes=True)[0])
-    for i in range(data.num_classes):
-        stats += f'Clause Compliance of Clause Class_{i}(x) AND Cite(x.y) --> Class_{i}(y): {clause_compliance(data_val, i)}' + '\n'
+class KnowledgeGenerator(object):
+    """ class to treat the knowledge generation """
+    def __init__(self, model, args):
+        super(KnowledgeGenerator, self).__init__()
+        self.keys = ['all', 'train', 'val', 'test']
+        self.train_data = model.train_data
+        self.data = model.train_data
+        self.dataset = args.dataset
+        self.create_kb = args.create_kb
+        self.knowledge_base = args.knowledge_base
+        self.filter_key = args.knowledge_filter_key
+        self.compliance_range = args.compliance_range
+        self.quantity_range = args.quantity_range
+        self.clause_stats = []
 
-    stats += '\n' + '=========== Test ===========' + '\n'
-    data_test = Data(x=data.x[data.test_mask], y=data.y[data.test_mask],
-                     edge_index=subgraph(data.test_mask, data.edge_index, relabel_nodes=True)[0])
-    for i in range(data.num_classes):
-        stats += f'Clause Compliance of Clause Class_{i}(x) AND Cite(x.y) --> Class_{i}(y): {clause_compliance(data_test, i)}' + '\n'
+        self.delete_files()
+        self.compute_clause_stats()
 
-    stats += '\n' + '\n'
-    stats += '====================================== Class Distribution  ==========================================' + '\n'
-    stats += '=========== Overall ===========' + '\n'
-    stats += get_y_stats(data, 'all') + '\n'
-    stats += '=========== Train ===========' + '\n'
-    stats += get_y_stats(data, 'train') + '\n'
-    stats += '=========== Valid ===========' + '\n'
-    stats += get_y_stats(data, 'val') + '\n'
-    stats += '=========== Test ===========' + '\n'
-    stats += get_y_stats(data, 'test')
+        if args.save_data_stats and not pathlib.Path(f'{self.dataset}_data_stats').exists():
+            print('Saving Data Stats..... ')
+            self.save_data_stats()
 
-    with open('data_stats', 'w') as file:
-        file.write(stats)
+    @property
+    def knowledge(self):
+        return self.generate_knowledge()
 
-    print('Done')
+    def delete_files(self):
+        """ Deletes knowledge base and datastats file that might
+        still be in directory from previous runs """
+        know_base = pathlib.Path(f'{self.dataset}_knowledge_base')
+        stats = pathlib.Path(f'{self.dataset}_stats')
+        if know_base.is_file():
+            know_base.unlink()
+            print(f'{self.dataset} knowledge base deleted')
+        if stats.is_file():
+            stats.unlink()
+            print(f'{self.dataset} stats deleted')
+
+    def filter_clause(self, clause):
+        """ filters clauses according to quantity and compliance ranges """
+        # clauses filtered by corresponding int
+        compliance = self.clause_stats[clause].compliance[self.filter_key]
+        quantity = self.clause_stats[clause].quantity[self.filter_key]
+        if self.compliance_range[0] <= compliance <= self.compliance_range[1] \
+                and self.quantity_range[0] <= quantity <= self.quantity_range[1]:
+            return True
+        else:
+            return False
+
+    def compute_clause_stats(self):
+        """ computes quantity and clause compliance for each clause for keys train, val, test and overall"""
+        print('Compute clause stats...')
+        for cls in range(self.data.num_classes):
+            c = ClauseStats()
+            for key in self.keys:
+                if key == 'all':
+                    split_data = self.data
+                else:
+                    mask = key + '_mask'
+                    assert hasattr(self.data, mask)
+                    split_data = Data(x=self.data.x[getattr(self.data, mask)], y=self.data.y[getattr(self.data, mask)],
+                                      edge_index=
+                                      subgraph(getattr(self.data, mask), self.data.edge_index, relabel_nodes=True)[0])
+
+                c.compliance[key] = clause_compliance(split_data, cls)
+                cnt = np.asarray(np.unique(split_data.y.cpu().detach().numpy(), return_counts=True))
+                cnt = cnt[cnt[:, 1].argsort()][1, cls]
+                c.quantity[key] = cnt / split_data.num_nodes
+            self.clause_stats += [c]  # for each clause one object
+
+    def generate_knowledge(self):
+        """
+        creates the knowledge file based on unary predicates = document classes
+        cite is binary predicate
+        num_classes int
+        """
+        assert hasattr(self.data, 'num_classes')
+
+        if self.create_kb:
+
+            # Filter clauses
+            filtered_clauses = list(filter(lambda x: self.filter_clause(x), list(range(self.data.num_classes))))
+            class_list = []
+            for i in filtered_clauses:  # if quantity of class
+                class_list += ['class_' + str(i)]
+
+            if not class_list:
+                UserWarning('Empty knowledge base. Choose other filters to keep more clauses ')
+                return ''
+
+            # Generate knowledge
+            kb = ''
+
+            # List of predicates
+            for c in class_list:
+                kb += c + ','
+
+            kb = kb[:-1] + '\nLink\n\n'
+
+            # No unary clauses
+
+            kb = kb[:-1] + '\n>\n'
+
+            # Binary clauses
+
+            # eg: nC(x),nCite(x.y),C(y)
+            for c in class_list:
+                kb += '_:n' + c + '(x),nLink(x.y),' + c + '(y)\n'
+
+            with open(f'{self.dataset}_knowledge_base', 'w') as kb_file:
+                kb_file.write(kb)
+
+            return kb
+
+        else:
+            # use the kb defined in args
+            with open(f'{self.dataset}_knowledge_base', 'w') as kb_file:
+                kb_file.write(self.knowledge_base)
+            return self.knowledge_base
+
+    def __str__(self):
+        """ print the stats """
+        stats = ''
+        stats += f'======================================Statistics for {self.dataset} ====================================\n'
+        stats += '====================================== Clause Compliance =========================================\n'
+
+        for key in self.keys:
+            for clause in range(self.data.num_classes):
+                stats += f'=========== {key} ===========\n'
+                stats += f'Clause Compliance of Clause Class_{clause}(x) AND Link(x.y) --> Class_{clause}(y): {self.clause_stats[clause].compliance[key]}' + '\n'
+
+        stats += '\n' + '\n'
+        stats += '====================================== Class Distribution  ==========================================\n'
+        for key in self.keys:
+            for clause in range(self.data.num_classes):
+                stats += f'=========== {key} ===========\n'
+                stats += f' Class Quantity of Class_{clause}: {self.clause_stats[clause].quantity[key]} \n'
+        print(stats)
+        return stats
+
+    def save_data_stats(self):
+        """ saves compliance and quantity in a txt file """
+        with open(f'{self.dataset}_data_stats', 'w') as file:
+            file.write(self.__str__())
+

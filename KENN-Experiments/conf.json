@@ -3,6 +3,9 @@
   "configs": [
     {
       "dataset": "Flickr",
+      "compliance_range": [0.1, 1.0],
+      "quantity_range": [0.0, 1.0],
+      "knowledge_filter_key": "all",
       "normalize_edges": false,
       "edges_drop_rate": 0.5,
       "use_norm": true,
