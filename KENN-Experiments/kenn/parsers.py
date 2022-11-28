@@ -9,6 +9,10 @@ def unary_parser(knowledge_file: str, activation=lambda x: x, initial_clause_wei
     Takes in input the knowledge file containing only unary clauses and returns a Kenn Layer,
     with input the predicates and clauses found in the knowledge file.
     :param knowledge_file: path of the prior knowledge file
+    :param activation
+    :param initial_clause_weight
+    :param save_training_data
+    :param boost_function
     """
     with open(knowledge_file, 'r') as kb_file:
         predicates_string = kb_file.readline()
@@ -26,6 +30,8 @@ def unary_parser_ke(knowledge_file: str, initial_clause_weight=0.5, boost_functi
     Takes in input the knowledge file containing only unary clauses and returns a Knowledge Enhancer layer,
     with input the predicates and clauses found in the knowledge file.
     :param knowledge_file: path of the prior knowledge file;
+    :param initial_clause_weight
+    :param boost_function
     """
     with open(knowledge_file, 'r') as kb_file:
         predicates_string = kb_file.readline()
@@ -43,6 +49,9 @@ def relational_parser(knowledge_file: str, activation=lambda x: x, initial_claus
     Takes in input the knowledge file containing both unary and binary clauses and returns a RelationalKenn
     Layer, with input the predicates and clauses found in the knowledge file.
     :param knowledge_file: path of the prior knowledge file;
+    :param activation
+    :param initial_clause_weight
+    :param boost_function
     """
     with open(knowledge_file, 'r') as kb_file:
         unary_literals_string = kb_file.readline()
