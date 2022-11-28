@@ -1,7 +1,7 @@
 import torch
 
 
-def train(model, optimizer, device, criterion, args):
+def train(model, optimizer, device, criterion):
     """
     training loop - trains specified model by computing batches
     returns average epoch accuracy and loss

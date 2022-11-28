@@ -49,8 +49,6 @@ def run_experiment(args):
     print(f"backend available {torch.backends.mps.is_available()}")
     device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
-    # mps_device = torch.device("mps") # todo: add to enable mps backend
-    # device = torch.device(mps_device)
     print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
     print(f'Start {args.mode} Training')
@@ -64,15 +62,6 @@ def run_experiment(args):
         writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
         model = get_model(args).to(device)
-
-        #kg = KnowledgeGenerator(model, args)
-        #kg.compute_clause_stats()
-        #kg.generate_knowledge()
-
-        # # todo remove later
-        # if args.save_data_stats and not pathlib.Path('data_stats').exists():
-        #     print('Saving Data Stats..... ')
-        #     _ = data_stats.save_data_stats(model.data, args)
         model.reset_parameters()
         evaluator = Evaluator(name=args.dataset)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -87,7 +76,7 @@ def run_experiment(args):
 
         for epoch in range(args.epochs):
             start = time()
-            train(model, optimizer, device, criterion, args)
+            train(model, optimizer, device, criterion)
             end = time()
 
             if epoch % args.eval_steps == 0:
