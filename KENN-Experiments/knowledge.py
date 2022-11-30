@@ -174,7 +174,7 @@ class KnowledgeGenerator(object):
             for clause in range(self.data.num_classes):
                 stats += f'=========== {key} ===========\n'
                 stats += f' Class Quantity of Class_{clause}: {self.clause_stats[clause].quantity[key]} \n'
-        print(stats)
+        # print(stats)
         return stats
 
     def save_data_stats(self):

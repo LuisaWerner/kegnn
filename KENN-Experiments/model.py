@@ -11,7 +11,7 @@ import Transforms as T
 import importlib
 import sys, inspect
 from preprocess_data import PygDataset
-from data_stats import KnowledgeGenerator
+from knowledge import KnowledgeGenerator
 
 
 def get_model(args):

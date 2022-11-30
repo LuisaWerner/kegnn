@@ -7,10 +7,10 @@ from torch.utils.tensorboard.writer import SummaryWriter
 import wandb
 from app_stats import RunStats, ExperimentStats
 from model import get_model
-from ogb.nodeproppred import Evaluator
+from evaluate import Evaluator
 from preprocess_data import *
 from training_batch import train, test
-from data_stats import *
+from knowledge import *
 
 
 def callback_early_stopping(valid_accuracies, epoch, args):
