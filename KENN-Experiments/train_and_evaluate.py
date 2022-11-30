@@ -1,6 +1,6 @@
 
 from time import time
-import torch.backends.mps
+# import torch.backends.mps
 import torch.nn.functional as F
 import torch_geometric
 from torch.utils.tensorboard.writer import SummaryWriter
