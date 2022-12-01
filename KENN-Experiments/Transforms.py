@@ -32,6 +32,12 @@ class DropTrainEdges(BaseTransform):
         super(DropTrainEdges, self).__init__()
         self.edges_drop_rate = args.edges_drop_rate
 
+    def __setattr__(self, key, value):
+        if value >= 1.0:
+            raise AttributeError(f'{key} has to be smaller than one. Otherwise all edges are deleted')
+        else:
+            super().__setattr__(key, value)
+
     def __call__(self, data):
         edge_mask = random.choices([True, False], weights=[1-self.edges_drop_rate, self.edges_drop_rate], k=data.num_edges)
         data.edge_index = data.edge_index[:, edge_mask]
