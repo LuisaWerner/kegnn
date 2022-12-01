@@ -21,7 +21,7 @@ def run_experiments(config_file):
         json_content = json.loads(f.read())
     for conf in json_content['configs']:
         experiment_conf = ExperimentConf(conf)
-        wandb.init(project="test-project", entity="tyrex", tags=[experiment_conf.wandb_label], config=conf)
+        wandb.init(project="KENN_tests november", entity="luisawerner", tags=[experiment_conf.wandb_label], config=conf)
         run_experiment(experiment_conf)
         wandb.finish()
 
