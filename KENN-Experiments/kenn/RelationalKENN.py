@@ -131,7 +131,6 @@ class RelationalKenn(torch.nn.Module):
         else:
             pass
 
-
     def forward(self, unary: torch.Tensor, binary: torch.Tensor, edge_index: torch.Tensor) \
             -> (torch.Tensor, torch.Tensor):
         """Forward step of Kenn model for relational data.
@@ -161,14 +160,3 @@ class RelationalKenn(torch.nn.Module):
 
         return self.activation(u + delta_up), self.activation(binary + delta_bp)
 
-    # This doens't seem to have a PyTorch correspondence
-    # def get_config(self):
-    #     config = super(RelationalKenn, self).get_config()
-    #     config.update({'unary_predicates': self.unary_predicates})
-    #     config.update({'unary_clauses': self.unary_clauses})
-    #     config.update({'binary_predicates': self.binary_predicates})
-    #     config.update({'binary_clauses': self.binary_clauses})
-    #     config.update({'activation': self.activation})
-    #     config.update({'initial_clause_weight': self.initial_clause_weight})
-    #
-    #     return config

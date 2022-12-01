@@ -38,6 +38,7 @@ class _GraphSampling(torch.nn.Module):
     def __init__(self, args):
         super(_GraphSampling, self).__init__()
         self.data = PygDataset(args).data
+        self.num_neighbors = args.num_neighbors
         self.train_data = T.DropTrainEdges(args)(PygDataset(args).data)
         self.batch_size = args.batch_size
         self.inductive = True if args.mode == 'inductive' else False
@@ -47,11 +48,10 @@ class _GraphSampling(torch.nn.Module):
         self.num_layers = args.num_layers
         self.dropout = args.dropout
         self.num_workers = args.num_workers
-        self.sampling_neighbor_size = args.sampling_neighbor_size
         self.num_layers_sampling = args.num_layers_sampling
 
         self.test_loader = NeighborLoader(self.data,
-                                          num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
+                                          num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                           shuffle=False,  # order needs to be respected here
                                           input_nodes=None,
                                           batch_size=self.batch_size,
@@ -80,7 +80,7 @@ class LinearRegression(_GraphSampling):
         self.name = 'LinearRegression'
         self.lin = Linear(self.num_features, self.out_channels)
         self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
-                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
+                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
                                            batch_size=self.batch_size,
@@ -102,7 +102,7 @@ class LogisticRegression(_GraphSampling):
         self.name = 'LinearRegression'
         self.lin = Linear(self.num_features, self.out_channels)
         self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
-                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
+                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
                                            batch_size=self.batch_size,
@@ -137,7 +137,7 @@ class GAT(_GraphSampling):
         self.conv2 = GATConv(self.hidden_channels * self.in_head, self.out_channels, concat=False,
                              heads=self.out_head, dropout=self.dropout)
         self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
-                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
+                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
                                            batch_size=self.batch_size,
@@ -168,15 +168,16 @@ class ClusterGCN(_GraphSampling):
     def __init__(self, args, **kwargs):
         super(ClusterGCN, self).__init__(args)
         self.name = 'ClusterGCN'
+        self.parts = args.num_parts
         self.convs = torch.nn.ModuleList()
         self.convs.append(SAGEConv(self.num_features, self.hidden_channels))
         for _ in range(self.num_layers - 2):
             self.convs.append(SAGEConv(self.hidden_channels, self.hidden_channels))
         self.convs.append(SAGEConv(self.hidden_channels, self.out_channels))
 
-        sample_size = max(1, int(self.batch_size / (self.train_data.num_nodes / args.num_parts)))
+        sample_size = max(1, int(self.batch_size / (self.train_data.num_nodes / self.num_parts)))
         cluster_data = ClusterData(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
-                                   num_parts=args.num_parts, recursive=False)
+                                   num_parts=self.num_parts, recursive=False)
         self.train_loader = ClusterLoader(cluster_data, batch_size=sample_size, shuffle=True)
 
     def reset_parameters(self):
@@ -224,7 +225,10 @@ class GraphSAINT(_GraphSampling):
     def __init__(self, args, **kwargs):
         super(GraphSAINT, self).__init__(args)
         self.name = 'GraphSAINT'
+        self.num_steps = args.num_steps
+        self.walk_length = args.walk_length
         self.use_norm = args.use_norm
+        self.sample_covreage = args.sample_coverage
         self.aggr = "add" if self.use_norm else "mean"
         self.convs = ModuleList()
         self.convs.append(SAGEConv(self.num_features, self.hidden_channels))
@@ -237,10 +241,10 @@ class GraphSAINT(_GraphSampling):
         self.train_loader = RWSampler(
             T.ToInductive()(self.train_data) if self.inductive else self.train_data,
             batch_size=self.batch_size,
-            walk_length=args.walk_length,
-            num_steps=args.num_steps,
+            walk_length=self.walk_length,
+            num_steps=self.num_steps,
             num_workers=self.num_workers,
-            sample_coverage=args.sample_coverage,
+            sample_coverage=self.sample_coverage,
         )
 
     def reset_parameters(self):
@@ -304,7 +308,7 @@ class GCN(_GraphSampling):
         # self.lin = Linear(self.hidden_channels, self.out_channels)
 
         self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
-                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
+                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
                                            batch_size=self.batch_size,
@@ -345,7 +349,7 @@ class SAGE(_GraphSampling):
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.convs.append(SAGEConv(self.hidden_channels, self.out_channels))
         self.train_loader = NeighborLoader(T.ToInductive()(self.train_data),  # always inductive with graphSAGE
-                                           num_neighbors=args.num_neighbors[:self.num_layers_sampling],
+                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=self.train_data.train_mask,  # todo is this needed ?
                                            batch_size=self.batch_size,
@@ -384,7 +388,7 @@ class MLP(_GraphSampling):
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.lins.append(Linear(self.hidden_channels, self.out_channels))
         self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
-                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
+                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
                                            batch_size=self.batch_size,
@@ -424,7 +428,7 @@ class Standard(_GraphSampling):
         self.lin_layers.append(Linear(self.hidden_channels, self.hidden_channels))
         self.lin_layers.append(Linear(self.hidden_channels, self.out_channels))
         self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
-                                           num_neighbors=[self.sampling_neighbor_size] * self.num_layers_sampling,
+                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
                                            batch_size=self.batch_size,

@@ -2,6 +2,7 @@ import numpy as np
 from torch_geometric.data import Data
 from torch_geometric.utils import subgraph
 import pathlib
+from argparse import ArgumentError
 
 
 def clause_compliance(data: Data, clause: int):
@@ -23,6 +24,9 @@ def clause_compliance(data: Data, clause: int):
 
     cls_list = np.concatenate(cls_list, axis=0)
     n_neighbors = len(cls_list)
+
+    if n_neighbors == 0:
+        raise Exception('No neighbors contained in clause compliance calculation. Might be because of an empty set. Verify edges_drop_rate argument.')
     n_neighbors_equal = len(np.where(cls_list[:, 0] == cls_list[:, 1])[0])
 
     return n_neighbors_equal / n_neighbors
@@ -30,6 +34,7 @@ def clause_compliance(data: Data, clause: int):
 
 class ClauseStats(object):
     """ for each clause compliance: dict ['all', 'train', ...]: value, store stats"""
+
     def __init__(self):
         super(ClauseStats, self).__init__()
         self.keys = ['all', 'train', 'val', 'test']
@@ -39,6 +44,7 @@ class ClauseStats(object):
 
 class KnowledgeGenerator(object):
     """ class to treat the knowledge generation """
+
     def __init__(self, model, args):
         super(KnowledgeGenerator, self).__init__()
         self.keys = ['all', 'train', 'val', 'test']
@@ -61,7 +67,8 @@ class KnowledgeGenerator(object):
 
     @property
     def knowledge(self):
-        return self.generate_knowledge()
+        self.generate_knowledge()
+        return f'{self.dataset}_knowledge_base'
 
     def delete_files(self):
         """ Deletes knowledge base and datastats file that might
@@ -116,7 +123,6 @@ class KnowledgeGenerator(object):
         assert hasattr(self.data, 'num_classes')
 
         if self.create_kb:
-
             # Filter clauses
             filtered_clauses = list(filter(lambda x: self.filter_clause(x), list(range(self.data.num_classes))))
             class_list = []
@@ -149,13 +155,13 @@ class KnowledgeGenerator(object):
             with open(f'{self.dataset}_knowledge_base', 'w') as kb_file:
                 kb_file.write(kb)
 
-            return kb
+            # return kb
 
         else:
             # use the kb defined in args
             with open(f'{self.dataset}_knowledge_base', 'w') as kb_file:
                 kb_file.write(self.knowledge_base)
-            return self.knowledge_base
+            # return self.knowledge_base
 
     def __str__(self):
         """ print the stats """
@@ -181,4 +187,3 @@ class KnowledgeGenerator(object):
         """ saves compliance and quantity in a txt file """
         with open(f'{self.dataset}_data_stats', 'w') as file:
             file.write(self.__str__())
-
