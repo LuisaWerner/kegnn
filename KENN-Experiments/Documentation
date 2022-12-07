@@ -14,3 +14,19 @@ absolute quantity of class
 TODO
 - Set relations to trainable? / set binary preactivations to trainable and node classifications to fixed values?
 - More info on resources: Memory consumption etc.
+
+# How to categorize experiments?
+
+(1) Experiments where full-batch traininig is feasible
+--- Try out
+
+(2) Experiments where batching is needed (CUDA OOM)
+---
+
+1. Hyperparameter optimization
+- https://docs.wandb.ai/guides/sweeps/initialize-sweeps
+- wandb sweep:
+- Parameters to be optimized:
+-- (1) Determine parameters for Base NN
+-------
+
