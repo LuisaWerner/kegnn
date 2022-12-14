@@ -26,7 +26,7 @@
 	"model": "GCN",
 	"normalize_edges": false,
 	"num_kenn_layers": 3,
-	"num_layers": 3,
+	"num_layers": 2,
 	"num_layers_sampling": 3,
 	"num_neighbors": [25, 10, 5, 5, 5, 5, 5, 5, 5],
 	"num_parts": 100,
@@ -43,7 +43,7 @@
 	"seed": 100,
 	"use_node_embedding": "store_true",
 	"use_norm": true,
-    "wandb_label": "edges_dropped on arxig and Flickr, KENN_MLP vs MLP",
+    "wandb_label": "GAT",
 	"walk_length": 3
     },
 	     {
@@ -71,7 +71,7 @@
 	"model": "GCN",
 	"normalize_edges": false,
 	"num_kenn_layers": 3,
-	"num_layers": 3,
+	"num_layers": 2,
 	"num_layers_sampling": 3,
 	"num_neighbors": [25, 10, 5, 5, 5, 5, 5, 5, 5],
 	"num_parts": 100,
@@ -88,7 +88,7 @@
 	"seed": 100,
 	"use_node_embedding": "store_true",
 	"use_norm": true,
-    "wandb_label": "edges_dropped on arxig and Flickr, KENN_MLP vs MLP",
+    "wandb_label": "GAT",
 	"walk_length": 3
     },
 	  {
@@ -116,7 +116,7 @@
 	"model": "GCN",
 	"normalize_edges": false,
 	"num_kenn_layers": 3,
-	"num_layers": 3,
+	"num_layers": 2,
 	"num_layers_sampling": 3,
 	"num_neighbors": [25, 10, 5, 5, 5, 5, 5, 5, 5],
 	"num_parts": 100,
@@ -133,7 +133,7 @@
 	"seed": 100,
 	"use_node_embedding": "store_true",
 	"use_norm": true,
-    "wandb_label": "edges_dropped on arxig and Flickr, KENN_MLP vs MLP",
+    "wandb_label": "GAT",
 	"walk_length": 3
     },
 	  {
@@ -161,7 +161,7 @@
 	"model": "GCN",
 	"normalize_edges": false,
 	"num_kenn_layers": 3,
-	"num_layers": 3,
+	"num_layers": 2,
 	"num_layers_sampling": 3,
 	"num_neighbors": [25, 10, 5, 5, 5, 5, 5, 5, 5],
 	"num_parts": 100,
@@ -178,7 +178,7 @@
 	"seed": 100,
 	"use_node_embedding": "store_true",
 	"use_norm": true,
-    "wandb_label": "edges_dropped on arxig and Flickr, KENN_MLP vs MLP",
+    "wandb_label": "GAT",
 	"walk_length": 3
     },
 	  {
@@ -206,7 +206,7 @@
 	"model": "GCN",
 	"normalize_edges": false,
 	"num_kenn_layers": 3,
-	"num_layers": 3,
+	"num_layers": 2,
 	"num_layers_sampling": 3,
 	"num_neighbors": [25, 10, 5, 5, 5, 5, 5, 5, 5],
 	"num_parts": 100,
@@ -223,7 +223,7 @@
 	"seed": 100,
 	"use_node_embedding": "store_true",
 	"use_norm": true,
-    "wandb_label": "GCN",
+    "wandb_label": "GAT",
 	"walk_length": 3
     }
 

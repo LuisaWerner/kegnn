@@ -49,12 +49,13 @@ class _GraphSampling(torch.nn.Module):
         self.dropout = args.dropout
         self.num_workers = args.num_workers
         self.num_layers_sampling = args.num_layers_sampling
+        self.full_batch = args.full_batch
 
         self.test_loader = NeighborLoader(self.data,
                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                           shuffle=False,  # order needs to be respected here
                                           input_nodes=None,
-                                          batch_size=len(self.data.test_mask) if args.full_batch else self.batch_size,
+                                          batch_size=len(self.data.test_mask) if self.full_batch else self.batch_size,
                                           num_workers=self.num_workers,
                                           transform=T.RelationsAttribute(),
                                           neighbor_sampler=None)
@@ -83,7 +84,7 @@ class LinearRegression(_GraphSampling):
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
-                                           batch_size=len(self.train_data) if args.full_batch else self.batch_size,
+                                           batch_size=len(self.data.train_mask) if self.full_batch else self.batch_size,
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
                                            neighbor_sampler=None)
@@ -105,7 +106,7 @@ class LogisticRegression(_GraphSampling):
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
-                                           batch_size=self.batch_size,
+                                           batch_size=len(self.data.train_mask) if self.full_batch else self.batch_size,
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
                                            neighbor_sampler=None)
@@ -140,7 +141,7 @@ class GAT(_GraphSampling):
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
-                                           batch_size=self.batch_size,
+                                           batch_size=len(self.data.train_mask) if self.full_batch else self.batch_size,
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
                                            neighbor_sampler=None)
