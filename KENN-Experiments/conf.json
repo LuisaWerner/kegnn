@@ -223,7 +223,7 @@
 	"seed": 100,
 	"use_node_embedding": "store_true",
 	"use_norm": true,
-    "wandb_label": "edges_dropped on arxig and Flickr, KENN_MLP vs MLP",
+    "wandb_label": "",
 	"walk_length": 3
     }
 

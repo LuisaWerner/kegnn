@@ -20,7 +20,7 @@ class PygDataset:
         elif args.dataset in self.saint_datasets:
             _dataset = getattr(torch_geometric.datasets, args.dataset)(root=args.dataset, transform=T.Compose([T.ToUndirected(), T.AddAttributes(args)]))
         else:
-            raise ValueError(f'Unknown dataset specified. Use one out of: {self.planet_sets + self.ogbn + self.saint_datasets}')
+            raise ValueError(f'Unknown dataset {args.dataset} specified. Use one out of: {self.planet_sets + self.ogbn + self.saint_datasets}')
 
         [self._data] = _dataset
 
