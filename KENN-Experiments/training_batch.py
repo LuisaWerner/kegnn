@@ -91,4 +91,4 @@ def test(model, criterion, device, evaluator):
         'y_pred': all_logits.argmax(dim=-1, keepdim=True)[model.data.test_mask]
     })['acc']
 
-    return test_acc, train_acc, valid_acc, train_loss, valid_loss, test_loss
+    return test_acc, valid_acc, train_acc, train_loss, valid_loss, test_loss

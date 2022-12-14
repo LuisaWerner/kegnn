@@ -11,6 +11,22 @@ from evaluate import Evaluator
 from preprocess_data import *
 from training_batch import train, test
 from knowledge import *
+from pathlib import Path
+
+
+class SaveBestState:
+    """
+    save the trained parameters of the model of the iteration that returns the best results
+    The goal is to be able to reuse the trained model later
+    """
+    def __init__(self, args, best_val_acc=0.0):
+        self.best_val_acc = best_val_acc
+        self.dir = Path.cwd() / 'pretrained_models' / args.model / args.dataset
+
+    def __call__(self, model, args, val_acc):
+        if val_acc > self.best_val_acc:
+            self.best_val_acc = val_acc
+            torch.save(model.state_dict(), self.dir)
 
 
 def callback_early_stopping(valid_accuracies, epoch, args):
@@ -55,6 +71,7 @@ def run_experiment(args):
     xp_stats = ExperimentStats()
 
     test_accuracies = []
+    save_best_state = SaveBestState(args)
 
     for run in range(args.runs):
 
@@ -107,8 +124,9 @@ def run_experiment(args):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
-        test_accuracy, *_ = test(model, criterion, device, evaluator)
+        test_accuracy, valid_acc, *_ = test(model, criterion, device, evaluator)
         test_accuracies += [test_accuracy]
+        save_best_state(valid_acc)
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
                       test_accuracies)
         xp_stats.add_run(rs)
