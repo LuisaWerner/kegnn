@@ -8,7 +8,7 @@
 	"cluster_partition_size": 8000,
 	"compliance_range": [0.0,1.0],
 	"create_kb": true,
-	"dataset": "CiteSeer ",
+	"dataset": "CiteSeer",
 	"device": 0,
 	"dropout": 0.5,
 	"edges_drop_rate": 0.0,
