@@ -77,4 +77,5 @@ train greedy: separate training of KENN layers
 3. Hyperparameter optimization for KENN models (only optimize KENN-specific parameters and take parameters for Base NN as given)
 4. Implement DataParallel/Distributed Parallel
 5. Possibility to accelerate KENN layers?
+6. Influenced-based mini-batching paper 
 
