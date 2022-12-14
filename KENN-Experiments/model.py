@@ -54,7 +54,7 @@ class _GraphSampling(torch.nn.Module):
                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                           shuffle=False,  # order needs to be respected here
                                           input_nodes=None,
-                                          batch_size=self.batch_size,
+                                          batch_size=len(self.data.test_mask) if args.full_batch else self.batch_size,
                                           num_workers=self.num_workers,
                                           transform=T.RelationsAttribute(),
                                           neighbor_sampler=None)
@@ -83,7 +83,7 @@ class LinearRegression(_GraphSampling):
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
-                                           batch_size=self.batch_size,
+                                           batch_size=len(self.train_data) if args.full_batch else self.batch_size,
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
                                            neighbor_sampler=None)
@@ -311,7 +311,7 @@ class GCN(_GraphSampling):
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
-                                           batch_size=self.batch_size,
+                                           batch_size=len(self.data.train_mask) if args.full_batch else self.batch_size,
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
                                            neighbor_sampler=None)
