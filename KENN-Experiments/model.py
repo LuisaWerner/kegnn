@@ -12,6 +12,7 @@ import importlib
 import sys, inspect
 from preprocess_data import PygDataset
 from knowledge import KnowledgeGenerator
+from evaluate import Evaluator
 
 
 def get_model(args):

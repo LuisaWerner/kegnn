@@ -14,52 +14,6 @@ from knowledge import *
 from pathlib import Path
 
 
-class SaveBestState:
-    """
-    save the trained parameters of the model of the iteration that returns the best results
-    The goal is to be able to reuse the trained model later
-    """
-    def __init__(self, args, best_val_acc=0.0):
-        self.best_val_acc = best_val_acc
-        self.dir = Path.cwd() / 'pretrained_models' / args.model / args.dataset
-
-    def __call__(self, model, args, val_acc):
-        if val_acc > self.best_val_acc:
-            self.best_val_acc = val_acc
-            torch.save(model.state_dict(), self.dir)
-
-
-def callback_early_stopping(valid_accuracies, epoch, args):
-    """
-    Takes as argument the list with all the validation accuracies.
-    If patience=k, checks if the mean of the last k accuracies is higher than the mean of the
-    previous k accuracies (i.e. we check that we are not overfitting). If not, stops learning.
-    @param valid_accuracies - list(float) , validation accuracy per epoch
-    @param epoch: current epoch
-    @param args: argument file [Namespace]
-    @return bool - if training stops or not
-    """
-    step = len(valid_accuracies)
-    patience = args.es_patience // args.eval_steps
-    # no early stopping for 2 * patience epochs
-    if epoch < 2 * args.es_patience:
-        return False
-
-    # Mean loss for last patience epochs and second-last patience epochs
-
-    mean_previous = np.mean(valid_accuracies[step - 2 * patience:step - patience])
-    mean_recent = np.mean(valid_accuracies[step - patience:step])
-    delta = mean_recent - mean_previous
-    if delta <= args.es_min_delta:
-        print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % args.es_patience)
-        print("*CB_ES* delta:", delta)
-        print(f"callback_early_stopping signal received at epoch {epoch}")
-        print("Terminating training")
-        return True
-    else:
-        return False
-
-
 def run_experiment(args):
     torch_geometric.seed_everything(args.seed)
     print(f"backend available {torch.backends.mps.is_available()}")
@@ -71,7 +25,7 @@ def run_experiment(args):
     xp_stats = ExperimentStats()
 
     test_accuracies = []
-    save_best_state = SaveBestState(args)
+    evaluator = Evaluator(args)
 
     for run in range(args.runs):
 
@@ -80,7 +34,6 @@ def run_experiment(args):
 
         model = get_model(args).to(device)
         model.reset_parameters()
-        evaluator = Evaluator(name=args.dataset)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = F.nll_loss
 
@@ -120,13 +73,13 @@ def run_experiment(args):
                       f'Valid: {100 * v_accuracy:.2f}% ')
 
             # early stopping
-            if args.es_enabled and callback_early_stopping(valid_accuracies, epoch, args):
+            if args.es_enabled and evaluator.callback_early_stopping(valid_accuracies, epoch):
                 print(f'Early Stopping at epoch {epoch}.')
                 break
 
         test_accuracy, valid_acc, *_ = test(model, criterion, device, evaluator)
         test_accuracies += [test_accuracy]
-        save_best_state(valid_acc)
+        evaluator.save_state_dict(valid_acc, model=model) # todo reference with model different ?
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
                       test_accuracies)
         xp_stats.add_run(rs)

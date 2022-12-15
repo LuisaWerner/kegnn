@@ -4,16 +4,26 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 import torch
 from pathlib import Path
+from copy import deepcopy
 
 
 class Evaluator:
     # _meta_path = Path(Path(__file__).parent.parent)
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, args):
+        self.name = args.dataset
         self._meta_path = Path(Path(__file__).parent)
         self.update_meta_info()
         self.meta_info = pd.read_csv(self._meta_path / 'master_all.csv', index_col=0)
+
+        self.es_patience = args.es_patience
+        self.eval_steps = args.eval_steps
+        self.es_min_delta = args.es_min_delta
+
+        self.best_val_acc = 0.0
+        self.state_dir = Path.cwd() / 'pretrained_models' / args.model / args.dataset
+        if not self.state_dir.exists():
+            self.state_dir.mkdir(parents=True)
 
         if self.name not in self.meta_info:
             print(self.name)
@@ -24,6 +34,43 @@ class Evaluator:
 
         self.num_tasks = int(self.meta_info[self.name]['num tasks'])
         self.eval_metric = self.meta_info[self.name]['eval metric']
+
+    def save_state_dict(self, val_acc, model):
+        """
+        saves the parameters of the iteration with the highest validation accuracy (param val_acc) of the model (param model)
+        """
+        if val_acc > self.best_val_acc:
+            self.best_val_acc = val_acc
+            torch.save(deepcopy(model.state_dict()), self.state_dir / 'model.pt')
+
+    def callback_early_stopping(self, valid_accuracies, epoch):
+        """
+        Takes as argument the list with all the validation accuracies.
+        If patience=k, checks if the mean of the last k accuracies is higher than the mean of the
+        previous k accuracies (i.e. we check that we are not overfitting). If not, stops learning.
+        @param valid_accuracies - list(float) , validation accuracy per epoch
+        @param epoch: current epoch
+        @param args: argument file [Namespace]
+        @return bool - if training stops or not
+        """
+        step = len(valid_accuracies)
+        patience = self.es_patience // self.eval_steps
+        # no early stopping for 2 * patience epochs
+        if epoch < 2 * self.es_patience:
+            return False
+
+        # Mean loss for last patience epochs and second-last patience epochs
+        mean_previous = np.mean(valid_accuracies[step - 2 * patience:step - patience])
+        mean_recent = np.mean(valid_accuracies[step - patience:step])
+        delta = mean_recent - mean_previous
+        if delta <= self.es_min_delta:
+            print("*CB_ES* Validation Accuracy didn't increase in the last %d epochs" % patience)
+            print("*CB_ES* delta:", delta)
+            print(f"callback_early_stopping signal received at epoch {epoch}")
+            print("Terminating training")
+            return True
+        else:
+            return False
 
     def update_meta_info(self):
         """
