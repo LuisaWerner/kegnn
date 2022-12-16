@@ -12,7 +12,7 @@ import importlib
 import sys, inspect
 from preprocess_data import PygDataset
 from knowledge import KnowledgeGenerator
-from evaluate import Evaluator
+from pathlib import Path
 
 
 def get_model(args):
@@ -264,7 +264,7 @@ class GraphSAINT(_GraphSampling):
         return x
 
 
-class KENN_SAINT(GraphSAINT):
+class KENN_GraphSAINT(GraphSAINT):
     """ kenn-sub with GraphSage (from ogb) as base NN"""
 
     def __init__(self, args):
@@ -389,6 +389,7 @@ class MLP(_GraphSampling):
             self.lins.append(Linear(self.hidden_channels, self.hidden_channels))
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.lins.append(Linear(self.hidden_channels, self.out_channels))
+
         self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
@@ -397,6 +398,7 @@ class MLP(_GraphSampling):
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
                                            neighbor_sampler=None)
+
 
     def reset_parameters(self):
         for lin in self.lins:
@@ -485,6 +487,23 @@ class KENN_MLP(MLP):
         self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
 
+        if args.load_baseNN:
+            self.use_pretrained = args.load_baseNN
+            self.dir_pretrained = Path.cwd() / 'pretrained_models' / args.model.split('_', 1)[-1] / args.dataset / 'model.pt'
+            if not self.dir_pretrained.exists():
+                raise FileNotFoundError(f"No pretrained model for {args.dataset} + {args.model.split('_', 1)[-1]} found at {self.dir_baseNN}")
+            # TODO how to distangle base NN just as a function and exclude from gradient descent?
+            self.pretrained_nn = MLP(args)
+            self.pretrained_nn.load_state_dict(torch.load(self.dir_pretrained))
+            for param in self.pretrained_nn.parameters():
+                param.requires_grad = False
+
+            # make sure that original base NN components don't get gradients
+            # for lin in self.lins:
+            #     lin.requires_grad = False
+            # for bn in self.bns:
+            #     bn.requires_grad = False
+
         for _ in range(args.num_kenn_layers):
             self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge))
 
@@ -494,9 +513,12 @@ class KENN_MLP(MLP):
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations=None, edge_weight=None):
-        z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
-        for layer in self.kenn_layers:
-            z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
+        if self.use_pretrained:
+            z = self.pretrained_nn.forward(x, edge_index, relations, edge_weight=edge_weight)
+        else:
+            z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
+            for layer in self.kenn_layers:
+                z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
         return z
 
 

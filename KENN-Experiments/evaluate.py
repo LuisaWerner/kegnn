@@ -21,7 +21,8 @@ class Evaluator:
         self.es_min_delta = args.es_min_delta
 
         self.best_val_acc = 0.0
-        self.state_dir = Path.cwd() / 'pretrained_models' / args.model / args.dataset
+        self.name_baseNN = args.model if not args.model.startswith('KENN') else args.model.split('_', 1)[-1]
+        self.state_dir = Path.cwd() / 'pretrained_models' / self.name_baseNN / args.dataset
         if not self.state_dir.exists():
             self.state_dir.mkdir(parents=True)
 
@@ -39,7 +40,7 @@ class Evaluator:
         """
         saves the parameters of the iteration with the highest validation accuracy (param val_acc) of the model (param model)
         """
-        if val_acc > self.best_val_acc:
+        if val_acc > self.best_val_acc and not model.name.startswith('KENN'):
             self.best_val_acc = val_acc
             torch.save(deepcopy(model.state_dict()), self.state_dir / 'model.pt')
 
