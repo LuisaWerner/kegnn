@@ -51,6 +51,8 @@ class _GraphSampling(torch.nn.Module):
         self.num_workers = args.num_workers
         self.num_layers_sampling = args.num_layers_sampling
         self.full_batch = args.full_batch
+        self.use_pretrained = args.load_baseNN
+        self.dir_pretrained = Path.cwd() / 'pretrained_models' / args.model.split('_', 1)[-1] / args.dataset / 'model.pt'
 
         self.test_loader = NeighborLoader(self.data,
                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
@@ -381,6 +383,7 @@ class MLP(_GraphSampling):
     def __init__(self, args, **kwargs):
         super(MLP, self).__init__(args)
         self.name = 'MLP'
+
         self.lins = ModuleList()
         self.lins.append(Linear(self.num_features, self.hidden_channels))
         self.bns = ModuleList()
@@ -389,6 +392,22 @@ class MLP(_GraphSampling):
             self.lins.append(Linear(self.hidden_channels, self.hidden_channels))
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.lins.append(Linear(self.hidden_channels, self.out_channels))
+
+        if args.load_baseNN:
+            # todo verify if the correct state dict is loaded etc.
+            # todo debug why this has very bad performance
+            if not args.model.startswith('KENN'):
+                raise ValueError('Cannot train a pretrained-base NN. Set load_baseNN to False if used standalone.')
+            else:
+                self.use_pretrained = args.load_baseNN
+                self.dir_pretrained = Path.cwd() / 'pretrained_models' / args.model.split('_', 1)[-1] / args.dataset / 'model.pt'
+                if not self.dir_pretrained.exists():
+                    raise FileNotFoundError(f"No pretrained model for {args.dataset} + {args.model.split('_', 1)[-1]} found at {self.dir_baseNN}")
+                self.load_state_dict(torch.load(self.dir_pretrained))
+
+                for name, p in self.named_parameters():
+                    p.requires_grad = False
+                    print("param name:", name, "requires_grad:", p.requires_grad)
 
         self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
@@ -487,23 +506,6 @@ class KENN_MLP(MLP):
         self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
 
-        if args.load_baseNN:
-            self.use_pretrained = args.load_baseNN
-            self.dir_pretrained = Path.cwd() / 'pretrained_models' / args.model.split('_', 1)[-1] / args.dataset / 'model.pt'
-            if not self.dir_pretrained.exists():
-                raise FileNotFoundError(f"No pretrained model for {args.dataset} + {args.model.split('_', 1)[-1]} found at {self.dir_baseNN}")
-            # TODO how to distangle base NN just as a function and exclude from gradient descent?
-            self.pretrained_nn = MLP(args)
-            self.pretrained_nn.load_state_dict(torch.load(self.dir_pretrained))
-            for param in self.pretrained_nn.parameters():
-                param.requires_grad = False
-
-            # make sure that original base NN components don't get gradients
-            # for lin in self.lins:
-            #     lin.requires_grad = False
-            # for bn in self.bns:
-            #     bn.requires_grad = False
-
         for _ in range(args.num_kenn_layers):
             self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge))
 
@@ -513,12 +515,10 @@ class KENN_MLP(MLP):
             layer.reset_parameters()
 
     def forward(self, x, edge_index, relations=None, edge_weight=None):
-        if self.use_pretrained:
-            z = self.pretrained_nn.forward(x, edge_index, relations, edge_weight=edge_weight)
-        else:
-            z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
-            for layer in self.kenn_layers:
-                z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
+        z = super().forward(x, edge_index, relations, edge_weight=edge_weight)
+
+        for layer in self.kenn_layers:
+            z, _ = layer(unary=z, edge_index=edge_index, binary=relations)
         return z
 
 
