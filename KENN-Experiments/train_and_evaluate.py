@@ -35,7 +35,9 @@ def run_experiment(args):
         model = get_model(args).to(device)
         model.reset_parameters()
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+        #optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
         criterion = F.nll_loss
+        wandb.watch(model, log='all')
 
         train_losses, valid_losses, train_accuracies, valid_accuracies, epoch_time = [], [], [], [], []
 
@@ -71,6 +73,9 @@ def run_experiment(args):
                       f'Time per Train Step: {end - start:.6f} '
                       f'Train: {100 * t_accuracy:.2f}%, '
                       f'Valid: {100 * v_accuracy:.2f}% ')
+
+                # only for debugging:
+                evaluator.plot_grad_flow(model, epoch)
 
             # early stopping
             if args.es_enabled and evaluator.callback_early_stopping(valid_accuracies, epoch):

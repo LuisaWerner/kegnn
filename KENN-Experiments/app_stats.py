@@ -21,9 +21,12 @@ class RunStats(object):
         self.epoch_time = epoch_time
         self.test_accuracies = test_accuracies
 
-        self.max_valid_accuracy = max(valid_accuracies)
-        self.max_train_accuracy = max(train_accuracies)
-        self.avg_epoch_time = sum(epoch_time) / len(epoch_time)
+        self.max_valid_accuracy = max(valid_accuracies, default=0)
+        self.max_train_accuracy = max(train_accuracies, default=0)
+        try:
+            self.avg_epoch_time = sum(epoch_time) / len(epoch_time)
+        except ZeroDivisionError:
+            self.avg_epoch_time = None
 
     def to_dict(self):
         return {

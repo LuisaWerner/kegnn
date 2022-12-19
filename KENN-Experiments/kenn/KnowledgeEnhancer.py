@@ -1,6 +1,6 @@
 import torch
 from kenn.ClauseEnhancer import ClauseEnhancer
-from kenn.boost_functions import GodelBoostConormApprox
+from kenn.boost_functions import *
 from torch_scatter import scatter_add
 
 
@@ -25,9 +25,15 @@ class KnowledgeEnhancer(torch.nn.Module):
         self.clause_enhancers = []
         self.save_training_data = save_training_data
 
+        # todo: different modalities to define clause weight
+        if initial_clause_weight == "random":
+            self.initial_clause_weight = torch.rand(len(clauses))
+        else:
+            self.initial_clause_weight = initial_clause_weight * torch.ones(len(clauses))
+
         for index, clause in enumerate(clauses):
             enhancer = ClauseEnhancer(
-                predicates, clause[:-1], initial_clause_weight, boost_function=boost_function)
+                predicates, clause[:-1], self.initial_clause_weight[index].item(), boost_function=boost_function)
             self.clause_enhancers.append(enhancer)
             self.add_module(f'clause-{index}', enhancer)
 

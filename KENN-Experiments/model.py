@@ -418,7 +418,6 @@ class MLP(_GraphSampling):
                                            transform=T.RelationsAttribute(),
                                            neighbor_sampler=None)
 
-
     def reset_parameters(self):
         for lin in self.lins:
             lin.reset_parameters()
@@ -481,6 +480,7 @@ class KENN_GCN(GCN):
         # self.knowledge_file = knowledge_file
         self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
+        self.clause_weight = args.clause_weight
 
         for _ in range(args.num_kenn_layers):
             self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge))
@@ -505,6 +505,7 @@ class KENN_MLP(MLP):
         self.name = str('KENN_' + self.name)
         self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
+        self.clause_weight = args.clause_weight
 
         for _ in range(args.num_kenn_layers):
             self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge))
