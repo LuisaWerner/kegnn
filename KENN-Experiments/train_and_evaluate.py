@@ -65,7 +65,7 @@ def run_experiment(args):
                       f'Valid: {100 * v_accuracy:.2f}% ')
 
                 # only for debugging:
-                evaluator.plot_grad_flow(model, epoch)
+                # evaluator.plot_grad_flow(model, epoch)
 
             # early stopping
             if args.es_enabled and evaluator.callback_early_stopping(valid_accuracies, epoch):
