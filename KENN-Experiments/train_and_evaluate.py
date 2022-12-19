@@ -3,7 +3,6 @@ from time import time
 # import torch.backends.mps
 import torch.nn.functional as F
 import torch_geometric
-from torch.utils.tensorboard.writer import SummaryWriter
 import wandb
 from app_stats import RunStats, ExperimentStats
 from model import get_model
@@ -30,12 +29,10 @@ def run_experiment(args):
     for run in range(args.runs):
 
         print(f"Run: {run} of {args.runs}")
-        writer = SummaryWriter('runs/' + args.dataset + f'/{args.mode}/run{run}')
 
         model = get_model(args).to(device)
         model.reset_parameters()
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-        #optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
         criterion = F.nll_loss
         wandb.watch(model, log='all')
 
@@ -53,13 +50,6 @@ def run_experiment(args):
 
             if epoch % args.eval_steps == 0:
                 _, t_accuracy, v_accuracy, t_loss, v_loss, _ = test(model, criterion, device, evaluator)
-
-                # Save stats for tensorboard
-                writer.add_scalar("loss/train", t_loss, epoch)
-                writer.add_scalar("loss/train", t_loss, epoch)
-                writer.add_scalar("loss/valid", v_loss, epoch)
-                writer.add_scalar("accuracy/train", t_accuracy, epoch)
-                writer.add_scalar("accuracy/valid", v_accuracy, epoch)
 
                 train_accuracies += [t_accuracy]
                 valid_accuracies += [v_accuracy]
@@ -91,7 +81,6 @@ def run_experiment(args):
         print(rs)
         wandb.log(rs.to_dict())
         wandb.run.summary["test_accuracies"] = test_accuracies
-        writer.close()
 
     xp_stats.end_experiment()
     print(xp_stats)
