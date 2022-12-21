@@ -2,6 +2,7 @@ import numpy as np
 from torch_geometric.data import Data
 from torch_geometric.utils import subgraph
 import pathlib
+import warnings
 from argparse import ArgumentError
 
 
@@ -20,15 +21,17 @@ def clause_compliance(data: Data, clause: int):
         # get the relations that include the node
         edge_mask = edge_index[
                     np.where(np.logical_or([edge_index[:, 0] == node][0], [edge_index[:, 1] == node][0])), :]
+        # get classes for node indices in pair
         cls_list += [np.take(y, edge_mask).squeeze(axis=0)]
 
     cls_list = np.concatenate(cls_list, axis=0)
     n_neighbors = len(cls_list)
 
     if n_neighbors == 0:
-        raise Exception('No neighbors contained in clause compliance calculation. Might be because of an empty set. Verify edges_drop_rate argument.')
-    n_neighbors_equal = len(np.where(cls_list[:, 0] == cls_list[:, 1])[0])
+        warnings.warn('RuntimeWarning: No neighbors contained in Clause Compliance Calculation. Might be because of an empty set. Verify edges_drop_rate argument. Clause Compliance set to 0.0 for this case ')
+        return 0.0
 
+    n_neighbors_equal = len(np.where(cls_list[:, 0] == cls_list[:, 1])[0])
     return n_neighbors_equal / n_neighbors
 
 

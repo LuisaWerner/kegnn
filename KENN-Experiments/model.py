@@ -477,7 +477,6 @@ class KENN_GCN(GCN):
     def __init__(self, args):
         super().__init__(args)
         self.name = str('KENN_' + self.name)
-        # self.knowledge_file = knowledge_file
         self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
         self.clause_weight = args.clause_weight
@@ -553,7 +552,7 @@ class KENN_GAT(GAT):
     def __init__(self, args):
         super().__init__(args)
         self.name = str('KENN_' + self.name)
-        self.knowledge_file = KnowledgeGenerator(self, args).knowledge
+        self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
 
         for _ in range(args.num_kenn_layers):
@@ -578,7 +577,7 @@ class KENN_LogisticRegression(LogisticRegression):
     def __init__(self, args):
         super().__init__(args)
         self.name = str('KENN_' + self.name)
-        self.knowledge_file = KnowledgeGenerator(self, args).knowledge
+        self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
 
         for _ in range(args.num_kenn_layers):
@@ -602,7 +601,7 @@ class KENN_LinearRegression(LinearRegression):
     def __init__(self, args):
         super().__init__(args)
         self.name = str('KENN_' + self.name)
-        self.knowledge_file = KnowledgeGenerator(self, args).knowledge
+        self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
 
         for _ in range(args.num_kenn_layers):
