@@ -396,6 +396,7 @@ class MLP(_GraphSampling):
         if args.load_baseNN:
             # todo verify if the correct state dict is loaded etc.
             # todo debug why this has very bad performance
+            # todo : instead of loading baseNN as function: load preactivations instead of features and continue with them !!! (that's how it's done in alessandros code)
             if not args.model.startswith('KENN'):
                 raise ValueError('Cannot train a pretrained-base NN. Set load_baseNN to False if used standalone.')
             else:
