@@ -414,7 +414,7 @@ class MLP(_GraphSampling):
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
-                                           batch_size=self.batch_size,
+                                           batch_size=len(self.data.train_mask) if self.full_batch else self.batch_size,
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
                                            neighbor_sampler=None)
@@ -454,7 +454,7 @@ class Standard(_GraphSampling):
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
-                                           batch_size=self.batch_size,
+                                           batch_size=len(self.data.train_mask) if self.full_batch else self.batch_size,
                                            num_workers=self.num_workers,
                                            transform=T.RelationsAttribute(),
                                            neighbor_sampler=None)
