@@ -113,7 +113,13 @@ class KnowledgeGenerator(object):
 
                 c.compliance[key] = clause_compliance(split_data, cls)
                 cnt = np.asarray(np.unique(split_data.y.cpu().detach().numpy(), return_counts=True))
-                cnt = cnt[cnt[:, 1].argsort()][1, cls]
+                try:
+                    cnt = cnt[cnt[:, 1].argsort()][1, cls]
+                except IndexError:
+                    for x in range(0, self.data.num_classes - 1):
+                        if x not in cnt[0]:
+                            cnt = np.insert(cnt, 0, values=np.zeros(shape=(2,)), axis=1)
+                            cnt = cnt[cnt[:, 1].argsort()][1, cls]
                 c.quantity[key] = cnt / split_data.num_nodes
             self.clause_stats += [c]  # for each clause one object
 
@@ -142,6 +148,8 @@ class KnowledgeGenerator(object):
             # List of predicates
             for c in class_list:
                 kb += c + ','
+            # for c in range(self.data.num_classes):
+            #     kb += 'class_' + str(c)+ ', '
 
             kb = kb[:-1] + '\nLink\n\n'
 
