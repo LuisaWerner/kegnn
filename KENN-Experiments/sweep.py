@@ -3,14 +3,14 @@ from train_and_evaluate import run_experiment
 
 
 sweep_config = {
-    'method': 'grid',
+    'method': 'random',
     'name': 'sweep',
     'metric': {
         'goal': 'maximize',
-        'name': 'avg_valid_accuracy'
+        'name': 'valid_acc'
     },
     'parameters': {
-        'epochs': {'values': [300]},
+        'epochs': {'values': [200]},
         'lr': {'value': 0.01},
         'adam_beta1': {'value': 0.9},
         "adam_beta2": {'value': 0.99},
@@ -79,8 +79,8 @@ def train(config=None):
 
 def main():
     wandb.login()
-    sweep_id = wandb.sweep(sweep_config, project="ijcai23_sweep", entity="luisawerner")
-    wandb.agent(sweep_id, train)
+    sweep_id = wandb.sweep(sweep_config, project="ijcai23_random_pubmed", entity="luisawerner")
+    wandb.agent(sweep_id, train, count=800)
 
 
 if __name__ == '__main__':
