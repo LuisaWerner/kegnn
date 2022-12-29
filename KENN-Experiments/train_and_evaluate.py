@@ -42,7 +42,7 @@ def run_experiment(args):
         # log knowledge file
         with open(model.knowledge, 'r') as kb_file:
             kb = kb_file.readlines()
-            wandb.log({'knowledge_base': str(kb)})
+            wandb.log({'logged_kb': str(kb)})
 
         train_losses, valid_losses, train_accuracies, valid_accuracies, epoch_time = [], [], [], [], []
 
