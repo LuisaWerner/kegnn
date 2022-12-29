@@ -13,12 +13,18 @@ class PygDataset:
     saint_datasets = ["Reddit2", "Flickr", "AmazonProducts", "Yelp"]
 
     def __init__(self, args):
+
+        if args.undirected:
+            transform = T.Compose([T.ToUndirected(), T.AddAttributes(args)])
+        else:
+            transform = T.AddAttributes(args)
+
         if args.dataset in self.planet_sets:
-            _dataset = torch_geometric.datasets.Planetoid(root=args.dataset, name=args.dataset, split=args.planetoid_split, transform=T.Compose([T.ToUndirected(), T.AddAttributes(args)]))
+            _dataset = torch_geometric.datasets.Planetoid(root=args.dataset, name=args.dataset, split=args.planetoid_split, transform=transform)
         elif args.dataset in self.ogbn:
-            _dataset = PygNodePropPredDataset(name=args.dataset, transform=T.Compose([T.ToUndirected(), T.AddAttributes(args)]))
+            _dataset = PygNodePropPredDataset(name=args.dataset, transform=transform)
         elif args.dataset in self.saint_datasets:
-            _dataset = getattr(torch_geometric.datasets, args.dataset)(root=args.dataset, transform=T.Compose([T.ToUndirected(), T.AddAttributes(args)]))
+            _dataset = getattr(torch_geometric.datasets, args.dataset)(root=args.dataset, transform=transform)
         else:
             raise ValueError(f'Unknown dataset {args.dataset} specified. Use one out of: {self.planet_sets + self.ogbn + self.saint_datasets}')
 
