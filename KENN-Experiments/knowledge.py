@@ -147,10 +147,10 @@ class KnowledgeGenerator(object):
             kb = ''
 
             # List of predicates
-            for c in class_list:
-                kb += c + ','
-            # for c in range(self.data.num_classes):
-            #     kb += 'class_' + str(c)+ ', '
+            # for c in class_list:
+            #     kb += c + ','
+            for c in range(self.data.num_classes):
+                kb += 'class_' + str(c) + ','
 
             kb = kb[:-1] + '\nLink\n\n'
 
