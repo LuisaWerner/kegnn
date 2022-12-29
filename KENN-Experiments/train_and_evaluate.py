@@ -85,9 +85,10 @@ def run_experiment(args):
         wandb.log(rs.to_dict())
         wandb.run.summary["test_accuracies"] = test_accuracies
 
-    wandb.log(xp_stats.to_dict()) # todo should this be fore or after print (xp_stats)?
+    # todo should this be fore or after print (xp_stats)?
     xp_stats.end_experiment()
     print(xp_stats)
+    wandb.log(xp_stats.to_dict())
 
 
 
