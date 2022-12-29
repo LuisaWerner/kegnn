@@ -37,7 +37,7 @@ def run_experiment(args):
         model.reset_parameters()
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = F.nll_loss
-        wandb.watch(model, log='all')
+        # wandb.watch(model, log='all')
 
         train_losses, valid_losses, train_accuracies, valid_accuracies, epoch_time = [], [], [], [], []
 
@@ -85,8 +85,9 @@ def run_experiment(args):
         wandb.log(rs.to_dict())
         wandb.run.summary["test_accuracies"] = test_accuracies
 
+    wandb.log(xp_stats.to_dict()) # todo should this be fore or after print (xp_stats)?
     xp_stats.end_experiment()
     print(xp_stats)
-    wandb.log(xp_stats.to_dict())
+
 
 
