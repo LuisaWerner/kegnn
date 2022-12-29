@@ -38,6 +38,11 @@ def run_experiment(args):
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = F.nll_loss
         # wandb.watch(model, log='all')
+        
+        # log knowledge file
+        with open(model.knowledge, 'r') as kb_file:
+            kb = kb_file.readlines()
+            wandb.log({'knowledge_base': str(kb)})
 
         train_losses, valid_losses, train_accuracies, valid_accuracies, epoch_time = [], [], [], [], []
 
@@ -83,12 +88,15 @@ def run_experiment(args):
         xp_stats.add_run(rs)
         print(rs)
         wandb.log(rs.to_dict())
+        wandb.log({'valid_acc': valid_acc})
         wandb.run.summary["test_accuracies"] = test_accuracies
 
     # todo should this be fore or after print (xp_stats)?
     xp_stats.end_experiment()
     print(xp_stats)
     wandb.log(xp_stats.to_dict())
+
+
 
 
 
