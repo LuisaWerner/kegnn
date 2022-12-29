@@ -122,10 +122,10 @@ class RelationalKenn(torch.nn.Module):
         self.register_buffer(name='delta_bp', tensor=torch.zeros(1))
 
     def reset_parameters(self):
-        if hasattr(self, 'binary_ke'):
+        if hasattr(self, 'binary_ke.clause_enhancers'):
             for clause_enhancer in self.binary_ke.clause_enhancers:
                 clause_enhancer.conorm_boost.reset_parameters()
-        elif hasattr(self, 'unary_ke'):
+        elif hasattr(self, 'unary_ke.clause_enhancers'):
             for clause_enhancer in self.binary_ke.clause_enhancers:
                 clause_enhancer.conorm_boost.reset_parameters()
         else:
