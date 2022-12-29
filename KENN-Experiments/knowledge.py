@@ -140,7 +140,8 @@ class KnowledgeGenerator(object):
 
             if not class_list:
                 UserWarning('Empty knowledge base. Choose other filters to keep more clauses ')
-                return ''
+                with open(f'{self.dataset}_knowledge_base', 'w') as kb_file:
+                    kb_file.write('')
 
             # Generate knowledge
             kb = ''
