@@ -80,7 +80,7 @@ def train(config=None):
 def main():
     wandb.login()
     sweep_id = wandb.sweep(sweep_config, project="ijcai23_sweep", entity="luisawerner")
-    wandb.agent(sweep_id, train, count=5)
+    wandb.agent(sweep_id, train)
 
 
 if __name__ == '__main__':
