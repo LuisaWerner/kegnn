@@ -40,9 +40,10 @@ def run_experiment(args):
         # wandb.watch(model, log='all')
         
         # log knowledge file
-        with open(model.knowledge, 'r') as kb_file:
-            kb = kb_file.readlines()
-            wandb.log({'logged_kb': str(kb)})
+        if hasattr(model, 'knowledge'):
+            with open(model.knowledge, 'r') as kb_file:
+                kb = kb_file.readlines()
+                wandb.log({'logged_kb': str(kb)})
 
         train_losses, valid_losses, train_accuracies, valid_accuracies, epoch_time = [], [], [], [], []
 
