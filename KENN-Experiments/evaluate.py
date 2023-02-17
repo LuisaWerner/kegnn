@@ -7,6 +7,8 @@ from pathlib import Path
 from copy import deepcopy
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+import wandb
+import pickle
 
 
 class Evaluator:
@@ -38,11 +40,35 @@ class Evaluator:
         self.num_tasks = int(self.meta_info[self.name]['num tasks'])
         self.eval_metric = self.meta_info[self.name]['eval metric']
 
+        self.num_kenn_layers = args.num_kenn_layers
+        self.runs = args.runs
+        self.dataset = args.dataset
+        self.clause_weight_dict = {run_key: {layer_key: {} for layer_key in range(self.num_kenn_layers)}
+                                   for run_key in range(self.runs)}
+
+    def track_clause_weights(self, run, model):
+        """ tracks clause weights """
+        # parameters are named like: kenn_layers.0.binary_ke.clause-0.conorm_boost.clause_weight'
+        for name, value in model.named_parameters():
+            if 'clause_weight' in name:
+                splitted_name = name.split('.')
+                clause_number = splitted_name[3].split('-')[1]
+                try:
+                    self.clause_weight_dict[run][int(splitted_name[1])][clause_number].append(value.item())
+                except KeyError:
+                    self.clause_weight_dict[run][int(splitted_name[1])].update({clause_number: []})
+                    self.clause_weight_dict[run][int(splitted_name[1])][clause_number].append(value.item())
+
+    def save_clause_weights(self):
+        with open(f'{self.dataset}_clause_weight_dict', 'wb') as clause_weights:
+            pickle.dump(self.clause_weight_dict, clause_weights, protocol=pickle.HIGHEST_PROTOCOL)
+        wandb.log({'logged_clause_weights': str(self.clause_weight_dict)})
+
     def save_state_dict(self, val_acc, model):
         """
         saves the parameters of the iteration with the highest validation accuracy (param val_acc) of the model (param model)
         """
-        if val_acc > self.best_val_acc and not model.name.startswith('KENN'):
+        if val_acc > self.best_val_acc: # and not model.name.startswith('KENN'):
             self.best_val_acc = val_acc
             torch.save(deepcopy(model.state_dict()), self.state_dir / 'model.pt')
 

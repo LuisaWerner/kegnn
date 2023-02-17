@@ -1,4 +1,3 @@
-
 from time import time
 # import torch.backends.mps
 import torch.nn.functional as F
@@ -11,6 +10,7 @@ from preprocess_data import *
 from training_batch import train, test
 from knowledge import *
 from pathlib import Path
+import pickle
 
 
 def run_experiment(args):
@@ -37,17 +37,15 @@ def run_experiment(args):
         model.reset_parameters()
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = F.nll_loss
-        # wandb.watch(model, log='all')
-        
+        wandb.watch(model, log='all')
+
         # log knowledge file
         if hasattr(model, 'knowledge'):
             with open(model.knowledge, 'r') as kb_file:
                 kb = kb_file.readlines()
                 wandb.log({'logged_kb': str(kb)})
 
-        train_losses, valid_losses, train_accuracies, valid_accuracies, epoch_time = [], [], [], [], []
-
-        clause_weights_dict = None # todo needed ?
+        train_losses, valid_losses, train_accuracies, valid_accuracies, epoch_time, clause_weights = [], [], [], [], [], []
 
         if not args.full_batch:
             print(f"Number of Training Batches with batch_size = {args.batch_size}: {len(model.train_loader)}")
@@ -65,6 +63,7 @@ def run_experiment(args):
                 train_losses += [t_loss]
                 valid_losses += [v_loss]
                 epoch_time += [end - start]
+                evaluator.track_clause_weights(run, model)
 
                 print(f'Run: {run + 1:02d}, '
                       f'Epoch: {epoch:02d}, '
@@ -83,7 +82,8 @@ def run_experiment(args):
 
         test_accuracy, valid_acc, *_ = test(model, criterion, device, evaluator)
         test_accuracies += [test_accuracy]
-        evaluator.save_state_dict(valid_acc, model=model) # todo reference with model different ?
+        evaluator.save_state_dict(valid_acc, model=model)  # todo reference with model different ?
+        evaluator.save_clause_weights()
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
                       test_accuracies)
         xp_stats.add_run(rs)
@@ -96,8 +96,3 @@ def run_experiment(args):
     xp_stats.end_experiment()
     print(xp_stats)
     wandb.log(xp_stats.to_dict())
-
-
-
-
-
