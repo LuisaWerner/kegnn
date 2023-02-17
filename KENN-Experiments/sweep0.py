@@ -52,8 +52,6 @@ sweep_config = {
         "num_workers": {'value': 0},
         "planetoid_split": {'value': "full"},
         "quantity_range": {'value': [0.0, 1.0]},
-        "range_constraint_lower": {'value': 0},
-        "range_constraint_upper": {'value': 500},
         "runs": {'value': 1},
         "sample_coverage": {'value': 10},
         "save_data_stats": {'value': True},
