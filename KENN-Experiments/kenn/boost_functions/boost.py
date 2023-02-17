@@ -32,6 +32,8 @@ class BoostFunction(torch.nn.Module, abc.ABC):
 
 
 class GodelBoostConormApprox(BoostFunction):
+    def __init__(self, initial_weight: float, fixed_weight: bool, min_weight, max_weight):
+        super().__init__(initial_weight, fixed_weight, min_weight, max_weight)
 
     def forward(self, selected_predicates: torch.Tensor, signs: torch.Tensor):
         self.clause_weight.data = torch.clip(self.clause_weight, self.min_weight, self.max_weight)
@@ -43,6 +45,8 @@ class GodelBoostConormApprox(BoostFunction):
 
 
 class GodelBoostConorm(BoostFunction):
+    def __init__(self, initial_weight: float, fixed_weight: bool, min_weight, max_weight):
+        super().__init__(initial_weight, fixed_weight, min_weight, max_weight)
 
     def forward(self, selected_predicates: torch.Tensor, signs: torch.Tensor):
         self.clause_weight.data = torch.clip(self.clause_weight, self.min_weight, self.max_weight)
@@ -60,7 +64,7 @@ class GodelBoostConorm(BoostFunction):
 class LukasiewiczBoostConorm(BoostFunction):
 
     def __init__(self, initial_weight: float, fixed_weight: bool, min_weight, max_weight):
-        super().__init__(initial_weight, fixed_weight, 0.0, 1.0)
+        super().__init__(initial_weight, fixed_weight, min_weight, max_weight)
 
     def forward(self, selected_predicates: torch.Tensor, signs: torch.Tensor):
         self.clause_weight.data = torch.clip(self.clause_weight, self.min_weight, self.max_weight)
@@ -73,6 +77,8 @@ class LukasiewiczBoostConorm(BoostFunction):
 
 
 class ProductBoostConorm(BoostFunction):
+    def __init__(self, initial_weight: float, fixed_weight: bool, min_weight, max_weight):
+        super().__init__(initial_weight, fixed_weight, min_weight, max_weight)
 
     def forward(self, selected_predicates: torch.Tensor, signs: torch.Tensor):
         self.clause_weight.data = torch.clip(self.clause_weight, self.min_weight, self.max_weight)

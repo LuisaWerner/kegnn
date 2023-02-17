@@ -8,7 +8,7 @@
     "attention_heads": 8,
     "batch_size": 512,
     "binary_preactivation": 500.0,
-    "boost_function": "ProductBoostConorm",
+    "boost_function": "GodelBoostConormApprox",
     "cluster_partition_size": 8000,
     "clause_weight": 0.001,
     "compliance_range": [0.0,1.0],

@@ -87,4 +87,4 @@ def relational_parser(knowledge_file: str, activation=lambda x: x, initial_claus
         binary_clauses,
         activation,
         initial_clause_weight,
-        boost_function=boost_function)
+        boost_function)

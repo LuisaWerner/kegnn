@@ -207,7 +207,8 @@ class KENN_ClusterGCN(ClusterGCN):
         self.kenn_layers = ModuleList()
 
         for _ in range(args.num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight))
+            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight,
+                                                      boost_function=args.boost_function))
 
     def reset_parameters(self):
         """ resets parameters to default initialization: Base NN and KENN clause weights """
@@ -275,7 +276,8 @@ class KENN_GraphSAINT(GraphSAINT):
         self.kenn_layers = ModuleList()
 
         for _ in range(args.num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight))
+            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight,
+                                                      boost_function=args.boost_function))
 
     def reset_parameters(self):
         """ resets parameters to default initialization: Base NN and KENN clause weights """
@@ -482,7 +484,8 @@ class KENN_GCN(GCN):
         self.clause_weight = args.clause_weight
 
         for _ in range(args.num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight))
+            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight,
+                                                      boost_function=args.boost_function))
 
     def reset_parameters(self):
         super().reset_parameters()  # should call reset parameter function of MLP
@@ -507,7 +510,8 @@ class KENN_MLP(MLP):
         self.clause_weight = args.clause_weight
 
         for _ in range(args.num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight))
+            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight,
+                                                      boost_function=args.boost_function))
 
     def reset_parameters(self):
         super().reset_parameters()
@@ -532,7 +536,8 @@ class KENN_SAGE(SAGE):
         self.kenn_layers = ModuleList()
 
         for _ in range(args.num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight))
+            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge,
+                                                      initial_clause_weight=args.clause_weight, boost_function=args.boost_function))
 
     def reset_parameters(self):
         super().reset_parameters()  # should call reset parameter function of MLP
@@ -556,7 +561,8 @@ class KENN_GAT(GAT):
         self.kenn_layers = ModuleList()
 
         for _ in range(args.num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight))
+            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight,
+                                                      boost_function=args.boost_function))
 
     def reset_parameters(self):
         super().reset_parameters()  # should call reset parameter function of MLP
@@ -581,7 +587,8 @@ class KENN_LogisticRegression(LogisticRegression):
         self.kenn_layers = ModuleList()
 
         for _ in range(args.num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight))
+            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight,
+                                                      boost_function=args.boost_function))
 
     def reset_parameters(self):
         super().reset_parameters()
@@ -605,7 +612,8 @@ class KENN_LinearRegression(LinearRegression):
         self.kenn_layers = ModuleList()
 
         for _ in range(args.num_kenn_layers):
-            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight))
+            self.kenn_layers.append(relational_parser(knowledge_file=self.knowledge, initial_clause_weight=args.clause_weight,
+                                                      boost_function=args.boost_function))
 
     def reset_parameters(self):
         super().reset_parameters()

@@ -2,7 +2,8 @@ import torch
 
 # TODO: No parallelization over clauses
 # TODO: fix the memory issue (already fixed in the tensorflow version)
-from kenn.boost_functions import GodelBoostConormApprox
+from kenn.boost_functions import *
+import importlib
 
 
 class ClauseEnhancer(torch.nn.Module):
@@ -27,6 +28,8 @@ class ClauseEnhancer(torch.nn.Module):
         :param initial_clause_weight: the initial value of the clause weight. Used if the clause weight is learned.
         """
         super().__init__()
+        boost_module = importlib.import_module("kenn.boost_functions")
+        _boost_function = getattr(boost_module, boost_function)
         # Split weight and clause
         weight_clause_split = clause_string.split(':')
 
@@ -42,7 +45,7 @@ class ClauseEnhancer(torch.nn.Module):
             initial_weight = float(weight_string)
             fixed_weight = True
 
-        self.conorm_boost = boost_function(initial_weight, fixed_weight, min_weight, max_weight)
+        self.conorm_boost = _boost_function(initial_weight, fixed_weight, min_weight, max_weight)
 
         literals = self.clause_string.split(',')
         self.number_of_literals = len(literals)
