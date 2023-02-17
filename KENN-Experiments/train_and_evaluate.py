@@ -8,9 +8,6 @@ from model import get_model
 from evaluate import Evaluator
 from preprocess_data import *
 from training_batch import train, test
-from knowledge import *
-from pathlib import Path
-import pickle
 
 
 def run_experiment(args):
