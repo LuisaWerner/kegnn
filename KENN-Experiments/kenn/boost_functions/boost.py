@@ -65,13 +65,14 @@ class LukasiewiczBoostConorm(BoostFunction):
 
     def __init__(self, initial_weight: float, fixed_weight: bool, min_weight, max_weight):
         super().__init__(initial_weight, fixed_weight, min_weight, max_weight)
+        self.register_buffer('clause_matrix_constant', torch.ones(1).to(torch.long))
 
     def forward(self, selected_predicates: torch.Tensor, signs: torch.Tensor):
         self.clause_weight.data = torch.clip(self.clause_weight, self.min_weight, self.max_weight)
 
         clause_matrix = (signs < 0) + signs * selected_predicates
         sums = torch.sum(clause_matrix, 1)
-        return torch.ones(clause_matrix.shape) * ((sums < 1) *
+        return self.clause_matrix_constant.repeat(clause_matrix.shape) * ((sums < 1) *
                                                   (1 - sums) *
                                                   self.clause_weight / clause_matrix.shape[1])[:, None] * signs
 
