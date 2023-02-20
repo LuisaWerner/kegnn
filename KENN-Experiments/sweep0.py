@@ -17,14 +17,14 @@ sweep_config = {
         "adam_eps": {'value': 1e-07},
         "attention_heads": {'value': 8},
         "batch_size": {'values': [128, 512, 1024]},
-        "binary_preactivation": {'values': [0.5, 1.0, 10.0, 500.0, 100.0, -0.1, 0.0]},
+        "binary_preactivation": {'values': [0.5, 1.0, 10.0, 500.0, 100.0]},
         "boost_function": {'values': ["GodelBoostConormApprox", "GodelBoostConorm", "LukasiewiczBoostConorm",
                                       "ProductBoostConorm"]},
         "cluster_partition_size": {'value': 8000},
         "clause_weight": {'values': [0.5, 'random', -0.5, 0.001, 0.1, 0.25]},
-        "compliance_range": {'values': [[0.0, 1.0], [0.0, 0.2], [0.8, 1.0]]},
+        "compliance_range": {'values': [[0.0, 1.0], [0.8, 1.0]]},
         "create_kb": {'value': True},
-        "dataset": {'value': "PubMed"},
+        "dataset": {'value': "Cora"},
         'device': {'value': 0},
         "dropout": {'value': 0.5},
         "edges_drop_rate": {'min': 0.0, 'max': 0.9},
@@ -77,7 +77,7 @@ def train(config=None):
 
 def main():
     wandb.login()
-    sweep_id = wandb.sweep(sweep_config, project="ijcai23_pubmed_kennmlp_2", entity="luisawerner")
+    sweep_id = wandb.sweep(sweep_config, project="ijcai23_cora_kennmlp_3", entity="luisawerner")
     wandb.agent(sweep_id, train, count=800)
 
 
