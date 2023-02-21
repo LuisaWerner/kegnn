@@ -30,7 +30,7 @@ sweep_config = {
         "edges_drop_rate": {'min': 0.0, 'max': 0.9},
         "es_enabled": {'value': True},
         "es_min_delta": {'value': 0.001},
-        "es_patience": {'values': [1, 10, 100]},
+        "es_patience": {'value': 10},
         "eval_steps": {'value': 1},
         "full_batch": {'values': [True, False]},
         "hidden_channels": {'values': [32, 64, 128, 256]},
