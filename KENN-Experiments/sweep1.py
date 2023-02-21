@@ -28,7 +28,7 @@ sweep_config = {
         'device': {'value': 1},
         "dropout": {'value': 0.5},
         "edges_drop_rate": {'min': 0.0, 'max': 0.9},
-        "es_enabled": {'values': [True, False]},
+        "es_enabled": {'value': True},
         "es_min_delta": {'value': 0.001},
         "es_patience": {'values': [1, 10, 100]},
         "eval_steps": {'value': 1},
