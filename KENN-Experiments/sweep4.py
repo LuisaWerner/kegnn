@@ -25,7 +25,7 @@ sweep_config = {
         "compliance_range": {'value': [0.0, 1.0]},
         "create_kb": {'value': True},
         "dataset": {'value': "Cora"},
-        'device': {'value': 0},
+        'device': {'value': 1},
         "dropout": {'value': 0.5},
         "edges_drop_rate": {'min': 0.0, 'max': 0.9},
         "es_enabled": {'values': [True, False]},
