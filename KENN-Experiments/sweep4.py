@@ -38,7 +38,7 @@ sweep_config = {
         "knowledge_filter_key": {'value': "all"},
         "load_baseNN": {'value': False},
         "mode": {'value': "transductive"},
-        "model": {'value': 'KENN_MLP'},
+        "model": {'value': 'KENN_GCN'},
         "max_weight": {'min': 0.8, 'max': 500.0},
         "min_weight": {'min': -0.5, 'max': 0.0},
         "mps": {'value': False},
@@ -77,7 +77,7 @@ def train(config=None):
 
 def main():
     wandb.login()
-    sweep_id = wandb.sweep(sweep_config, project="ijcai23_cora_kennmlp_2", entity="luisawerner")
+    sweep_id = wandb.sweep(sweep_config, project="ijcai23_cora_kenngcn_2", entity="luisawerner")
     wandb.agent(sweep_id, train, count=800)
 
 
