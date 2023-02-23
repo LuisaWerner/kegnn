@@ -32,7 +32,7 @@ sweep_config = {
         "es_min_delta": {'value': 0.001},
         "es_patience": {'value': 10},
         "eval_steps": {'value': 1},
-        "full_batch": {'values': [True, False]},
+        "full_batch": {'value': True},
         "hidden_channels": {'values': [32, 64, 128, 256]},
         "knowledge_base": {'value': "class_0\nCite\n\n>\n_:nclass_0(x),nCite(x.y),class_0(y)\n"},
         "knowledge_filter_key": {'value': "all"},
