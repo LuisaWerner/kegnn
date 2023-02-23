@@ -54,7 +54,7 @@ sweep_config = {
         "quantity_range": {'value': [0.0, 1.0]},
         "runs": {'value': 1},
         "sample_coverage": {'value': 10},
-        "save_data_stats": {'value': True},
+        "save_data_stats": {'value': False},
         "save_results": {'value': True},
         "seed": {'value': 1234},
         "undirected": {'value': False},
