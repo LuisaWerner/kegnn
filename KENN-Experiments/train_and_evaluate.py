@@ -49,6 +49,7 @@ def run_experiment(args):
 
         for epoch in range(args.epochs):
             start = time()
+            evaluator.track_clause_weights(run, model)
             train(model, optimizer, device, criterion)
             end = time()
 
@@ -60,7 +61,7 @@ def run_experiment(args):
                 train_losses += [t_loss]
                 valid_losses += [v_loss]
                 epoch_time += [end - start]
-                evaluator.track_clause_weights(run, model)
+                # evaluator.track_clause_weights(run, model)
 
                 print(f'Run: {run + 1:02d}, '
                       f'Epoch: {epoch:02d}, '
@@ -80,7 +81,7 @@ def run_experiment(args):
         test_accuracy, valid_acc, *_ = test(model, criterion, device, evaluator)
         test_accuracies += [test_accuracy]
         evaluator.save_state_dict(valid_acc, model=model)  # todo reference with model different ?
-        evaluator.save_clause_weights()
+        # evaluator.save_clause_weights()
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
                       test_accuracies)
         xp_stats.add_run(rs)
@@ -89,7 +90,8 @@ def run_experiment(args):
         wandb.log({'valid_acc': valid_acc})
         wandb.run.summary["test_accuracies"] = test_accuracies
 
-    # todo should this be fore or after print (xp_stats)?
+    # todo should this be fore or after print (xp_stats)
+    evaluator.save_clause_weights()
     xp_stats.end_experiment()
     print(xp_stats)
     wandb.log(xp_stats.to_dict())
