@@ -18,8 +18,7 @@ sweep_config = {
         "attention_heads": {'value': 8},
         "batch_size": {'values': [128, 512, 1024]},
         "binary_preactivation": {'values': [0.5, 1.0, 10.0, 500.0, 100.0]},
-        "boost_function": {'values': ["GodelBoostConormApprox", "GodelBoostConorm", "LukasiewiczBoostConorm",
-                                      "ProductBoostConorm"]},
+        "boost_function": {'values': ["GodelBoostConormApprox", "GodelBoostConorm"]},
         "cluster_partition_size": {'value': 8000},
         "clause_weight": {'values': [0.5, 'random', -0.5, 0.001, 0.1, 0.25]},
         "compliance_range": {'value': [0.0, 1.0]},
@@ -38,7 +37,7 @@ sweep_config = {
         "knowledge_filter_key": {'value': "all"},
         "load_baseNN": {'value': False},
         "mode": {'value': "transductive"},
-        "model": {'value': 'KENN_MLP'},
+        "model": {'value': 'KENN_GCN'},
         "max_weight": {'min': 0.8, 'max': 500.0},
         "min_weight": {'min': -0.5, 'max': 0.0},
         "mps": {'value': False},
@@ -77,7 +76,7 @@ def train(config=None):
 
 def main():
     wandb.login()
-    sweep_id = wandb.sweep(sweep_config, project="ijcai23_flickr_kennmlp_2", entity="luisawerner")
+    sweep_id = wandb.sweep(sweep_config, project="ijcai23_flickr_kenngcn_2", entity="luisawerner")
     wandb.agent(sweep_id, train, count=800)
 
 
