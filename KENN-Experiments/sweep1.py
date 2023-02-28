@@ -23,7 +23,7 @@ sweep_config = {
         "clause_weight": {'values': [0.5, 'random', -0.5, 0.001, 0.1, 0.25]},
         "compliance_range": {'value': [0.0, 1.0]},
         "create_kb": {'value': True},
-        "dataset": {'value': "Cora"},
+        "dataset": {'value': "PubMed"},
         'device': {'value': 1},
         "dropout": {'value': 0.5},
         "edges_drop_rate": {'min': 0.0, 'max': 0.9},
@@ -76,7 +76,7 @@ def train(config=None):
 
 def main():
     wandb.login()
-    sweep_id = wandb.sweep(sweep_config, project="ijcai23_cora_kenngat", entity="luisawerner")
+    sweep_id = wandb.sweep(sweep_config, project="ijcai23_pubmed_kenngat", entity="luisawerner")
     wandb.agent(sweep_id, train, count=800)
 
 
