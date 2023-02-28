@@ -23,7 +23,7 @@ sweep_config = {
         "clause_weight": {'values': [0.5, 'random', -0.5, 0.001, 0.1, 0.25]},
         "compliance_range": {'value': [0.0, 1.0]},
         "create_kb": {'value': True},
-        "dataset": {'value': "CiteSeer"},
+        "dataset": {'value': "Yelp"},
         'device': {'value': 0},
         "dropout": {'value': 0.5},
         "edges_drop_rate": {'min': 0.0, 'max': 0.9},
@@ -37,7 +37,7 @@ sweep_config = {
         "knowledge_filter_key": {'value': "all"},
         "load_baseNN": {'value': False},
         "mode": {'value': "transductive"},
-        "model": {'value': 'KENN_GAT'},
+        "model": {'value': 'KENN_MLP'},
         "max_weight": {'min': 0.8, 'max': 500.0},
         "min_weight": {'min': -0.5, 'max': 0.0},
         "mps": {'value': False},
@@ -76,7 +76,7 @@ def train(config=None):
 
 def main():
     wandb.login()
-    sweep_id = wandb.sweep(sweep_config, project="ijcai23_citeseer_kenngat", entity="luisawerner")
+    sweep_id = wandb.sweep(sweep_config, project="ijcai23_yelp_kennmlp", entity="luisawerner")
     wandb.agent(sweep_id, train, count=800)
 
 
