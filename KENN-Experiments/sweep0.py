@@ -16,7 +16,7 @@ sweep_config = {
         "adam_beta2": {'value': 0.99},
         "adam_eps": {'value': 1e-07},
         "attention_heads": {'values': [1, 3, 4, 6, 8, 10]},
-        "batch_size": {'values': [128, 512, 1024, 4096, 12288]},
+        "batch_size": {'values': [128, 512, 1024, 2048]},
         "binary_preactivation": {'values': [0.5, 1.0, 10.0, 500.0, 100.0]},
         "boost_function": {'value': "GodelBoostConormApprox"},
         "cluster_partition_size": {'value': 8000},
@@ -82,3 +82,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
