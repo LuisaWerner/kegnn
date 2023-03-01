@@ -62,7 +62,8 @@ class KnowledgeGenerator(object):
         self.clause_stats = []
 
         self.delete_files()
-        self.compute_clause_stats()
+        if args.save_data_stats:
+            self.compute_clause_stats()
 
         if args.save_data_stats and not pathlib.Path(f'{self.dataset}_data_stats').exists():
             print('Saving Data Stats..... ')
@@ -133,7 +134,10 @@ class KnowledgeGenerator(object):
 
         if self.create_kb:
             # Filter clauses
-            filtered_clauses = list(filter(lambda x: self.filter_clause(x), list(range(self.data.num_classes))))
+            if len(self.clause_stats) > 0:
+                filtered_clauses = list(filter(lambda x: self.filter_clause(x), list(range(self.data.num_classes))))
+            else:
+                filtered_clauses = list(range(self.data.num_classes))
             class_list = []
             for i in filtered_clauses:  # if quantity of class
                 class_list += ['class_' + str(i)]
