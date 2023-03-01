@@ -16,14 +16,14 @@ sweep_config = {
         "adam_beta2": {'value': 0.99},
         "adam_eps": {'value': 1e-07},
         "attention_heads": {'values': [1, 3, 4, 6, 8, 10]},
-        "batch_size": {'values': [128, 512, 1024]},
+        "batch_size": {'values': [128, 512, 1024, 4096, 12288]},
         "binary_preactivation": {'values': [0.5, 1.0, 10.0, 500.0, 100.0]},
-        "boost_function": {'values': ["GodelBoostConormApprox", "GodelBoostConorm"]},
+        "boost_function": {'value': "GodelBoostConormApprox"},
         "cluster_partition_size": {'value': 8000},
         "clause_weight": {'values': [0.5, 'random', -0.5, 0.001, 0.1, 0.25]},
         "compliance_range": {'value': [0.0, 1.0]},
         "create_kb": {'value': True},
-        "dataset": {'value': "Yelp"},
+        "dataset": {'value': "Flickr"},
         'device': {'value': 0},
         "dropout": {'value': 0.5},
         "edges_drop_rate": {'min': 0.0, 'max': 0.9},
@@ -31,13 +31,13 @@ sweep_config = {
         "es_min_delta": {'value': 0.001},
         "es_patience": {'value': 10},
         "eval_steps": {'value': 1},
-        "full_batch": {'values': [True, False]},
+        "full_batch": {'value': False},
         "hidden_channels": {'values': [32, 64, 128, 256]},
         "knowledge_base": {'value': "class_0\nCite\n\n>\n_:nclass_0(x),nCite(x.y),class_0(y)\n"},
         "knowledge_filter_key": {'value': "all"},
         "load_baseNN": {'value': False},
         "mode": {'value': "transductive"},
-        "model": {'value': 'KENN_MLP'},
+        "model": {'value': 'KENN_GAT'},
         "max_weight": {'min': 0.8, 'max': 500.0},
         "min_weight": {'min': -0.5, 'max': 0.0},
         "mps": {'value': False},
@@ -76,7 +76,7 @@ def train(config=None):
 
 def main():
     wandb.login()
-    sweep_id = wandb.sweep(sweep_config, project="ijcai23_yelp_kennmlp", entity="luisawerner")
+    sweep_id = wandb.sweep(sweep_config, project="ijcai23_flickr_kenngat", entity="luisawerner")
     wandb.agent(sweep_id, train, count=800)
 
 
