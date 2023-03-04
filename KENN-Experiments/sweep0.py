@@ -15,7 +15,7 @@ sweep_config = {
         'adam_beta1': {'value': 0.9},
         "adam_beta2": {'value': 0.99},
         "adam_eps": {'value': 1e-07},
-        "attention_heads": {'values': [1, 3, 4, 6, 8, 10]},
+        "attention_heads": {'values': [1, 3, 4, 6, 8]},
         "batch_size": {'values': [128, 512, 1024, 2048]},
         "binary_preactivation": {'values': [0.5, 1.0, 10.0, 500.0, 100.0]},
         "boost_function": {'value': "GodelBoostConormApprox"},
