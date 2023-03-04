@@ -14,16 +14,12 @@ api = wandb.Api()
 
 # clause weight 0.25, 3 layers
 dainty24=api.run("luisawerner/ijcai23_citeseer_kenngcn_2/yqyplmqf").summary['logged_clause_weights']
-
 # clause weight 0.5, 3 layers
 skilled=api.run("luisawerner/ijcai23_citeseer_kenngcn_2/8k9m5a8i").summary['logged_clause_weights']
-
 # clause weight 0.001, 3 layers
 smooth87=api.run("luisawerner/ijcai23_citeseer_kenngcn_2/my2jz6iq").summary['logged_clause_weights']
-
 # clause weight 0.1, 3 layers
 jolly=api.run("luisawerner/ijcai23_citeseer_kenngcn_2/j1wph4m6").summary['logged_clause_weights']
-
 # clause weight -0.5, 3 layers
 deep = api.run("luisawerner/ijcai23_citeseer_kenngcn_2/vdjwae4h").summary['logged_clause_weights']
 
@@ -31,7 +27,7 @@ deep = api.run("luisawerner/ijcai23_citeseer_kenngcn_2/vdjwae4h").summary['logge
 
 
 skilled_weights = eval(skilled)
-dainty = eval (dainty24)
+dainty = eval(dainty24)
 
 
 plt.figure()
