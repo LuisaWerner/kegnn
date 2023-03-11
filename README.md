@@ -1,4 +1,4 @@
-##To run this script (KENN with MLP as base NN )
+## To run this script (KENN with MLP as base NN )
 
 dataset = 'ogbn-arxiv' or 'ogbn-products' mode = 'transductive' or 'inductive'
 
