@@ -1,23 +1,57 @@
-## To run this script (KENN with MLP as base NN )
+## Knowledge Enhanced Graph Neural Networks 
+Graph data is omnipresent and represents a large variety of use cases. 
+Though rich in information, graphs are often noisy, incomplete and complex. 
+Therefore, graph learning tasks such as node classification or graph completion have gained increasing attention in the recent past. 
+On the one hand, neural methods such as graph neural networks have proven to be a robust method for learning rich representations of noisy graphs. 
+On the other hand, symbolic methods enable exact reasoning on graphs. 
+We propose KeGNN, a neuro-symbolic framework for learning on graph data that combines both paradigms and allows for the integration of prior knowledge into a graph neural network model. 
+In essence, KeGNN consists of a graph neural network as a base on which knowledge enhancement layers are stacked with the objective of refining the predictions with respect to prior knowledge. 
+We instantiate KeGNN in conjunction with two standard graph neural networks: Graph Convolutional Networks and Graph Attention Networks, and apply KeGNN to multiple benchmark datasets for node classification. 
 
-dataset = 'ogbn-arxiv' or 'ogbn-products' mode = 'transductive' or 'inductive'
+KeGNN is an extension of KENN [Knowledge Enhanced Neural Networks (KENN)](https://github.com/rmazzier/KENN-Citeseer-Experiments) on the [Citeseer Dataset](https://linqs.soe.ucsc.edu/data).
+It corresponds to the experiments in KENN by setting --dataset to 'CiteSeer' and --model to 'KENN_MLP'. 
 
-Example:
-python train_and_evaluate.py dataset='ogbn-arxiv' --epochs=500 --runs=10 --mode='transductive' --batch_size=1000
---sampling_neighbor_size=10
+This implementation is based on [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric). 
 
-To start tensorboard (choose right parameters)
+## How to run the code 
+### Environment Setup
+In order to make sure that the right environment is used, the necessary Python packages and their versions are specified in `requirements.txt`. We use Python 3.9. To install them go in the project directory and create a conda environment with the following packages. 
+```
+pip install -r requirements.txt
+``` 
 
-1. go to project directory
-2. tensorboard --logdir=runs/ogbn-arxiv/transductive/run0
+### Run the Experiments
+We use [Weights and Biases](https://wandb.ai/site) (WandB) as experiment tracking tool. The experiments can be run WITHOUT or WITH  the use of WandB.
+For internal use, I suggest running WITH WandB to keep track of results. WandB can be temporarely disabled by setting `mode='disabled'` in `wandb.init(...)` in `run_experiments.py`.
+If you want to use weights and biases specify the following parameters in  `conf.json`.
+```
+"wandb_use" : true,
+"wandb_label": "<your label>",
+"wandb_project" : "<your project>",
+"wandb_entity": "<your entity>"
+```
+
+Then use the following command to run the experiments: 
+```
+cd Experiments
+python run_experiments.py conf.json
+```
+
+The experiments can be interpreted directly on weights and biases or can be further analyzed with the jupyter notebook `results_analysis.ipynb` in the `notebook` directory. 
+
+For running the code without weights and biases do the following steps: 
+```
+cd Experiments
+python train_and_evaluate.py conf.json 
+```
 
 
-How to choose parameters in conf file
-# Parameters
 
-### Dataset Generation
+## How to adapt the conf file
+The file conf.json 
 -- dataset
 choose from ['CiteSeer', 'Cora', 'PubMed','ogbn-products', 'ogbn-arxiv', 'Reddit2', 'Flickr', 'AmazonProducts, 'Yelp]
+Note: CiteSeer, Cora, PubMed and Flickr are tested with this implementation
 
 | Name           | Description                      | #nodes    | #edges      | #features | #Classes | Task                 |
 |----------------|----------------------------------|-----------|-------------|-----------|----------|----------------------|
@@ -120,6 +154,21 @@ if zero, no coefficients are calculated , default: 10
 --save_results:  store_true if set
 --use_node_embedding: store_true if set
 --save_data_stats: store_true if set 
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
 
 
 
