@@ -7,6 +7,7 @@ from argparse import ArgumentError
 
 
 def clause_compliance(data: Data, clause: int):
+    # todo: inefficient and maybe even wrong function - should be revised/ replaced by the other compliance funciton in preprocess_data.py
     """ Calculates the clause_compliance
     Clause compliance = # neighbors that both have the respective class cls / # total num neighbors
     @param data: PyG Data Object
