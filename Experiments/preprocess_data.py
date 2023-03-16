@@ -1,9 +1,36 @@
-
 import torch
 import torch_geometric.datasets
 import Transforms as T
 from ogb.nodeproppred import PygNodePropPredDataset
+import numpy as np
 
+
+def compute_compliance(model):
+    """
+    compute clause compliance per iteration
+    returns a list of length |number classes| with compliance value per each
+    """
+    # y = model.data.y.cpu().detach().numpy() do we need to detach or is this even slowing down the code?
+    y = model.data.y.numpy()
+    edge_index = np.transpose(model.data.edge_index.numpy())
+    train_mask = model.data.train_mask.numpy()
+    train_edge_mask = np.logical_or(train_mask[edge_index[:, 0]], train_mask[edge_index[:, 1]])
+
+    # calculate the classes corresponding to edge index
+    edge_index_cls = np.zeros_like(edge_index)
+    for row in range(edge_index.shape[0]):
+        edge_index_cls[row, 0] = y[edge_index[row, 0]]
+        edge_index_cls[row, 1] = y[edge_index[row, 1]]
+
+    compliance = []
+    for cls in range(model.data.num_classes):
+        cls_mask = np.logical_or(edge_index_cls[:, 0] == cls, edge_index_cls[:, 1] == cls)
+        mask = np.logical_and(cls_mask, train_edge_mask) # edges that have at least a training node and a node of class cls
+        same_mask = np.logical_and(mask, np.equal(edge_index_cls[:, 0], edge_index_cls[:, 1])) # edges that are of the above set and have the same class for both nodes
+        cls_compliance = sum(same_mask)/sum(mask)
+        compliance.append(cls_compliance)
+
+    return compliance
 
 class PygDataset:
     """ loads the dataset depending on the name """
