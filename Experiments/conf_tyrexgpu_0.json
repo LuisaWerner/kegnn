@@ -43,7 +43,7 @@
     "num_workers": 0,
     "planetoid_split": "full",
     "quantity_range": [0.0, 1.0],
-    "runs": 100,
+    "runs": 10,
     "sample_coverage": 10,
     "save_data_stats": false,
     "save_results": true,
