@@ -1,10 +1,8 @@
-import os
 import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 import torch
 from pathlib import Path
-from copy import deepcopy
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import wandb
@@ -12,7 +10,6 @@ import pickle
 
 
 class Evaluator:
-    # _meta_path = Path(Path(__file__).parent.parent)
 
     def __init__(self, args):
         self.name = args.dataset
@@ -26,9 +23,6 @@ class Evaluator:
 
         self.best_val_acc = 0.0
         self.name_baseNN = args.model if not args.model.startswith('KENN') else args.model.split('_', 1)[-1]
-        self.state_dir = Path.cwd() / 'pretrained_models' / self.name_baseNN / args.dataset
-        if not self.state_dir.exists():
-            self.state_dir.mkdir(parents=True)
 
         if self.name not in self.meta_info:
             print(self.name)
@@ -99,7 +93,7 @@ class Evaluator:
         according to the defined metrics here
         """
         ogb_meta_info = pd.read_csv(self._meta_path / 'master.csv', index_col=0)
-        datasets = ['CiteSeer', 'Cora', 'PubMed', 'Reddit2', 'AmazonProducts', 'Yelp', 'Flickr']
+        datasets = ['CiteSeer', 'Cora', 'PubMed', 'Flickr']
         for name in datasets:
             meta_info = pd.DataFrame(columns=[name],
                                      index=['num tasks', 'eval metric', 'task type', 'has node attr', 'has edge attr',
@@ -261,32 +255,3 @@ class Evaluator:
         return {'acc': sum(acc_list) / len(acc_list)}
 
 
-if __name__ == '__main__':
-    evaluator = Evaluator('ogbn-proteins')
-    print(evaluator.expected_input_format)
-    print(evaluator.expected_output_format)
-    y_true = torch.tensor(np.random.randint(2, size=(100, 112)))
-    y_pred = torch.tensor(np.random.randn(100, 112))
-    input_dict = {'y_true': y_true, 'y_pred': y_pred}
-    result = evaluator.eval(input_dict)
-    print(result)
-
-    ### acc case
-    evaluator = Evaluator('ogbn-products')
-    print(evaluator.expected_input_format)
-    print(evaluator.expected_output_format)
-    y_true = np.random.randint(5, size=(100, 1))
-    y_pred = np.random.randint(5, size=(100, 1))
-    input_dict = {'y_true': y_true, 'y_pred': y_pred}
-    result = evaluator.eval(input_dict)
-    print(result)
-
-    ### acc case
-    evaluator = Evaluator('ogbn-arxiv')
-    print(evaluator.expected_input_format)
-    print(evaluator.expected_output_format)
-    y_true = np.random.randint(5, size=(100, 1))
-    y_pred = np.random.randint(5, size=(100, 1))
-    input_dict = {'y_true': y_true, 'y_pred': y_pred}
-    result = evaluator.eval(input_dict)
-    print(result)
