@@ -1,18 +1,16 @@
-""" Base Neural Network and Knowledge Enhanced Models """
+
 from abc import abstractmethod
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, SAGEConv, GATConv
+from torch_geometric.nn import GCNConv, GATConv
 from torch.nn import Linear, BatchNorm1d, ModuleList
 from torch_geometric.loader import *
 from kegnn.parsers import *
-from torch_geometric.loader import GraphSAINTRandomWalkSampler as RWSampler
 import Transforms as T
 import importlib
 import sys, inspect
 from preprocess_data import PygDataset
 from knowledge import KnowledgeGenerator
-from pathlib import Path
 
 
 def get_model(args):
@@ -32,14 +30,13 @@ def get_model(args):
 class _GraphSampling(torch.nn.Module):
     """
     Super Class for sampling batches in mini-batch training
-    Implemented base on https://github.com/rusty1s/pytorch_geometric/blob/master/examples/graph_saint.py
-    and from here https://github.com/VITA-Group/Large_Scale_GCN_Benchmarking/blob/main/GraphSampling/_GraphSampling.py
     """
 
     def __init__(self, args):
         super(_GraphSampling, self).__init__()
         self.data = PygDataset(args).data
-        self.num_neighbors = args.num_neighbors
+        self.num_neighbors = [25, 10, 5, 5, 5, 5, 5, 5, 5]
+        self.num_layers_sampling = 3
         self.train_data = T.DropTrainEdges(args)(PygDataset(args).data)
         self.batch_size = args.batch_size
         self.hidden_channels = args.hidden_channels
@@ -47,8 +44,7 @@ class _GraphSampling(torch.nn.Module):
         self.out_channels = self.data.num_classes
         self.num_layers = args.num_layers
         self.dropout = args.dropout
-        self.num_workers = args.num_workers
-        self.num_layers_sampling = args.num_layers_sampling
+        self.num_workers = 0
         self.full_batch = args.full_batch
 
         self.test_loader = NeighborLoader(self.data,
@@ -109,8 +105,6 @@ class GAT(_GraphSampling):
             conv.reset_parameters()
 
     def forward(self, x, edge_index, relations, edge_weight):
-        # todo verify with dropout, elu etc.
-        # to do also very slow
         x = self.conv1(x, edge_index)
         x = F.elu(x)
         for i, conv in enumerate(self.convs):
@@ -138,7 +132,6 @@ class GCN(_GraphSampling):
                 GCNConv(self.hidden_channels, self.hidden_channels))
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.convs.append(GCNConv(self.hidden_channels, self.out_channels))
-        # self.lin = Linear(self.hidden_channels, self.out_channels)
 
         self.train_loader = NeighborLoader(self.train_data,
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
@@ -150,7 +143,6 @@ class GCN(_GraphSampling):
                                            neighbor_sampler=None)
 
     def reset_parameters(self):
-        # self.lin.reset_parameters()
         for conv in self.convs:
             conv.reset_parameters()
         for bn in self.bns:
@@ -164,7 +156,6 @@ class GCN(_GraphSampling):
             x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.convs[-1](x, edge_index)
         return x
-
 
 
 class MLP(_GraphSampling):
@@ -223,7 +214,7 @@ class KENN_GCN(GCN):
                                                       boost_function=args.boost_function))
 
     def reset_parameters(self):
-        super().reset_parameters()  # should call reset parameter function of MLP
+        super().reset_parameters()
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
@@ -275,7 +266,7 @@ class KENN_GAT(GAT):
                                                       boost_function=args.boost_function))
 
     def reset_parameters(self):
-        super().reset_parameters()  # should call reset parameter function of MLP
+        super().reset_parameters() 
         for layer in self.kenn_layers:
             layer.reset_parameters()
 
