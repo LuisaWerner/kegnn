@@ -1,7 +1,6 @@
 import torch
 import torch_geometric.datasets
 import Transforms as T
-from ogb.nodeproppred import PygNodePropPredDataset
 import numpy as np
 
 
@@ -10,7 +9,6 @@ def compute_compliance(model):
     compute clause compliance per iteration
     returns a list of length |number classes| with compliance value per each
     """
-    # y = model.data.y.cpu().detach().numpy() do we need to detach or is this even slowing down the code?
     y = model.data.y.numpy()
     edge_index = np.transpose(model.data.edge_index.numpy())
     train_mask = model.data.train_mask.numpy()
@@ -25,8 +23,10 @@ def compute_compliance(model):
     compliance = []
     for cls in range(model.data.num_classes):
         cls_mask = np.logical_or(edge_index_cls[:, 0] == cls, edge_index_cls[:, 1] == cls)
-        mask = np.logical_and(cls_mask, train_edge_mask) # edges that have at least a training node and a node of class cls
-        same_mask = np.logical_and(mask, np.equal(edge_index_cls[:, 0], edge_index_cls[:, 1])) # edges that are of the above set and have the same class for both nodes
+        # edges that have at least a training node and a node of class cls
+        mask = np.logical_and(cls_mask, train_edge_mask)
+        # edges that are of the above set and have the same class for both nodes
+        same_mask = np.logical_and(mask, np.equal(edge_index_cls[:, 0], edge_index_cls[:, 1]))
         cls_compliance = sum(same_mask)/sum(mask)
         compliance.append(cls_compliance)
 
