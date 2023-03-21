@@ -64,14 +64,6 @@ class Evaluator:
             pickle.dump(self.clause_weight_dict, clause_weights, protocol=pickle.HIGHEST_PROTOCOL)
         wandb.log({'logged_clause_weights': str(self.clause_weight_dict)})
 
-    def save_state_dict(self, val_acc, model):
-        """
-        saves the parameters of the iteration with the highest validation accuracy (param val_acc) of the model (param model)
-        """
-        if val_acc > self.best_val_acc: # and not model.name.startswith('KENN'):
-            self.best_val_acc = val_acc
-            torch.save(deepcopy(model.state_dict()), self.state_dir / 'model.pt')
-
     def callback_early_stopping(self, valid_accuracies, epoch):
         """
         Takes as argument the list with all the validation accuracies.

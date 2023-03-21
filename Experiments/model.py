@@ -50,8 +50,6 @@ class _GraphSampling(torch.nn.Module):
         self.num_workers = args.num_workers
         self.num_layers_sampling = args.num_layers_sampling
         self.full_batch = args.full_batch
-        self.use_pretrained = args.load_baseNN
-        self.dir_pretrained = Path.cwd() / 'pretrained_models' / args.model.split('_', 1)[-1] / args.dataset / 'model.pt'
 
         self.test_loader = NeighborLoader(self.data,
                                           num_neighbors=self.num_neighbors[:self.num_layers_sampling],
@@ -184,21 +182,6 @@ class MLP(_GraphSampling):
             self.lins.append(Linear(self.hidden_channels, self.hidden_channels))
             self.bns.append(BatchNorm1d(self.hidden_channels))
         self.lins.append(Linear(self.hidden_channels, self.out_channels))
-
-        if args.load_baseNN:
-
-            if not args.model.startswith('KENN'):
-                raise ValueError('Cannot train a pretrained-base NN. Set load_baseNN to False if used standalone.')
-            else:
-                self.use_pretrained = args.load_baseNN
-                self.dir_pretrained = Path.cwd() / 'pretrained_models' / args.model.split('_', 1)[-1] / args.dataset / 'model.pt'
-                if not self.dir_pretrained.exists():
-                    raise FileNotFoundError(f"No pretrained model for {args.dataset} + {args.model.split('_', 1)[-1]} found at {self.dir_baseNN}")
-                self.load_state_dict(torch.load(self.dir_pretrained))
-
-                for name, p in self.named_parameters():
-                    p.requires_grad = False
-                    print("param name:", name, "requires_grad:", p.requires_grad)
 
         self.train_loader = NeighborLoader(self.train_data,
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],

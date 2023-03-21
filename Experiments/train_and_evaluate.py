@@ -76,7 +76,6 @@ def run_experiment(args):
 
         test_accuracy, valid_acc, *_ = test(model, criterion, device, evaluator)
         test_accuracies += [test_accuracy]
-        evaluator.save_state_dict(valid_acc, model=model)  # todo reference with model different ?
         rs = RunStats(run, train_losses, train_accuracies, valid_losses, valid_accuracies, test_accuracy, epoch_time,
                       test_accuracies)
         xp_stats.add_run(rs)
