@@ -23,27 +23,9 @@ def train(model, optimizer, device, criterion):
             continue
 
         optimizer.zero_grad()
-
-        if 'SAINT' in model.name:
-
-            # if sample_coverage is 0, no normalization coefficients are calculated
-            if not model.use_norm or not hasattr(batch, 'edge_norm') or not hasattr(batch, 'node_norm'):
-                out = model(batch.x, batch.edge_index, batch.relations).log_softmax(dim=-1)
-                loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
-
-            # if normalization coefficients are calculated
-            else:
-                batch.edge_weight = batch.edge_norm * batch.edge_weight
-                out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight).log_softmax(dim=-1)
-                loss = criterion(out, batch.y.squeeze(1), reduction='none')
-                loss = (loss * batch.node_norm)[batch.train_mask].sum()
-
-            total_loss += float(loss.item())
-
-        else:
-            out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight).log_softmax(dim=-1)
-            loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
-            total_loss += float(loss.item())
+        out = model(batch.x, batch.edge_index, batch.relations, batch.edge_weight).log_softmax(dim=-1)
+        loss = criterion(out[batch.train_mask], batch.y.squeeze(1)[batch.train_mask])
+        total_loss += float(loss.item())
 
         loss.backward()
         optimizer.step()
