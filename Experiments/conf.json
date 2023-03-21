@@ -51,7 +51,7 @@
     "undirected": false,
     "use_node_embedding": false,
     "use_norm": true,
-    "wandb_label": "test",
+    "wandb_label": "test_run",
     "wandb_project": "nesy23_clauseweights",
     "wandb_entity": "luisawerner",
     "walk_length": 3
