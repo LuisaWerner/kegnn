@@ -1,6 +1,6 @@
 import torch
-from kenn.ClauseEnhancer import ClauseEnhancer
-from kenn.boost_functions import *
+from kegnn.ClauseEnhancer import ClauseEnhancer
+from kegnn.boost_functions import *
 from torch_scatter import scatter_add
 
 
@@ -15,7 +15,7 @@ class KnowledgeEnhancer(torch.nn.Module):
         The clause_weight should be either a real number (in such a case this value is fixed) or an underscore
         (in this case the weight will be a tensorflow variable and learned during training).
         The clause must be represented as a list of literals separated by commas (that represent disjunctions).
-        Negation must specified by adding the letter 'n' before the predicate name.
+        Negation must be pecified by adding the letter 'n' before the predicate name.
         An example:
            _:nDog,Animal
         :param initial_clause_weight: the initial sign to the clause weight. Used if the clause weight is learned.

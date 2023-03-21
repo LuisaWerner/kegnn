@@ -1,6 +1,6 @@
-from kenn import Kenn, KnowledgeEnhancer, RelationalKenn
+from kegnn import KE, KnowledgeEnhancer, RelationalKe
 
-from kenn.boost_functions import GodelBoostConormApprox
+from kegnn.boost_functions import GodelBoostConormApprox
 
 
 def unary_parser(knowledge_file: str, activation=lambda x: x, initial_clause_weight=0.5, save_training_data=False,
@@ -21,7 +21,7 @@ def unary_parser(knowledge_file: str, activation=lambda x: x, initial_clause_wei
 
     predicates = predicates_string[:-1].split(',')
 
-    return Kenn(predicates, clauses, activation, initial_clause_weight, save_training_data,
+    return KE(predicates, clauses, activation, initial_clause_weight, save_training_data,
                 boost_function=boost_function)
 
 
@@ -80,7 +80,7 @@ def relational_parser(knowledge_file: str, activation=lambda x: x, initial_claus
         else:
             binary_clauses.append(clause)
 
-    return RelationalKenn(
+    return RelationalKe(
         u_groundings,
         b_groundings,
         unary_clauses,

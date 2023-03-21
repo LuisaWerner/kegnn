@@ -1,8 +1,5 @@
 import torch
-
-# TODO: No parallelization over clauses
-# TODO: fix the memory issue (already fixed in the tensorflow version)
-from kenn.boost_functions import *
+from kegnn.boost_functions import *
 import importlib
 
 
@@ -22,7 +19,7 @@ class ClauseEnhancer(torch.nn.Module):
         The clause_weight should be either a real number (in such a case this sign is fixed) or an underscore
         (in this case the weight will be learned during training).
         The clause must be represented as a list of literals separated by commas (that represent disjunctions).
-        Negation must specified by adding the letter 'n' before the predicate name.
+        Negation must be specified by adding the letter 'n' before the predicate name.
         An example:
            _:nDog,Animal
         :param initial_clause_weight: the initial value of the clause weight. Used if the clause weight is learned.
@@ -61,11 +58,8 @@ class ClauseEnhancer(torch.nn.Module):
                 sign = -1
                 literal = literal[1:]
 
-            # This could be improved using a hashmap instead of a list
             literal_index = available_predicates.index(literal)
             gather_literal_indices.append(literal_index)
-            # What's the difference? This just creates singletons of the same list as above.
-            # gather is [n], scatter is [n, 1]...
             scatter_literal_indices.append([literal_index])
             signs.append(sign)
 
@@ -81,7 +75,7 @@ class ClauseEnhancer(torch.nn.Module):
 
         # Choose the right literals
         # self.gather_literal_indices: [l], each in {1, ..., 2|U| + |B|}
-        return ground_atoms[..., self.gather_literal_indices]  # [b, l]
+        return ground_atoms[..., self.gather_literal_indices]
 
     def forward(self, ground_atoms: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         """Improve the satisfaction level of the clause.

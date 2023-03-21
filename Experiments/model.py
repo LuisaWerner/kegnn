@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, SAGEConv, GATConv
 from torch.nn import Linear, BatchNorm1d, ModuleList
 from torch_geometric.loader import *
-from kenn.parsers import *
+from kegnn.parsers import *
 from torch_geometric.loader import GraphSAINTRandomWalkSampler as RWSampler
 import Transforms as T
 import importlib

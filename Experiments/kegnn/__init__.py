@@ -1,5 +1,5 @@
 from .ClauseEnhancer import ClauseEnhancer
-from .KENN import Kenn
+from .KE import Ke
 from .KnowledgeEnhancer import KnowledgeEnhancer
-from .RelationalKENN import Join, GroupBy, RelationalKenn
+from .RelationalKE import Join, GroupBy, RelationalKe
 from .parsers import unary_parser, unary_parser_ke, relational_parser

@@ -1,10 +1,10 @@
 import torch
-from kenn.KnowledgeEnhancer import KnowledgeEnhancer
+from kegnn.KnowledgeEnhancer import KnowledgeEnhancer
 
-from kenn.boost_functions import GodelBoostConormApprox
+from kegnn.boost_functions import GodelBoostConormApprox
 
 
-class Kenn(torch.nn.Module):
+class Ke(torch.nn.Module):
 
     def __init__(self, predicates: [str],
                  clauses: [str],
@@ -19,7 +19,7 @@ class Kenn(torch.nn.Module):
         The clause_weight should be either a real number (in such a case this value is fixed) or an underscore
         (in this case the weight will be a tensorflow variable and learned during training).
         The clause must be represented as a list of literals separated by commas (that represent disjunctions).
-        Negation must specified by adding the letter 'n' before the predicate name.
+        Negation must be specified by adding the letter 'n' before the predicate name.
         An example:
            _:nDog,Animal
         """

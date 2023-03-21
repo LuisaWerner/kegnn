@@ -1,7 +1,7 @@
 import torch
-from kenn import KnowledgeEnhancer
+from kegnn import KnowledgeEnhancer
 
-from kenn.boost_functions import GodelBoostConormApprox
+from kegnn.boost_functions import GodelBoostConormApprox
 
 
 class GroupBy(torch.nn.Module):
@@ -31,7 +31,6 @@ class GroupBy(torch.nn.Module):
         index1 = torch.squeeze(index1)
         index2 = torch.squeeze(index2)
 
-        # For the case where index1 and index2 are scalars, tf.squeeze will make them 0 dimensional
         if index1.ndim == 0 and index2.ndim == 0:
             index1 = torch.unsqueeze(index1, 0)
             index2 = torch.unsqueeze(index2, 0)
@@ -71,7 +70,7 @@ class Join(torch.nn.Module):
         return torch.cat([u1, u2, binary], dim=1)
 
 
-class RelationalKenn(torch.nn.Module):
+class RelationalKe(torch.nn.Module):
 
     def __init__(self, unary_predicates: [str],
                  binary_predicates: [str],
@@ -88,7 +87,7 @@ class RelationalKenn(torch.nn.Module):
         The clause_weight should be either a real number (in such a case this value is fixed) or an underscore
         (in this case the weight will be a tensorflow variable and learned during training).
         The clause must be represented as a list of literals separated by commas (that represent disjunctions).
-        Negation must specified by adding the letter 'n' before the predicate name.
+        Negation must be specified by adding the letter 'n' before the predicate name.
         An example:
            _:nDog,Animal
         :param binary_clauses: a list of binary clauses
