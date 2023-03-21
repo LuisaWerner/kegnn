@@ -7,7 +7,7 @@ def train(model, optimizer, device, criterion):
     returns average epoch accuracy and loss
     parameters are updated with gradient descent
     @param model: a model specified in model.py
-    @param optimizer: torch.optimizer object
+    @param optimizer: torch optimizer object
     @param device: gpu or cpu
     @param criterion: defined loss function
     @param args: input parameters
