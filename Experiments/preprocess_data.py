@@ -32,12 +32,12 @@ def compute_compliance(model):
 
     return compliance
 
+
 class PygDataset:
     """ loads the dataset depending on the name """
 
     planet_sets = ['CiteSeer', 'Cora', 'PubMed']
-    ogbn = ['ogbn-products', 'ogbn-arxiv']
-    saint_datasets = ["Reddit2", "Flickr", "AmazonProducts", "Yelp"]
+    saint_datasets = ["Flickr"]
 
     def __init__(self, args):
 
@@ -47,13 +47,13 @@ class PygDataset:
             transform = T.AddAttributes(args)
 
         if args.dataset in self.planet_sets:
-            _dataset = torch_geometric.datasets.Planetoid(root=args.dataset, name=args.dataset, split=args.planetoid_split, transform=transform)
-        elif args.dataset in self.ogbn:
-            _dataset = PygNodePropPredDataset(name=args.dataset, transform=transform)
+            _dataset = torch_geometric.datasets.Planetoid(root=args.dataset, name=args.dataset,
+                                                          split=args.planetoid_split, transform=transform)
         elif args.dataset in self.saint_datasets:
             _dataset = getattr(torch_geometric.datasets, args.dataset)(root=args.dataset, transform=transform)
         else:
-            raise ValueError(f'Unknown dataset {args.dataset} specified. Use one out of: {self.planet_sets + self.ogbn + self.saint_datasets}')
+            raise ValueError(
+                f'Unknown dataset {args.dataset} specified. Use one out of: {self.planet_sets + self.saint_datasets}')
 
         [self._data] = _dataset
 
@@ -70,12 +70,3 @@ class PygDataset:
     @property
     def data(self):
         return self._data
-
-
-
-
-
-
-
-
-
