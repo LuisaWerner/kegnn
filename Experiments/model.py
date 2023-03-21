@@ -266,7 +266,7 @@ class KENN_GAT(GAT):
                                                       boost_function=args.boost_function))
 
     def reset_parameters(self):
-        super().reset_parameters() 
+        super().reset_parameters()
         for layer in self.kenn_layers:
             layer.reset_parameters()
 

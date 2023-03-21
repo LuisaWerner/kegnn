@@ -1,5 +1,4 @@
 from time import time
-# import torch.backends.mps
 import torch.nn.functional as F
 import torch_geometric
 import wandb
@@ -18,30 +17,18 @@ def run_experiment(args):
 
     print(f'Start Training')
     xp_stats = ExperimentStats()
-
     test_accuracies = []
     evaluator = Evaluator(args)
 
     for run in range(args.runs):
 
         print(f"Run: {run} of {args.runs}")
-
         model = get_model(args).to(device)
         model.reset_parameters()
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = F.nll_loss
-        wandb.watch(model, log='all')
-
-        # log knowledge file
-        if hasattr(model, 'knowledge'):
-            with open(model.knowledge, 'r') as kb_file:
-                kb = kb_file.readlines()
-                wandb.log({'logged_kb': str(kb)})
 
         train_losses, valid_losses, train_accuracies, valid_accuracies, epoch_time, clause_weights = [], [], [], [], [], []
-
-        if not args.full_batch:
-            print(f"Number of Training Batches with batch_size = {args.batch_size}: {len(model.train_loader)}")
 
         for epoch in range(args.epochs):
             start = time()
@@ -57,7 +44,6 @@ def run_experiment(args):
                 train_losses += [t_loss]
                 valid_losses += [v_loss]
                 epoch_time += [end - start]
-                # evaluator.track_clause_weights(run, model)
 
                 print(f'Run: {run + 1:02d}, '
                       f'Epoch: {epoch:02d}, '
@@ -65,9 +51,6 @@ def run_experiment(args):
                       f'Time per Train Step: {end - start:.6f} '
                       f'Train: {100 * t_accuracy:.2f}%, '
                       f'Valid: {100 * v_accuracy:.2f}% ')
-
-                # only for debugging:
-                # evaluator.plot_grad_flow(model, epoch)
 
             # early stopping
             if args.es_enabled and evaluator.callback_early_stopping(valid_accuracies, epoch):
@@ -84,7 +67,6 @@ def run_experiment(args):
         wandb.log({'valid_acc': valid_acc})
         wandb.run.summary["test_accuracies"] = test_accuracies
 
-    # todo should this be fore or after print (xp_stats)
     evaluator.save_clause_weights()
     xp_stats.end_experiment()
     print(xp_stats)
