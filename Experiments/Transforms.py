@@ -12,19 +12,6 @@ class RelationsAttribute(BaseTransform):
         return data
 
 
-class ToInductive(BaseTransform):
-    """
-    Prepares data object for inductive training
-    Full dataset stays the same, simply the nodes in edge_index not in train are deleted.
-    """
-
-    def __call__(self, data):
-        mask = data.train_mask
-        data.edge_index, _ = subgraph(mask, data.edge_index, None, relabel_nodes=False, num_nodes=data.num_nodes)
-        data.relations = data.relations[:data.edge_index.shape[1]]
-        return data
-
-
 class DropTrainEdges(BaseTransform):
     """ for training: randomly drops edges in training mode """
 

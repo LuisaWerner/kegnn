@@ -12,15 +12,11 @@ from training_batch import train, test
 
 def run_experiment(args):
     torch_geometric.seed_everything(args.seed)
-    if args.mps:
-        print(f"MPS backend available {torch.backends.mps.is_available()}")
-        device = torch.device("mps")
-    else:
-        device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
-        device = torch.device(device)
-        print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
+    device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
+    device = torch.device(device)
+    print(f'Cuda available? {torch.cuda.is_available()}, Number of devices: {torch.cuda.device_count()}')
 
-    print(f'Start {args.mode} Training')
+    print(f'Start Training')
     xp_stats = ExperimentStats()
 
     test_accuracies = []

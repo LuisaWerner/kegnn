@@ -22,7 +22,6 @@
     "full_batch": true,
     "hidden_channels": 128,
     "lr": 0.01,
-    "mode": "transductive",
     "model": "KENN_GCN",
     "max_weight":500.0,
     "min_weight":0.0,

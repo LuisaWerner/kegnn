@@ -42,7 +42,6 @@ class _GraphSampling(torch.nn.Module):
         self.num_neighbors = args.num_neighbors
         self.train_data = T.DropTrainEdges(args)(PygDataset(args).data)
         self.batch_size = args.batch_size
-        self.inductive = True if args.mode == 'inductive' else False
         self.hidden_channels = args.hidden_channels
         self.num_features = self.data.num_features
         self.out_channels = self.data.num_classes
@@ -96,7 +95,7 @@ class GAT(_GraphSampling):
 
         self.conv2 = GATConv(self.hidden_channels * self.in_head, self.out_channels, concat=False,
                              heads=self.out_head, dropout=self.dropout)
-        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
+        self.train_loader = NeighborLoader(self.train_data,
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
@@ -143,7 +142,7 @@ class GCN(_GraphSampling):
         self.convs.append(GCNConv(self.hidden_channels, self.out_channels))
         # self.lin = Linear(self.hidden_channels, self.out_channels)
 
-        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
+        self.train_loader = NeighborLoader(self.train_data,
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
@@ -201,7 +200,7 @@ class MLP(_GraphSampling):
                     p.requires_grad = False
                     print("param name:", name, "requires_grad:", p.requires_grad)
 
-        self.train_loader = NeighborLoader(T.ToInductive()(self.train_data) if self.inductive else self.train_data,
+        self.train_loader = NeighborLoader(self.train_data,
                                            num_neighbors=self.num_neighbors[:self.num_layers_sampling],
                                            shuffle=True,
                                            input_nodes=None,
