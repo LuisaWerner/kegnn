@@ -199,12 +199,12 @@ class MLP(_GraphSampling):
         return x
 
 
-class KENN_GCN(GCN):
+class Ke_GCN(GCN):
     """ kenn-sub with GCN as base NN"""
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = str('KENN_' + self.name)
+        self.name = str('Ke' + self.name)
         self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
         self.clause_weight = args.clause_weight
@@ -225,12 +225,12 @@ class KENN_GCN(GCN):
         return z
 
 
-class KENN_MLP(MLP):
+class Ke_MLP(MLP):
     """ kenn-sub with MLP (from ogb) as base NN"""
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = str('KENN_' + self.name)
+        self.name = str('Ke' + self.name)
         self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
         self.clause_weight = args.clause_weight
@@ -252,12 +252,12 @@ class KENN_MLP(MLP):
         return z
 
 
-class KENN_GAT(GAT):
+class Ke_GAT(GAT):
     """ kenn-sub with GAT as base NN """
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = str('KENN_' + self.name)
+        self.name = str('Ke' + self.name)
         self.knowledge = KnowledgeGenerator(self, args).knowledge
         self.kenn_layers = ModuleList()
 

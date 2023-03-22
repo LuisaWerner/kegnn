@@ -22,7 +22,7 @@ class Evaluator:
         self.es_min_delta = args.es_min_delta
 
         self.best_val_acc = 0.0
-        self.name_baseNN = args.model if not args.model.startswith('KENN') else args.model.split('_', 1)[-1]
+        self.name_baseNN = args.model if not args.model.startswith('Ke') else args.model.split('_', 1)[-1]
 
         if self.name not in self.meta_info:
             print(self.name)

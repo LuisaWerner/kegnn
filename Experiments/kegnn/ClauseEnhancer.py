@@ -25,7 +25,7 @@ class ClauseEnhancer(torch.nn.Module):
         :param initial_clause_weight: the initial value of the clause weight. Used if the clause weight is learned.
         """
         super().__init__()
-        boost_module = importlib.import_module("kenn.boost_functions")
+        boost_module = importlib.import_module("kegnn.boost_functions")
         _boost_function = getattr(boost_module, boost_function)
         # Split weight and clause
         weight_clause_split = clause_string.split(':')
