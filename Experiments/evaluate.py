@@ -16,7 +16,7 @@ class Evaluator:
         self._meta_path = Path(Path(__file__).parent)
         self.update_meta_info()
         self.meta_info = pd.read_csv(self._meta_path / 'master_all.csv', index_col=0)
-
+        self.wandb_use = args.wandb_use
         self.es_patience = args.es_patience
         self.eval_steps = args.eval_steps
         self.es_min_delta = args.es_min_delta
@@ -56,7 +56,8 @@ class Evaluator:
     def save_clause_weights(self):
         with open(f'{self.dataset}_clause_weight_dict', 'wb') as clause_weights:
             pickle.dump(self.clause_weight_dict, clause_weights, protocol=pickle.HIGHEST_PROTOCOL)
-        wandb.log({'logged_clause_weights': str(self.clause_weight_dict)})
+        if self.wandb_use:
+            wandb.log({'logged_clause_weights': str(self.clause_weight_dict)})
 
     def callback_early_stopping(self, valid_accuracies, epoch):
         """
