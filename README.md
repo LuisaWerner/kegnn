@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 ### To run the Experiments 
 We use [Weights and Biases](https://wandb.ai/site) (WandB) as experiment tracking tool. The experiments can be run WITHOUT or WITH  the use of WandB.
-## WIT Wandb
+## A. Without Wandb
 1. To run the experiments without WandB, run the following command. 
 
 ```
@@ -50,7 +50,7 @@ inspect_results_.ipynb
 ```
 
 
-## WITH Wandb
+## B. With Wandb
 2. If you want to use weights and biases specify the following parameters in  `Experiments/conf.json`.
 ```
 "wandb_use" : True,
@@ -74,10 +74,10 @@ cd Experiments/notebooks
 inspect_results_wandb.ipynb
 ```
 
-### How to configure the experiments? 
+## How to configure the experiments? 
 The settings and parameters of the run can be specified in a configuration file `Experiments/conf.json` as follows.
 
-# Experiment setup 
+### Experiment setup 
 - dataset: The dataset on which the experiments are conducted. Values ['CiteSeer', 'Cora', 'PubMed', 'Flickr'] - Default: 'CiteSeer'
 - device: GPU number in case of available GPUS. Values: positive integers - Default: 0
 - model: Model for the experiments. Values: ['KeGCN', 'KeGAT', 'KeMLP', 'GCN', 'GAT', 'MLP'] - Default: 'KeGCN'
@@ -86,7 +86,7 @@ The settings and parameters of the run can be specified in a configuration file 
 - runs: Number of independent runs to conduct. Values: positive integers. Default: 50
 - seed: Random seed. Values: positive integers. Default: 1234
 
-# Standard Hyperparameters
+### Standard Hyperparameters
 - adam_beta1: Adam Optimizer Parameter Beta1. Default: 0.9
 - adam_beta2: Adam Optimizer Parameter Beta2. Default: 0.99
 - adam_eps: Adam Optimizer Parameter Epsilon. Default: 1e-07
@@ -105,7 +105,7 @@ The settings and parameters of the run can be specified in a configuration file 
 - num_layers: Number of hidden layers in base NN. Values: positive Integers. Default: 3
 
 
-# Knowledge Enhancement specific parameters
+### Knowledge Enhancement specific parameters
 - binary_preactivation: Initialization of binary predicate groundings. Values: high positive real-valued numbers. Default: 500.0
 - boost function: value: "GodelBoostConormApprox"
 - clause weight: Initialization of the clause weight. Values: positive real-valued numbers. Default: 0.5
@@ -114,7 +114,7 @@ The settings and parameters of the run can be specified in a configuration file 
 - num_kenn_layers: number of stacked kenn layers. Values: positive integers. Default: 3
 
 
-# WandB specific hyperparameters
+### WandB specific hyperparameters
 - wandb_use: flag to use wandb or not. values: [true, false]. Default: false
 - wandb_label: runs can be labelled. Put a label value here if you want to label your runs. Values: 'string'. Default: 'test'
 - wandb_project: your wandb project
