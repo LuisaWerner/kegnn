@@ -37,8 +37,10 @@ class Evaluator:
         self.num_kenn_layers = args.num_kenn_layers
         self.runs = args.runs
         self.dataset = args.dataset
+        self.model = args.model
         self.clause_weight_dict = {run_key: {layer_key: {} for layer_key in range(self.num_kenn_layers)}
                                    for run_key in range(self.runs)}
+        self.results = dict.fromkeys(['test_accuracies'])
 
     def track_clause_weights(self, run, model):
         """ tracks clause weights """
@@ -53,11 +55,20 @@ class Evaluator:
                     self.clause_weight_dict[run][int(splitted_name[1])].update({clause_number: []})
                     self.clause_weight_dict[run][int(splitted_name[1])][clause_number].append(value.item())
 
-    def save_clause_weights(self):
-        with open(f'{self.dataset}_clause_weight_dict', 'wb') as clause_weights:
+    def save_results(self, test_accuracies):
+        pth = Path(__file__).parent / 'results'
+        if not pth.exists():
+            pth.mkdir()
+
+        self.results['test_accuracies'] = test_accuracies
+        with open(pth / str('results_' + str(self.dataset) + '_' + str(self.model)), 'wb') as results:
+            pickle.dump(self.results, results, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open(pth / str('clause_weights_' + str(self.dataset) + '_' + str(self.model)), 'wb') as clause_weights:
             pickle.dump(self.clause_weight_dict, clause_weights, protocol=pickle.HIGHEST_PROTOCOL)
         if self.wandb_use:
             wandb.log({'logged_clause_weights': str(self.clause_weight_dict)})
+
 
     def callback_early_stopping(self, valid_accuracies, epoch):
         """
