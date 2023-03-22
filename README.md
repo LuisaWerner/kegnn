@@ -1,7 +1,7 @@
 # Knowledge Enhanced Graph Neural Networks
 
-This repository contains the implementation of Knowledge Enhanced Graph Neural Networks (KeGNN) and the experiments. 
-This is a work by the [Tyrex Team](https://tyrex.inria.fr/) 
+This repository contains the implementation of [Knowledge Enhanced Graph Neural Networks (KeGNN)] (https://hal.inria.fr/hal-04041691) and the experiments. 
+This is a work by the [Tyrex Team](https://tyrex.inria.fr/). 
 
 Graph data is omnipresent and has a large variety of applications such as natural science, social networks or semantic web. 
 Though rich in information, graphs are often noisy and incomplete. Therefore, graph completion tasks such as node classification or link prediction have gained attention. 
