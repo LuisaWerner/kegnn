@@ -1,0 +1,43 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: 'Knowledge Enhanced Graph Neural Networks '
+message: 'If you use this software, please cite it as below.'
+type: software
+authors:
+  - given-names: Luisa
+    family-names: Werner
+    affiliation: INRIA Grenoble
+    email: luisa.werner@inria.fr
+    orcid: 'https://orcid.org/0000-0002-1431-6490'
+repository-code: 'https://github.com/LuisaWerner/kegnn'
+abstract: >-
+  Graph data is omnipresent and has a wide variety of
+  applications, such as in natural science, social networks,
+  or the semantic web. However, while being rich in
+  information, graphs are often noisy and incomplete. As a
+  result, graph completion tasks, such as node
+  classification or link prediction, have gained attention.
+  On one hand, neural methods, such as graph neural
+  networks, have proven to be robust tools for learning rich
+  representations of noisy graphs. On the other hand,
+  symbolic methods enable exact reasoning on graphs. We
+  propose Knowledge Enhanced Graph Neural Networks (KeGNN),
+  a neurosymbolic framework for graph completion that
+  combines both paradigms as it allows for the integration
+  of prior knowledge into a graph neural network model.
+  Essentially, KeGNN consists of a graph neural network as a
+  base upon which knowledge enhancement layers are stacked
+  with the goal of refining predictions with respect to
+  prior knowledge. We instantiate KeGNN in conjunction with
+  two state of the art graph neural networks, Graph
+  Convolutional Networks and Graph Attention Networks, and
+  evaluate KeGNN on multiple benchmark datasets for node
+  classification.
+keywords:
+  - Graph Neural Networks
+  - Neuro-Symbolic Integration
+  - Knowledge Graphs
+license: MIT
+commit: 7a04139
