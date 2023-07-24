@@ -1,8 +1,11 @@
 # Knowledge Enhanced Graph Neural Networks
 
-This repository contains the implementation of [Knowledge Enhanced Graph Neural Networks KeGNN] (https://openreview.net/pdf?id=7cdXVj9z6Y) and the experiments. 
+This repository contains the implementation of [Knowledge Enhanced Graph Neural Networks KeGNN](https://arxiv.org/abs/2303.15487) and the experiments. 
+
+We stack [knowledge enhancement layers](https://github.com/HEmile/KENN-PyTorch) as proposed in the paper [Knowledge Enhanced Neural Networks for Relational Domains](https://arxiv.org/pdf/2205.15762.pdf) [Daniele, Serafini]] on top of Graph Neural Networks.
 This is a work by the [Tyrex Team](https://tyrex.inria.fr/). It is as an accepted paper at the [KBCG Workshop](https://knowledgeai.github.io/) at IJCAI'23. 
 
+## Abstract
 Graph data is omnipresent and has a large variety of applications such as natural science, social networks or semantic web. 
 Though rich in information, graphs are often noisy and incomplete. Therefore, graph completion tasks such as node classification or link prediction have gained attention. 
 On the one hand, neural methods such as graph neural networks have proven to be robust tools for learning rich representations of noisy graphs. 
