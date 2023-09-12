@@ -24,6 +24,51 @@ The datasets are publicly available at the dataset collection of [PyTorch Geomet
 | PubMed   | from Planetoid, Citation Network   | 19,717 | 88,648  | 500       | 3        | Node Classification  |
 | Flickr   | from GraphSaint [1], Image Network | 89,250 | 899.756 | 500       | 7        | Node Classification  |
 
+## How to cite
+The works of Knowledge Enhanced Neural Networks can be cited as follows:
+```
+# Knowledge Enhanced Graph Neural Networks for Graph Completion
+@misc{werner2023knowledge,
+      title={Knowledge Enhanced Graph Neural Networks for Graph Completion}, 
+      author={Luisa Werner and Nabil Layaïda and Pierre Genevès and Sarah Chlyah},
+      year={2023},
+      eprint={2303.15487},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI}
+}
+
+# Knowledge Enhanced Neural Networks for Relational Domains
+@InProceedings{10.1007/978-3-031-27181-6_7,
+author="Daniele, Alessandro
+and Serafini, Luciano",
+editor="Dovier, Agostino
+and Montanari, Angelo
+and Orlandini, Andrea",
+title="Knowledge Enhanced Neural Networks for Relational Domains",
+booktitle="AIxIA 2022 -- Advances in Artificial Intelligence",
+year="2023",
+publisher="Springer International Publishing",
+address="Cham",
+pages="91--109",
+isbn="978-3-031-27181-6"
+}
+
+# Knowledge Enhanced Neural Networks
+@InProceedings{10.1007/978-3-030-29908-8_43,
+author="Daniele, Alessandro
+and Serafini, Luciano",
+editor="Nayak, Abhaya C.
+and Sharma, Alok",
+title="Knowledge Enhanced Neural Networks",
+booktitle="PRICAI 2019: Trends in Artificial Intelligence",
+year="2019",
+publisher="Springer International Publishing",
+address="Cham",
+pages="542--554",
+isbn="978-3-030-29908-8"
+}
+
+``` 
 ### Before running the experiments in both implementations
 1. In order to make sure that the right environment is used, the necessary Python packages and their versions are specified in `requirements.txt`. 
 We use Python 3.9. 
